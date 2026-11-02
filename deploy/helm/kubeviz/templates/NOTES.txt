@@ -1,0 +1,23 @@
+KubeViz instalado no namespace {{ .Release.Namespace }}.
+
+{{- if .Values.ingress.enabled }}
+
+Acesse: https://{{ .Values.ingress.host }}
+{{- else }}
+
+Para acessar sem Ingress:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "kubeviz.fullname" . }} 8443:{{ include "kubeviz.servicePort" . }}
+
+e abra {{ ternary "https" "http" .Values.tls.enabled }}://localhost:8443
+{{- end }}
+{{- if and .Values.tls.enabled (not .Values.tls.secretName) }}
+
+O certificado é autoassinado (apenas para testes): o navegador mostrará um aviso.
+Em produção, use tls.secretName com um certificado do cert-manager.
+{{- end }}
+
+O login é feito com um token do Kubernetes. O KubeViz usa o token da própria
+pessoa em cada requisição e respeita o RBAC dela. Para gerar um token de teste:
+
+  kubectl create token <serviceaccount> -n <namespace>

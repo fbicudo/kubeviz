@@ -30,6 +30,9 @@ type Config struct {
 	LogLevel slog.Level
 	// LogFormat: text ou json.
 	LogFormat string
+	// TLSCertFile e TLSKeyFile ativam HTTPS (os dois ou nenhum).
+	TLSCertFile string
+	TLSKeyFile  string
 	// ShowVersion: imprime a versão e sai.
 	ShowVersion bool
 }
@@ -54,6 +57,8 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	fs.StringVar(&c.Mode, "mode", env("MODE", "auto"), "auto|local|in-cluster (env KUBEVIZ_MODE)")
 	fs.StringVar(&level, "log-level", env("LOG_LEVEL", "info"), "debug|info|warn|error (env KUBEVIZ_LOG_LEVEL)")
 	fs.StringVar(&c.LogFormat, "log-format", env("LOG_FORMAT", "text"), "text|json (env KUBEVIZ_LOG_FORMAT)")
+	fs.StringVar(&c.TLSCertFile, "tls-cert-file", env("TLS_CERT_FILE", ""), "certificado TLS em PEM; ativa HTTPS (env KUBEVIZ_TLS_CERT_FILE)")
+	fs.StringVar(&c.TLSKeyFile, "tls-key-file", env("TLS_KEY_FILE", ""), "chave privada TLS em PEM (env KUBEVIZ_TLS_KEY_FILE)")
 	fs.BoolVar(&c.ShowVersion, "version", false, "imprime a versão e sai")
 
 	if err := fs.Parse(args); err != nil {
@@ -67,6 +72,9 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	}
 	if c.LogFormat != "text" && c.LogFormat != "json" {
 		return Config{}, fmt.Errorf("log-format inválido %q (use text ou json)", c.LogFormat)
+	}
+	if (c.TLSCertFile == "") != (c.TLSKeyFile == "") {
+		return Config{}, errors.New("informe --tls-cert-file e --tls-key-file juntos")
 	}
 	switch c.Mode {
 	case "auto", "local", "in-cluster":

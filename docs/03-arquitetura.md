@@ -156,8 +156,13 @@ GitOps).
 - Autorização: delegada ao RBAC do cluster; a UI consulta
   `SelfSubjectAccessReview`/`SelfSubjectRulesReview` para ocultar ou desabilitar
   ações não permitidas.
-- A ServiceAccount da própria console tem permissões mínimas (impersonation e
-  leitura necessária para métricas/uptime); configuração detalhada no Helm chart.
+- A ServiceAccount da própria console **não tem nenhuma permissão** no login por
+  token (tarefa 0.5): o token montado no pod só informa endereço e CA do
+  cluster. Permissões serão acrescentadas apenas quando necessárias e de forma
+  explícita no chart (impersonation para o OIDC; leitura para métricas e uptime
+  em segundo plano, nas Fases 1 e 2).
+- HTTPS servido pelo próprio KubeViz (TLS 1.2+, HSTS, recarga automática do
+  certificado); Ingress opcional.
 - Cookies `HttpOnly`/`Secure`/`SameSite`, proteção CSRF, cabeçalhos CSP.
 - Log de auditoria de todas as ações de escrita.
 - Secrets mascarados por padrão na UI.

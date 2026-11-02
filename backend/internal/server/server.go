@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io/fs"
@@ -28,6 +29,10 @@ type Options struct {
 	LocalToken string
 	// SessionTTL é a duração das sessões (padrão: 12 h).
 	SessionTTL time.Duration
+	// TLSCertFile e TLSKeyFile, quando definidos, ativam HTTPS. Os arquivos
+	// são relidos quando mudam (renovação de certificado).
+	TLSCertFile string
+	TLSKeyFile  string
 	// WhoAmI identifica o dono de uma credencial; nil = auth.WhoAmI.
 	// Substituível nos testes.
 	WhoAmI func(context.Context, *rest.Config) (auth.User, error)
@@ -114,7 +119,8 @@ func (s *Server) Run(ctx context.Context, addr string) error {
 	return s.Serve(ctx, ln)
 }
 
-// Serve atende conexões de ln até ctx ser cancelado.
+// Serve atende conexões de ln até ctx ser cancelado. Com TLSCertFile
+// definido, serve HTTPS.
 func (s *Server) Serve(ctx context.Context, ln net.Listener) error {
 	srv := &http.Server{
 		Handler:           s.Handler(),
@@ -123,9 +129,21 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) error {
 		ErrorLog:          slog.NewLogLogger(s.log.Handler(), slog.LevelWarn),
 	}
 
+	scheme := "http"
+	if s.opts.TLSCertFile != "" {
+		cfg, err := s.tlsConfig()
+		if err != nil {
+			_ = ln.Close()
+			return err
+		}
+		srv.TLSConfig = cfg
+		ln = tls.NewListener(ln, cfg)
+		scheme = "https"
+	}
+
 	errc := make(chan error, 1)
 	go func() { errc <- srv.Serve(ln) }()
-	s.log.Info("servidor iniciado", "endereco", "http://"+ln.Addr().String())
+	s.log.Info("servidor iniciado", "endereco", scheme+"://"+ln.Addr().String())
 
 	select {
 	case err := <-errc:

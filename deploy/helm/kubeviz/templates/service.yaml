@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kubeviz.fullname" . }}
+  labels:
+    {{- include "kubeviz.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "kubeviz.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: {{ ternary "https" "http" .Values.tls.enabled }}
+      port: {{ include "kubeviz.servicePort" . }}
+      targetPort: http
+      protocol: TCP
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}

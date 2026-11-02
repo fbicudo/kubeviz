@@ -3,11 +3,25 @@
 Interface web open source para gestão de clusters Kubernetes, com painéis de
 performance e uptime e assistentes (wizards) para configurar o ambiente.
 
-> **Status:** Fase 0 (fundação) em andamento. Conecta ao cluster, troca de
-> contexto, autentica usuários, respeita o RBAC de cada um e já lista pods com
-> status. Acompanhe em [docs/PROGRESSO.md](docs/PROGRESSO.md).
+> **Status:** Fase 0 (fundação) quase concluída. Instala via Helm, serve HTTPS,
+> autentica usuários, respeita o RBAC de cada um e lista pods com status.
+> Acompanhe em [docs/PROGRESSO.md](docs/PROGRESSO.md).
 
 ![Lista de pods do KubeViz num cluster kind](docs/img/pods-admin.png)
+
+## Instalação no cluster (Helm)
+
+```bash
+helm install kubeviz deploy/helm/kubeviz -n kubeviz --create-namespace
+kubectl -n kubeviz port-forward svc/kubeviz 8443:443
+```
+
+Abra https://localhost:8443 e entre com um token do Kubernetes
+(`kubectl create token <serviceaccount> -n <namespace>`). O KubeViz usa o token
+da própria pessoa em cada requisição, então cada usuário vê apenas o que o RBAC
+permite; a ServiceAccount do KubeViz não tem permissão nenhuma. Sem
+`tls.secretName`, o chart gera um certificado autoassinado, adequado só para
+testes. Opções em [values.yaml](deploy/helm/kubeviz/values.yaml).
 
 ## Desenvolvimento
 
@@ -27,6 +41,7 @@ Executando:
 ./bin/kubeviz                              # usa o kubeconfig e o contexto atuais
 ./bin/kubeviz --context prod --log-level debug
 ./bin/kubeviz --kubeconfig ~/outro.yaml
+./bin/kubeviz --listen 0.0.0.0:4466 --tls-cert-file tls.crt --tls-key-file tls.key   # acesso pela rede
 ```
 
 O KubeViz imprime no terminal um link com um token de acesso gerado a cada

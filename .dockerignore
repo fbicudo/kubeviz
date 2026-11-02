@@ -1,0 +1,10 @@
+.git
+bin
+docs
+hack
+**/node_modules
+frontend/dist
+backend/internal/web/dist/*
+!backend/internal/web/dist/.gitkeep
+*.md
+!frontend/**/*.md

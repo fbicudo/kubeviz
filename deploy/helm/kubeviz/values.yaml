@@ -1,0 +1,77 @@
+# Valores padrão do chart do KubeViz.
+
+image:
+  # Ajustar quando o repositório for publicado (tarefa 0.7).
+  repository: ghcr.io/kubeviz/kubeviz
+  # Vazio = appVersion do chart.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# As sessões ficam em memória: com mais de uma réplica, um usuário perderia a
+# sessão ao cair em outro pod. Manter 1 até existir armazenamento compartilhado.
+replicaCount: 1
+
+# HTTPS servido pelo próprio KubeViz.
+tls:
+  enabled: true
+  # Secret do tipo kubernetes.io/tls já existente (ex.: emitido pelo
+  # cert-manager). O certificado é relido automaticamente quando renovado.
+  secretName: ""
+  # Sem secretName, o chart gera um certificado autoassinado, válido por um
+  # ano: adequado apenas para testes (o navegador mostrará um aviso).
+  selfSigned:
+    dnsNames: []
+    ipAddresses: []
+
+service:
+  type: ClusterIP
+  # Padrão: 443 com TLS, 80 sem TLS.
+  port: null
+  nodePort: null
+
+ingress:
+  enabled: false
+  className: ""
+  host: kubeviz.example.com
+  # Com tls.enabled, o Ingress precisa falar HTTPS com o pod. No ingress-nginx:
+  #   nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+  annotations: {}
+  # Secret TLS usado pelo Ingress para o domínio público.
+  tlsSecretName: ""
+
+logLevel: info
+logFormat: json
+sessionTTL: ""
+
+serviceAccount:
+  # Nome da ServiceAccount; vazio = nome do release.
+  name: ""
+  annotations: {}
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]

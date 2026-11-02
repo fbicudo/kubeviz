@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubeviz.fullname" . }}
+  labels:
+    {{- include "kubeviz.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kubeviz.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kubeviz.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "kubeviz.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: kubeviz
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: KUBEVIZ_MODE
+              value: in-cluster
+            - name: KUBEVIZ_LISTEN
+              value: "0.0.0.0:4466"
+            - name: KUBEVIZ_LOG_LEVEL
+              value: {{ .Values.logLevel | quote }}
+            - name: KUBEVIZ_LOG_FORMAT
+              value: {{ .Values.logFormat | quote }}
+            {{- if .Values.tls.enabled }}
+            - name: KUBEVIZ_TLS_CERT_FILE
+              value: /etc/kubeviz/tls/tls.crt
+            - name: KUBEVIZ_TLS_KEY_FILE
+              value: /etc/kubeviz/tls/tls.key
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 4466
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: {{ ternary "HTTPS" "HTTP" .Values.tls.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+              scheme: {{ ternary "HTTPS" "HTTP" .Values.tls.enabled }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- if .Values.tls.enabled }}
+          volumeMounts:
+            - name: tls
+              mountPath: /etc/kubeviz/tls
+              readOnly: true
+          {{- end }}
+      {{- if .Values.tls.enabled }}
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ include "kubeviz.tlsSecretName" . }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

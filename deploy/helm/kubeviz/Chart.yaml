@@ -1,0 +1,9 @@
+apiVersion: v2
+name: kubeviz
+description: Console web para gestão de clusters Kubernetes, com indicadores de performance e uptime e assistentes de configuração.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://kubeviz.dev
+license: Apache-2.0
+keywords: [kubernetes, dashboard, console, observability]

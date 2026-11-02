@@ -1,5 +1,6 @@
 # Cenário de demonstração do KubeViz: workloads em vários estados e um usuário
-# (ServiceAccount demo/dev) que só pode ler pods do namespace demo.
+# (ServiceAccount demo/dev) que só pode ler pods do namespace demo e outro
+# (demo/leitor) com leitura em todo o cluster.
 # Aplicado por `make demo`.
 apiVersion: v1
 kind: Namespace
@@ -56,3 +57,15 @@ metadata: {name: dev-ler-pods, namespace: demo}
 roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: ler-pods}
 subjects:
 - {kind: ServiceAccount, name: dev, namespace: demo}
+---
+# Leitura em todo o cluster (papel padrão "view", que não inclui secrets).
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: leitor, namespace: demo}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata: {name: demo-leitor-view}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: view}
+subjects:
+- {kind: ServiceAccount, name: leitor, namespace: demo}

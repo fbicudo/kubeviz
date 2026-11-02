@@ -46,13 +46,20 @@ func main() {
 	log.Info("cluster configurado", "modo", info.Mode, "contexto", info.Context, "servidor", info.Server,
 		"versao", info.Version, "acessivel", info.Reachable)
 
-	opts := server.Options{LoopbackOnly: cfg.ListenIsLoopback()}
+	opts := server.Options{
+		LoopbackOnly: cfg.ListenIsLoopback(),
+		TLSCertFile:  cfg.TLSCertFile,
+		TLSKeyFile:   cfg.TLSKeyFile,
+	}
 	if cl.Mode() == cluster.ModeLocal {
 		opts.LocalToken = auth.RandomToken()
 		// Como no Jupyter: só quem vê o terminal recebe o link de acesso.
-		fmt.Fprintf(os.Stderr, "\n  KubeViz pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n", browserURL(cfg.Listen), opts.LocalToken)
+		fmt.Fprintf(os.Stderr, "\n  KubeViz pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n", browserURL(cfg.Listen, cfg.TLSCertFile != ""), opts.LocalToken)
 		if !opts.LoopbackOnly {
 			log.Warn("modo local exposto fora de localhost: quem tiver o link usará suas credenciais do kubeconfig", "listen", cfg.Listen)
+			if cfg.TLSCertFile == "" {
+				log.Warn("sem HTTPS: o link e o cookie de sessão trafegam sem criptografia; use --tls-cert-file e --tls-key-file")
+			}
 		}
 	}
 
@@ -63,15 +70,19 @@ func main() {
 }
 
 // browserURL converte o endereço de escuta num endereço clicável.
-func browserURL(listen string) string {
+func browserURL(listen string, https bool) string {
+	scheme := "http://"
+	if https {
+		scheme = "https://"
+	}
 	host, port, err := net.SplitHostPort(listen)
 	if err != nil {
-		return "http://" + listen
+		return scheme + listen
 	}
 	if host == "" || host == "0.0.0.0" || host == "::" {
 		host = "127.0.0.1"
 	}
-	return "http://" + net.JoinHostPort(host, port)
+	return scheme + net.JoinHostPort(host, port)
 }
 
 func newLogger(cfg config.Config) *slog.Logger {

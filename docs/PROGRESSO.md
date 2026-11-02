@@ -149,16 +149,53 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - A pasta local do projeto continua `~/k8s-console`; renomear quando o
   repositório for criado no GitHub.
 
+### 02/11/2026 — Tarefa 0.5: imagem, Helm chart e HTTPS — critério da Fase 0 cumprido
+- **HTTPS nativo** (`--tls-cert-file`/`--tls-key-file`, env `KUBEVIZ_TLS_*`):
+  TLS 1.2+, HTTP/2, HSTS, cookie `Secure`; o certificado é relido quando o
+  arquivo muda (renovação pelo cert-manager sem reiniciar). Decisão: o próprio
+  KubeViz serve TLS, em vez de depender de um Ingress; o Ingress continua
+  disponível no chart.
+- **Imagem** (`Dockerfile`, `make image`): build em 3 estágios, compilação
+  cruzada (amd64/arm64), distroless `static-debian13:nonroot`, usuário 65532,
+  **47 MB**. Requer BuildKit (`docker-buildx` instalado pelo apt).
+- **Helm chart** (`deploy/helm/kubeviz`): Deployment com raiz somente leitura,
+  sem privilégios e com seccomp; probes HTTPS; Service 443; Ingress opcional;
+  certificado autoassinado gerado pelo chart (só para testes) ou Secret
+  existente (`tls.secretName`). **A ServiceAccount do KubeViz não recebe nenhuma
+  permissão**: cada requisição usa o token do próprio usuário. Alvos
+  `make helm-lint` e `make kind-install`.
+- **Cenário de demonstração:** novo usuário `demo/leitor`, com o papel padrão
+  `view` (leitura em todo o cluster, sem secrets e sem nós).
+- **Verificado no kind (modo in-cluster, HTTPS via port-forward):**
+  - `kubectl auth can-i` confirma que a ServiceAccount do KubeViz não lista
+    pods nem lê secrets;
+  - certificado com os nomes do Service e o IP 10.11.12.103; HSTS presente;
+  - sessão sem login → tela de token; link do modo local → 404; token inválido
+    → 401; cookie `Secure`;
+  - `dev`: 200 em pods de `demo`, 403 em todos os namespaces;
+  - `leitor`: 14 pods em todos os namespaces, 403 em secrets e em nós (a visão
+    geral mostra "sem permissão" no indicador de nós);
+  - capturas: [img/login-token.png](img/login-token.png),
+    [img/incluster-dev-pods.png](img/incluster-dev-pods.png) e
+    [img/incluster-leitor-overview.png](img/incluster-leitor-overview.png).
+- **Campo de token mascarado** (tipo senha): a primeira captura da tela de login
+  mostrava parte de um token em texto aberto; o token não deve ficar visível
+  para quem olha a tela.
+- **Testes novos:** HTTPS de ponta a ponta, certificado inválido e recarga do
+  certificado (mantém o anterior se o novo estiver corrompido).
+- **CI:** validação do chart e build da imagem para amd64 e arm64 (sem publicar).
+- **Não verificado:** Ingress com TLS (o kind não tem controlador de Ingress
+  instalado; só validado por `helm template`); build arm64 (só no CI); CI no
+  GitHub como um todo (repositório não publicado).
+
 ## Próximas tarefas (Fase 0)
 
-1. **0.5 — Empacotamento:** Dockerfile (distroless, multi-arquitetura) e Helm
-   chart com ServiceAccount de permissões mínimas; instalar no kind e testar o
-   modo in-cluster, a tela de token e o RBAC pelo navegador (critério de pronto
-   da Fase 0). Incluir HTTPS (Ingress com TLS) para acesso pela rede.
-2. **0.6 — Revisão visual:** ajustar tokens de cor e densidade, definir logo e
-   paleta finais; trocar os `<select>` nativos por componentes com busca.
-3. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
-   ativar o relato privado de vulnerabilidades.
+1. **0.6 — Revisão visual:** ajustar tokens de cor e densidade, definir logo e
+   paleta finais; trocar os `<select>` nativos por componentes com busca; refazer
+   as capturas antigas que ainda mostram "Kubora".
+2. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
+   publicar a imagem no GHCR e o chart (OCI), ativar o relato privado de
+   vulnerabilidades. Ajustar `image.repository` no chart.
 
 ## Bloqueios e pendências do responsável
 
@@ -179,5 +216,13 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   `demo`) e gera `~/.kube/kubeviz-demo.yaml` (fora do repositório) com os
   contextos `kind-kubeviz-dev` (administrador) e `dev-limitado` (token de 48 h).
   Rodar com `./bin/kubeviz --kubeconfig ~/.kube/kubeviz-demo.yaml`.
+- Acesso pela rede, rodando em segundo plano nesta máquina (não sobrevive a
+  reinícios):
+  - modo local (administrador do kind): `https://10.11.12.103:4466`, com o
+    certificado autoassinado em `~/.config/kubeviz/tls/` (fora do repositório);
+    o link com token aparece no log de inicialização;
+  - modo in-cluster (Helm no namespace `kubeviz`): `https://10.11.12.103:8443`,
+    via `kubectl -n kubeviz port-forward --address 10.11.12.103 svc/kubeviz 8443:443`;
+    login com `kubectl create token dev -n demo` ou `... leitor -n demo`.
 - Cluster: `kind-kubeviz-dev` (`make kind-up` / `make kind-down`). A máquina tem 3,3 GB de RAM, então
   manter apenas um cluster por vez.

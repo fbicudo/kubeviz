@@ -9,7 +9,7 @@ PKG     := kubeviz.dev/kubeviz/internal/version
 LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT) -X $(PKG).Date=$(DATE)
 WEBDIST := backend/internal/web/dist
 
-.PHONY: help deps dev-backend dev-frontend frontend build test test-integration test-envtest kind-up kind-down demo lint clean
+.PHONY: help deps dev-backend dev-frontend frontend build image helm-lint kind-install test test-integration test-envtest kind-up kind-down demo lint clean
 
 help: ## Mostra esta ajuda
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -31,6 +31,21 @@ frontend: ## Compila a UI e copia para dentro do backend (go:embed)
 
 build: frontend ## Gera o binário único bin/kubeviz com a UI embutida
 	cd backend && CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o ../bin/kubeviz ./cmd/kubeviz
+
+IMAGE ?= kubeviz:dev
+
+image: ## Gera a imagem de container $(IMAGE)
+	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) --build-arg DATE=$(DATE) .
+
+helm-lint: ## Valida o Helm chart
+	helm lint deploy/helm/kubeviz
+	helm template kubeviz deploy/helm/kubeviz > /dev/null
+
+kind-install: image ## Instala o chart no kind com a imagem local (modo in-cluster, HTTPS)
+	kind load docker-image $(IMAGE) --name kubeviz-dev
+	helm upgrade --install kubeviz deploy/helm/kubeviz -n kubeviz --create-namespace \
+		--set image.repository=docker.io/library/kubeviz --set image.tag=dev --set image.pullPolicy=Never --wait
+	kubectl -n kubeviz rollout restart deploy/kubeviz
 
 test: ## Roda os testes do backend e do frontend
 	cd backend && go test ./...

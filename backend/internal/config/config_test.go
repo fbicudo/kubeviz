@@ -61,6 +61,7 @@ func TestLoadInvalid(t *testing.T) {
 		"formato inválido": {"--log-format", "xml"},
 		"argumento solto":  {"extra"},
 		"modo inválido":    {"--mode", "remoto"},
+		"TLS sem chave":    {"--tls-cert-file", "c.pem"},
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {

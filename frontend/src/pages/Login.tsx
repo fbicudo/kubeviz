@@ -56,14 +56,15 @@ function TokenForm() {
       <label htmlFor={id} className="block font-medium">
         {t('auth.token.label')}
       </label>
-      <textarea
+      {/* Campo de senha: o token não fica visível para quem olha a tela. */}
+      <input
         id={id}
+        type="password"
         value={token}
         onChange={(e) => setToken(e.target.value)}
-        rows={4}
         autoComplete="off"
         spellCheck={false}
-        className="w-full resize-none rounded-md border bg-background p-2 font-mono text-xs break-all focus:border-accent focus:outline-none"
+        className="h-9 w-full rounded-md border bg-background px-2 font-mono text-xs focus:border-accent focus:outline-none"
         placeholder="eyJhbGciOiJSUzI1NiIs…"
       />
       <p className="text-xs text-muted">
