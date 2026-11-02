@@ -19,6 +19,17 @@ func (s *Server) k8sProxy(w http.ResponseWriter, r *http.Request) {
 	sess := sessionFrom(r.Context())
 	cfg := s.userConfig(sess)
 
+	// Auditoria: toda alteração real no cluster (dry-runs e consultas de
+	// permissão não alteram nada e ficam de fora).
+	if isWrite(r) {
+		s.log.Info("alteração no cluster",
+			"usuario", sessionUser(sess),
+			"metodo", r.Method,
+			"recurso", strings.TrimPrefix(r.URL.Path, k8sPrefix),
+			"origem", clientIP(r),
+		)
+	}
+
 	// Terminais (exec/attach) ficam registrados: quem, onde e qual comando.
 	if p := r.URL.Path; strings.HasSuffix(p, "/exec") || strings.HasSuffix(p, "/attach") {
 		q := r.URL.Query()
@@ -58,6 +69,19 @@ func (s *Server) k8sProxy(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	proxy.ServeHTTP(w, r)
+}
+
+// isWrite indica um pedido que altera o cluster.
+func isWrite(r *http.Request) bool {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return false
+	}
+	if r.URL.Query().Get("dryRun") != "" {
+		return false
+	}
+	// Revisões de acesso (SelfSubjectAccessReview etc.) são consultas via POST.
+	return !strings.Contains(r.URL.Path, "/apis/authorization.k8s.io/") && !strings.Contains(r.URL.Path, "/apis/authentication.k8s.io/")
 }
 
 // sessionUser identifica a sessão nos logs de auditoria.

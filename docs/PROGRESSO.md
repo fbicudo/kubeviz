@@ -465,18 +465,45 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
     `dev-limitado` recusado; sessões registradas no log;
   - captura: [img/terminal.png](img/terminal.png).
 
+### 02/11/2026 — Tarefa 1.7: ações
+- **Barra de ações no detalhe**, com diálogos acessíveis (Radix Dialog):
+  - Deployment: escalar, reiniciar (anotação `restartedAt`, como `kubectl
+    rollout restart`), pausar/retomar, voltar revisão (lista de revisões a
+    partir dos ReplicaSets, com imagens; JSON patch do template, sem o rótulo
+    `pod-template-hash`, como `kubectl rollout undo`);
+  - StatefulSet: escalar e reiniciar; DaemonSet: reiniciar; ReplicaSet: escalar;
+  - Nó: bloquear/liberar agendamento (cordon/uncordon);
+  - qualquer objeto: excluir, exigindo digitar o nome; volta para a lista.
+- **Só aparece o que o RBAC permite:** cada botão depende de uma
+  `SelfSubjectAccessReview` feita com a credencial do usuário.
+- **Auditoria (RF-50):** toda alteração real no cluster feita pelo KubeViz fica
+  no log (`alteração no cluster`: usuário, método, recurso, origem); consultas,
+  dry-runs e revisões de acesso ficam de fora.
+- Botão de confirmação de exclusão com contraste acessível nos dois temas.
+- **Verificado:**
+  - testes Go (auditoria) e 153 testes Vitest (SSAR, corpos e cabeçalhos de
+    cada ação, revisões, rollback; botões por permissão, escalar, excluir com
+    nome, rollback, cordon);
+  - no kind, pelo navegador, conferido com `kubectl`: escalar para 3; reiniciar
+    (revisão 1 → 2 com `restartedAt`); pausar/retomar; voltar para a revisão 1
+    (template sem `restartedAt`, revisão 3); cordon/uncordon; excluir um pod de
+    teste; `dev-limitado` sem nenhuma ação; tudo registrado na auditoria;
+  - **bug encontrado no teste real e corrigido:** o DELETE ia sem corpo e sem
+    `Content-Type`, e o backend o recusava (415) pela proteção contra CSRF; agora
+    envia `DeleteOptions` em JSON, e o teste confere o cabeçalho;
+  - capturas: [img/acao-escalar.png](img/acao-escalar.png) e
+    [img/acao-excluir.png](img/acao-excluir.png).
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
-   confirmação; ações ocultas quando o RBAC não permite.
-2. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
+1. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
    personalizados (CRDs) via discovery.
-3. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
-4. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+2. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
+3. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
     (kwok).
 
 ## Como publicar uma versão

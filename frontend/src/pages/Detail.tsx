@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { stringify } from 'yaml'
 import { LiveIndicator } from '@/components/resources/LiveIndicator'
 import { EditObject } from '@/components/editor/EditObject'
+import { ActionBar } from '@/components/resources/Actions'
 import { LoadError } from '@/components/resources/common'
 import { LogsView } from '@/components/resources/LogsView'
 import { TerminalView } from '@/components/resources/TerminalView'
@@ -66,6 +67,7 @@ export function Detail() {
     ...found,
   }
 
+  const [notice, setNotice] = useState<string | null>(null)
   const page = pageOfKind(kind)
   const kindLabel = kind.id in kinds ? t(`kinds.${kind.id}`) : kind.kind
 
@@ -87,10 +89,19 @@ export function Detail() {
           {obj && <ObjectStatus obj={obj} />}
           <span className="ml-auto">{obj && <LiveIndicator state={live} />}</span>
         </div>
-        <p className="text-muted">
-          {kind.kind}
-          {namespace && ` · ${namespace}`}
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="mr-auto text-muted">
+            {kind.kind}
+            {namespace && ` · ${namespace}`}
+          </p>
+          {obj && <ActionBar obj={obj} kind={kind} path={objectPath(kind, namespace, name)} onDone={setNotice} />}
+        </div>
+        {notice && (
+          <p role="status" className="flex items-center gap-2 text-ok">
+            <Check className="size-4" aria-hidden />
+            {notice}
+          </p>
+        )}
       </div>
 
       {list.isError ? (

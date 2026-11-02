@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/fbicudo/kubeviz/backend/internal/auth"
 )
 
 // fakeExecServer imita o API server: responde 101 e devolve com eco o que receber.
@@ -111,5 +113,36 @@ func TestWebSocketFromOtherOriginIsRefused(t *testing.T) {
 	resp, _, _ = upgrade(t, addr, sessionCookie+"=invalido", "http://"+addr)
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("sem sessão: status %d, quer 401", resp.StatusCode)
+	}
+}
+
+func TestAuditLogOfClusterWrites(t *testing.T) {
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer api.Close()
+	fc := newFakeCluster()
+	fc.host = api.URL
+	var logs bytes.Buffer
+	s := New(slog.New(slog.NewTextHandler(&logs, nil)), testAssets, fc, Options{WhoAmI: fakeWhoAmI})
+	h := s.Handler()
+	sess := s.sessions.Create(auth.User{}, "")
+	sess.LocalUser = "fabio"
+	hdr := map[string]string{"Cookie": sessionCookie + "=" + sess.ID, "Content-Type": "application/json"}
+
+	do(t, h, "GET", "/api/k8s/api/v1/pods", "", hdr)
+	do(t, h, "PATCH", "/api/k8s/apis/apps/v1/namespaces/demo/deployments/web?dryRun=All", "{}", hdr)
+	do(t, h, "POST", "/api/k8s/apis/authorization.k8s.io/v1/selfsubjectaccessreviews", "{}", hdr)
+	if strings.Contains(logs.String(), "alteração no cluster") {
+		t.Fatalf("consultas, dry-runs e revisões de acesso não alteram nada: %s", logs.String())
+	}
+
+	do(t, h, "DELETE", "/api/k8s/api/v1/namespaces/demo/pods/web-1", "", hdr)
+	do(t, h, "PATCH", "/api/k8s/apis/apps/v1/namespaces/demo/deployments/web/scale", "{}", hdr)
+	out := logs.String()
+	for _, want := range []string{"usuario=fabio metodo=DELETE recurso=/api/v1/namespaces/demo/pods/web-1", "metodo=PATCH recurso=/apis/apps/v1/namespaces/demo/deployments/web/scale"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("faltou no log de auditoria: %q\n%s", want, out)
+		}
 	}
 }
