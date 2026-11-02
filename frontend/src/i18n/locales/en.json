@@ -186,7 +186,8 @@
     "tab": {
       "overview": "Overview",
       "yaml": "YAML",
-      "events": "Events"
+      "events": "Events",
+      "logs": "Logs"
     },
     "notFound": "Object not found",
     "notFoundHint": "It may have been deleted or live in another namespace.",
@@ -284,5 +285,38 @@
     "summaryWaiting_other": "{{count}} wait for a namespace in this batch.",
     "summaryErrors_one": "{{count}} with errors.",
     "summaryErrors_other": "{{count}} with errors."
+  },
+  "logs": {
+    "container": "Container",
+    "previous": "Previous run",
+    "follow": "Follow",
+    "tail": "Lines",
+    "all": "all",
+    "restarted_one": "This container restarted {{count}} time.",
+    "restarted_other": "This container restarted {{count}} times.",
+    "seePrevious": "See the previous run's logs",
+    "search": "Search logs",
+    "matches_one": "{{count}} line",
+    "matches_other": "{{count}} lines",
+    "timestamps": "Timestamps",
+    "wrap": "Wrap lines",
+    "lines_one": "{{count}} line",
+    "lines_other": "{{count}} lines",
+    "capped": "max {{max}}",
+    "download": "Download",
+    "retry": "Try again",
+    "noPrevious": "There's no previous run of this container (it hasn't restarted).",
+    "notStarted": "The container hasn't started yet.",
+    "region": "Logs of container {{container}}",
+    "noMatches": "No lines with that text.",
+    "empty": "No logs yet.",
+    "toEnd": "Jump to end",
+    "state": {
+      "connecting": "Connecting…",
+      "streaming": "Live",
+      "loaded": "Loaded",
+      "ended": "End of logs",
+      "error": "Error"
+    }
   }
 }

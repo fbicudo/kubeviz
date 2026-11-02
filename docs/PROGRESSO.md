@@ -417,21 +417,45 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
     aguardam namespace e os com erro;
   - captura: [img/aplicar-yaml.png](img/aplicar-yaml.png).
 
+### 02/11/2026 — Tarefa 1.5: logs
+- **Aba Logs no detalhe de pods** (`?tab=logs`): seletor de container (inclusive
+  de inicialização), execução anterior, acompanhar ao vivo, quantidade de
+  linhas (100/500/2000/todas), horários, quebra de linha, busca com contagem e
+  destaque, download (`.log`). Para containers que reiniciaram, atalho para os
+  logs da execução anterior.
+- `lib/k8s/logs.ts`: stream de `pods/log` sempre com `timestamps=true`;
+  reconexão automática quando o stream cai (container reiniciou) a partir do
+  último horário, sem duplicar linhas; códigos ANSI removidos; no máximo 5.000
+  linhas na tela. Rolagem automática pausa quando o usuário rola para cima
+  ("Ir para o fim"). Mensagens claras para "sem execução anterior" e
+  "container ainda não começou".
+- Demonstração: novo Deployment `demo/relogio`, que escreve a hora a cada 2 s
+  (com cores ANSI).
+- **Verificado:**
+  - 138 testes Vitest (ANSI, horário, limite de linhas, URL; ao vivo com linha
+    partida entre pedaços, busca, execução anterior inexistente, download);
+  - no kind: `relogio` recebeu linhas novas ao vivo (160 → 163 em 5 s), sem
+    ANSI; busca; `quebrado` mostrou o atalho de reinício e os logs da execução
+    anterior ("falhando");
+  - **bug encontrado no teste real e corrigido:** quando a resposta terminava
+    sem quebra de linha, a última linha era descartada (caso do cluster que já
+    tinha descartado os logs anteriores e respondia só com a mensagem de erro);
+  - captura: [img/logs-ao-vivo.png](img/logs-ao-vivo.png).
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
-2. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
+1. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
    verificação de origem).
-3. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
+2. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
    confirmação; ações ocultas quando o RBAC não permite.
-4. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
+3. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
    personalizados (CRDs) via discovery.
-5. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
-6. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+4. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
+5. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
     (kwok).
 
 ## Como publicar uma versão

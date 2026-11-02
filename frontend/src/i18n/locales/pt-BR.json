@@ -186,7 +186,8 @@
     "tab": {
       "overview": "Visão geral",
       "yaml": "YAML",
-      "events": "Eventos"
+      "events": "Eventos",
+      "logs": "Logs"
     },
     "notFound": "Objeto não encontrado",
     "notFoundHint": "Ele pode ter sido excluído ou estar em outro namespace.",
@@ -284,5 +285,38 @@
     "summaryWaiting_other": "{{count}} aguardam o namespace deste lote.",
     "summaryErrors_one": "{{count}} com erro.",
     "summaryErrors_other": "{{count}} com erro."
+  },
+  "logs": {
+    "container": "Container",
+    "previous": "Execução anterior",
+    "follow": "Acompanhar",
+    "tail": "Linhas",
+    "all": "todas",
+    "restarted_one": "Este container reiniciou {{count}} vez.",
+    "restarted_other": "Este container reiniciou {{count}} vezes.",
+    "seePrevious": "Ver os logs da execução anterior",
+    "search": "Buscar nos logs",
+    "matches_one": "{{count}} linha",
+    "matches_other": "{{count}} linhas",
+    "timestamps": "Horários",
+    "wrap": "Quebrar linhas",
+    "lines_one": "{{count}} linha",
+    "lines_other": "{{count}} linhas",
+    "capped": "máximo de {{max}}",
+    "download": "Baixar",
+    "retry": "Tentar de novo",
+    "noPrevious": "Não há execução anterior deste container (ele não reiniciou).",
+    "notStarted": "O container ainda não começou a rodar.",
+    "region": "Logs do container {{container}}",
+    "noMatches": "Nenhuma linha com esse texto.",
+    "empty": "Sem logs até agora.",
+    "toEnd": "Ir para o fim",
+    "state": {
+      "connecting": "Conectando…",
+      "streaming": "Ao vivo",
+      "loaded": "Carregado",
+      "ended": "Fim dos logs",
+      "error": "Erro"
+    }
   }
 }

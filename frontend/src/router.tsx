@@ -54,7 +54,7 @@ const detailRoute = createRoute({
   path: '/view/$group/$version/$resource/$name',
   validateSearch: (search: Record<string, unknown>): DetailSearch => ({
     ...(typeof search.ns === 'string' && search.ns ? { ns: search.ns } : {}),
-    ...(search.tab === 'yaml' || search.tab === 'events' ? { tab: search.tab } : {}),
+    ...(search.tab === 'yaml' || search.tab === 'events' || search.tab === 'logs' ? { tab: search.tab } : {}),
   }),
   component: Detail,
 })
