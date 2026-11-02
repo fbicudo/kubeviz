@@ -41,14 +41,18 @@ export function useContexts() {
   return useQuery({ queryKey: clusterKeys.contexts, queryFn: getContexts })
 }
 
-/** Troca o contexto ativo e descarta todos os dados do cluster anterior. */
+/**
+ * Troca o contexto ativo. Como a identidade pode mudar junto, todos os dados
+ * do cluster anterior são apagados (não apenas marcados como antigos): nada
+ * visto com uma credencial pode aparecer sob outra.
+ */
 export function useSwitchContext() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: setCurrentContext,
     onSuccess: (info) => {
       qc.setQueryData(clusterKeys.info, info)
-      void qc.invalidateQueries()
+      void qc.resetQueries({ predicate: (q) => q.queryKey[0] !== clusterKeys.info[0] })
     },
   })
 }

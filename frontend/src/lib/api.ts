@@ -26,7 +26,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     let message = res.statusText
     try {
-      message = ((await res.json()) as { error?: string }).error ?? message
+      // Erros do Kubora vêm em {"error"}; os da API do Kubernetes, em {"message"}.
+      const body = (await res.json()) as { error?: string; message?: string }
+      message = body.error ?? body.message ?? message
     } catch {
       // corpo não é JSON
     }

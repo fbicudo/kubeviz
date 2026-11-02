@@ -4,10 +4,10 @@ Interface web open source para gestão de clusters Kubernetes, com painéis de
 performance e uptime e assistentes (wizards) para configurar o ambiente.
 
 > **Status:** Fase 0 (fundação) em andamento. Conecta ao cluster, troca de
-> contexto, autentica usuários e repassa chamadas à API com as credenciais de
-> cada um; ainda não lista recursos. Acompanhe em [docs/PROGRESSO.md](docs/PROGRESSO.md).
+> contexto, autentica usuários, respeita o RBAC de cada um e já lista pods com
+> status. Acompanhe em [docs/PROGRESSO.md](docs/PROGRESSO.md).
 
-![Visão geral do Kubora conectado a um cluster kind](docs/img/cluster-conectado.png)
+![Lista de pods do Kubora num cluster kind](docs/img/pods-admin.png)
 
 ## Desenvolvimento
 

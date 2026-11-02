@@ -3,6 +3,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { allNavItems } from '@/components/layout/nav'
 import { Overview } from '@/pages/Overview'
 import { Placeholder } from '@/pages/Placeholder'
+import { Pods } from '@/pages/Pods'
 
 const rootRoute = createRootRoute({
   component: AppShell,
@@ -11,16 +12,29 @@ const rootRoute = createRootRoute({
 
 const overviewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Overview })
 
-// Enquanto as telas não existem, cada item do menu aponta para um placeholder.
-const sectionRoutes = allNavItems.map((item) =>
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: item.path,
-    component: () => <Placeholder titleKey={`nav.${item.id}`} />,
-  }),
-)
+const podsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pods',
+  // ?ns=<namespace>; ausente = todos os namespaces.
+  validateSearch: (search: Record<string, unknown>): { ns?: string } =>
+    typeof search.ns === 'string' && search.ns ? { ns: search.ns } : {},
+  component: Pods,
+})
 
-const routeTree = rootRoute.addChildren([overviewRoute, ...sectionRoutes])
+const implemented = new Set(['/pods'])
+
+// Enquanto as telas não existem, cada item do menu aponta para um placeholder.
+const sectionRoutes = allNavItems
+  .filter((item) => !implemented.has(item.path))
+  .map((item) =>
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: item.path,
+      component: () => <Placeholder titleKey={`nav.${item.id}`} />,
+    }),
+  )
+
+const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, ...sectionRoutes])
 
 export function makeRouter(history?: RouterHistory) {
   return createRouter({ routeTree, history })

@@ -102,18 +102,50 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - **Não verificado:** tela de token no modo in-cluster com o binário real (só
   nos testes; o binário in-cluster depende do Helm chart, tarefa 0.5).
 
+### 02/11/2026 — Tarefa 0.4: primeira lista real (pods)
+- **Página de Pods** (`/pods?ns=<namespace>`): seletor de namespace (lista os
+  namespaces; sem permissão para isso, vira campo de texto), filtro por nome,
+  atualização a cada 10 s e botão de atualizar. Colunas: nome, namespace,
+  status, prontos, reinícios, idade, nó e IP.
+- **Status como no `kubectl get pods`** (`lib/k8s/pods.ts`): motivos de espera e
+  término dos containers (CrashLoopBackOff, ImagePullBackOff, Error, ExitCode),
+  containers de inicialização, Terminating e Evicted; cor por gravidade.
+- **Sem permissão:** mensagem clara com o texto da API e a sugestão de escolher
+  um namespace permitido.
+- **Visão geral:** indicadores reais de nós prontos e pods em execução, com o
+  número de pods com falha (link para a lista). CPU e memória ficam para a
+  Fase 2 (métricas).
+- **Correção de segurança encontrada no teste visual:** ao trocar de contexto
+  (e, portanto, de identidade), dados da identidade anterior podiam continuar
+  em cache e a contagem de pods do administrador aparecia para o usuário
+  limitado. Agora a troca apaga todos os dados do cluster; há um teste de
+  regressão, conferido falhando sem a correção.
+- **Erros 4xx deixaram de ser repetidos** automaticamente (a mensagem de
+  "sem permissão" aparecia com 1 s de atraso).
+- **Verificado:**
+  - 34 testes Vitest: 17 de status de pods, idade e prontidão de nós; página
+    de Pods (lista, filtro, namespace pela URL e pelo seletor, usuário restrito,
+    troca de contexto sem vazamento);
+  - no kind, com o namespace `demo` (2 pods nginx, 1 em CrashLoop, 1 com imagem
+    inexistente) e a ServiceAccount `demo/dev`, que só lê pods de `demo`:
+    administrador vê os 13 pods; o usuário limitado recebe a recusa ao listar
+    todos os namespaces e vê os 4 pods ao escolher `demo`;
+  - capturas: [img/overview-pods.png](img/overview-pods.png),
+    [img/pods-admin.png](img/pods-admin.png),
+    [img/pods-sem-permissao.png](img/pods-sem-permissao.png) e
+    [img/pods-limitado-demo.png](img/pods-limitado-demo.png).
+- **Limitações conhecidas:** listas sem virtualização e sem watch (Fase 1);
+  o seletor de contexto e de namespace usam `<select>` nativo (tarefa 0.6).
+
 ## Próximas tarefas (Fase 0)
 
-1. **0.4 — Primeira lista real:** pods do namespace, respeitando o RBAC do
-   usuário (critério de pronto da Fase 0). Preenche os indicadores de nós e pods
-   da visão geral.
-2. **0.5 — Empacotamento:** Dockerfile (distroless, multi-arquitetura) e Helm
-   chart com ServiceAccount de permissões mínimas; testar o modo in-cluster e a
-   tela de token no kind.
-3. **0.6 — Revisão visual:** ajustar tokens de cor e densidade, definir logo e
-   paleta finais; trocar o `<select>` nativo do seletor de contexto por um
-   componente com busca.
-4. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
+1. **0.5 — Empacotamento:** Dockerfile (distroless, multi-arquitetura) e Helm
+   chart com ServiceAccount de permissões mínimas; instalar no kind e testar o
+   modo in-cluster, a tela de token e o RBAC pelo navegador (critério de pronto
+   da Fase 0). Incluir HTTPS (Ingress com TLS) para acesso pela rede.
+2. **0.6 — Revisão visual:** ajustar tokens de cor e densidade, definir logo e
+   paleta finais; trocar os `<select>` nativos por componentes com busca.
+3. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
    ativar o relato privado de vulnerabilidades.
 
 ## Bloqueios e pendências do responsável
@@ -130,6 +162,11 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - Pelo apt: Docker 29.1, make 4.4, dependências do Chromium.
 - O usuário foi adicionado ao grupo `docker`; até o próximo login, use
   `sg docker -c "<comando>"` ou abra uma nova sessão.
+- Cenário de demonstração no kind: namespace `demo` com pods de exemplo e a
+  ServiceAccount `demo/dev` (só lê pods de `demo`). O arquivo
+  `~/.kube/kubora-demo.yaml` (fora do repositório) tem os contextos
+  `kind-kubora-dev` (administrador) e `dev-limitado` (token de 48 h, gerado em
+  02/11/2026). Rodar com `./bin/kubora --kubeconfig ~/.kube/kubora-demo.yaml`.
 - Cluster: `kind-kubora-dev` (recriar com
   `kind create cluster --name kubora-dev`; remover com
   `kind delete cluster --name kubora-dev`). A máquina tem 3,3 GB de RAM, então

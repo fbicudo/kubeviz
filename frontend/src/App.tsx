@@ -9,6 +9,8 @@ import { makeRouter } from '@/router'
 import '@/i18n'
 
 const isUnauthorized = (e: unknown) => e instanceof ApiError && e.status === 401
+// Erros 4xx (sem permissão, não encontrado…) não mudam ao repetir.
+const isClientError = (e: unknown) => e instanceof ApiError && e.status >= 400 && e.status < 500
 
 function makeQueryClient() {
   // Qualquer 401 (sessão expirada), em consulta ou ação, devolve o usuário à
@@ -22,7 +24,7 @@ function makeQueryClient() {
     defaultOptions: {
       queries: {
         staleTime: 10_000,
-        retry: (count, error) => !isUnauthorized(error) && count < 1,
+        retry: (count, error) => !isClientError(error) && count < 1,
       },
     },
   })

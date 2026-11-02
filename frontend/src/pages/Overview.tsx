@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { StatTile } from '@/components/ui/stat-tile'
-import { getVersion } from '@/lib/api'
+import { Link } from '@tanstack/react-router'
+import { ApiError, getVersion } from '@/lib/api'
+import { isNodeReady, summarizePod } from '@/lib/k8s/pods'
+import { useNodes, usePods } from '@/lib/k8s/queries'
 import { useClusterInfo } from '@/lib/queries'
 
 export function Overview() {
@@ -22,8 +25,8 @@ export function Overview() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatTile label={t('overview.nodes')} value="—" hint={t('overview.pending')} />
-        <StatTile label={t('overview.pods')} value="—" hint={t('overview.pending')} />
+        <NodesTile />
+        <PodsTile />
         <StatTile label={t('overview.cpu')} value="—" hint={t('overview.pending')} />
         <StatTile label={t('overview.memory')} value="—" hint={t('overview.pending')} />
       </div>
@@ -37,6 +40,54 @@ export function Overview() {
         />
       </div>
     </div>
+  )
+}
+
+/** Mensagem curta para indicadores que falharam (ex.: sem permissão). */
+function errorHint(t: (k: string) => string, error: Error) {
+  return error instanceof ApiError && error.status === 403 ? t('overview.forbidden') : error.message
+}
+
+function NodesTile() {
+  const { t } = useTranslation()
+  const nodes = useNodes()
+  if (nodes.isError) {
+    return <StatTile label={t('overview.nodes')} value="—" hint={errorHint(t, nodes.error)} />
+  }
+  const items = nodes.data?.items ?? []
+  const ready = items.filter(isNodeReady).length
+  return (
+    <StatTile
+      label={t('overview.nodes')}
+      status={!nodes.data ? 'unknown' : ready === items.length ? 'ok' : ready === 0 ? 'critical' : 'warn'}
+      value={nodes.data ? `${ready}/${items.length}` : '…'}
+      hint={nodes.data && ready < items.length ? t('overview.nodesNotReady', { count: items.length - ready }) : undefined}
+    />
+  )
+}
+
+function PodsTile() {
+  const { t } = useTranslation()
+  const pods = usePods('')
+  if (pods.isError) {
+    return <StatTile label={t('overview.pods')} value="—" hint={errorHint(t, pods.error)} />
+  }
+  const summaries = (pods.data?.items ?? []).map(summarizePod)
+  const running = summaries.filter((s) => s.status === 'Running').length
+  const failing = summaries.filter((s) => s.severity === 'critical').length
+  return (
+    <StatTile
+      label={t('overview.pods')}
+      status={!pods.data ? 'unknown' : failing > 0 ? 'critical' : 'ok'}
+      value={pods.data ? `${running}/${summaries.length}` : '…'}
+      hint={
+        pods.data ? (
+          <Link to="/pods" className="hover:text-foreground">
+            {failing > 0 ? t('overview.podsFailing', { count: failing }) : t('overview.podsAllGood')}
+          </Link>
+        ) : undefined
+      }
+    />
   )
 }
 

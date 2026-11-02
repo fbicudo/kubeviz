@@ -49,10 +49,16 @@
     "pods": "Running pods",
     "cpu": "CPU usage",
     "memory": "Memory usage",
-    "pending": "Coming soon, once cluster resources are read.",
+    "pending": "Available in Phase 2, with metrics collection.",
     "backend": "Backend",
     "backendOk": "Connected · {{version}}",
-    "backendDown": "Unavailable"
+    "backendDown": "Unavailable",
+    "forbidden": "Not allowed to query",
+    "nodesNotReady_one": "{{count}} node is not ready",
+    "nodesNotReady_other": "{{count}} nodes are not ready",
+    "podsFailing_one": "{{count}} failing pod",
+    "podsFailing_other": "{{count}} failing pods",
+    "podsAllGood": "No failing pods"
   },
   "placeholder": {
     "title": "Under construction",
@@ -84,6 +90,30 @@
       "help": "Use a ServiceAccount or user token. To create one:",
       "submit": "Sign in",
       "invalid": "Invalid or expired token."
+    }
+  },
+  "pods": {
+    "count_one": "{{shown}} of {{count}} pod",
+    "count_other": "{{shown}} of {{count}} pods",
+    "filter": "Filter by name or namespace",
+    "refresh": "Refresh",
+    "namespace": "Namespace",
+    "allNamespaces": "All namespaces",
+    "namespacePlaceholder": "e.g. default",
+    "forbidden": "Not allowed to list pods in {{scope}}",
+    "forbiddenHint": "Pick a namespace you have access to.",
+    "loadError": "Could not load pods",
+    "empty": "No pods found.",
+    "loading": "Loading…",
+    "col": {
+      "name": "Name",
+      "namespace": "Namespace",
+      "status": "Status",
+      "ready": "Ready",
+      "restarts": "Restarts",
+      "age": "Age",
+      "node": "Node",
+      "ip": "IP"
     }
   }
 }
