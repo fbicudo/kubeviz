@@ -20,10 +20,11 @@ import {
   objectPath,
   kindOfOwner,
   kinds,
-  pageOfKind,
+  listHref,
   type ResourceKind,
 } from '@/lib/k8s/catalog'
 import { summarizePod } from '@/lib/k8s/pods'
+import { lastSeen } from '@/lib/k8s/events'
 import { maskSecret } from '@/lib/k8s/secrets'
 import { useK8sList, useK8sListLive } from '@/lib/k8s/queries'
 import type { Condition, K8sObject, KubeEvent, Pod } from '@/lib/k8s/types'
@@ -68,22 +69,19 @@ export function Detail() {
   }
 
   const [notice, setNotice] = useState<string | null>(null)
-  const page = pageOfKind(kind)
   const kindLabel = kind.id in kinds ? t(`kinds.${kind.id}`) : kind.kind
 
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        {page && (
-          <Link
-            to={`/${page}` as never}
-            search={(kind.namespaced && namespace ? { ns: namespace } : {}) as never}
-            className="inline-flex items-center gap-1 text-xs text-muted hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" aria-hidden />
-            {kindLabel}
-          </Link>
-        )}
+        <Link
+          to={listHref(kind) as never}
+          search={(kind.namespaced && namespace ? { ns: namespace } : {}) as never}
+          className="inline-flex items-center gap-1 text-xs text-muted hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          {kindLabel}
+        </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-lg font-semibold break-all">{name}</h1>
           {obj && <ObjectStatus obj={obj} />}
@@ -499,6 +497,3 @@ function Events({ obj }: { obj: K8sObject }) {
     </div>
   )
 }
-
-const lastSeen = (e: KubeEvent) =>
-  e.series?.lastObservedTime ?? e.lastTimestamp ?? e.eventTime ?? e.firstTimestamp ?? e.metadata.creationTimestamp

@@ -134,4 +134,5 @@ export interface KubeEvent {
   series?: { count?: number; lastObservedTime?: string }
   source?: { component?: string; host?: string }
   reportingComponent?: string
+  involvedObject?: { apiVersion?: string; kind?: string; name?: string; namespace?: string; uid?: string }
 }

@@ -62,7 +62,6 @@ export const kinds = {
 export const resourcePages: Record<string, ResourceKind[]> = {
   nodes: [kinds.nodes],
   namespaces: [kinds.namespaces],
-  events: [kinds.events],
   deployments: [kinds.deployments, kinds.replicasets],
   statefulsets: [kinds.statefulsets],
   daemonsets: [kinds.daemonsets],
@@ -105,8 +104,15 @@ export function kindOfOwner(apiVersion: string, kindName: string): ResourceKind 
 
 /** Página do menu que lista o tipo (para o link "voltar"). */
 export function pageOfKind(k: ResourceKind): string | undefined {
-  if (k.id === 'pods') return 'pods'
+  if (k.id === 'pods' || k.id === 'events') return k.id
   return Object.entries(resourcePages).find(([, ks]) => ks.some((x) => x.id === k.id))?.[0]
+}
+
+/** Endereço da lista do tipo: a página do menu ou, para os demais (CRDs…), a lista genérica. */
+export function listHref(k: Pick<ResourceKind, 'group' | 'version' | 'resource'>): string {
+  const known = findKind(k.group, k.resource)
+  const page = known && pageOfKind(known)
+  return page ? `/${page}` : `/list/${k.group}/${k.version}/${k.resource}`
 }
 
 /**

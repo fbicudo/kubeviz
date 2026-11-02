@@ -73,7 +73,7 @@ interface ResourceListProps {
   onNamespace: (ns: string) => void
 }
 
-function ResourceList({ kind, namespace, onNamespace }: ResourceListProps) {
+export function ResourceList({ kind, namespace, onNamespace }: ResourceListProps) {
   const { t } = useTranslation()
   const [filter, setFilter] = useState('')
   const [wide, setWide] = useState(false)

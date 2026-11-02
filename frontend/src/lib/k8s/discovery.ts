@@ -58,6 +58,12 @@ export function parseDiscovery(lists: DiscoveryList[]): Discovery {
   return out
 }
 
+/** Tipo descoberto a partir do grupo, versão e recurso (como na URL da API). */
+export function findByResource(d: Discovery, group: string, version: string, resource: string): ResourceKind | undefined {
+  for (const k of d.values()) if (k.group === group && k.version === version && k.resource === resource) return k
+  return undefined
+}
+
 export async function fetchDiscovery(): Promise<Discovery> {
   const opts = { headers: { Accept: DISCOVERY_ACCEPT } }
   const [core, groups] = await Promise.all([

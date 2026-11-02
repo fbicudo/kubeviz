@@ -17,7 +17,7 @@ import {
   useCan,
   type AccessCheck,
 } from '@/lib/k8s/actions'
-import { collectionPath, kinds, pageOfKind, type ResourceKind } from '@/lib/k8s/catalog'
+import { collectionPath, kinds, listHref, type ResourceKind } from '@/lib/k8s/catalog'
 import { useK8sList } from '@/lib/k8s/queries'
 import type { K8sObject } from '@/lib/k8s/types'
 import { age } from '@/lib/format'
@@ -149,8 +149,7 @@ export function ActionBar({ obj, kind, path, onDone }: ActionBarProps) {
           onConfirm={async () => {
             await deleteObject(path)
             refresh()
-            const page = pageOfKind(kind)
-            void navigate({ to: (page ? `/${page}` : '/') as never, search: (kind.namespaced && ns ? { ns } : {}) as never })
+            void navigate({ to: listHref(kind) as never, search: (kind.namespaced && ns ? { ns } : {}) as never })
           }}
         />
       )}

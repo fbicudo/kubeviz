@@ -10,6 +10,7 @@ import {
   Layers,
   ListChecks,
   Network,
+  Puzzle,
   Server,
   Shield,
   Shuffle,
@@ -34,7 +35,10 @@ const item = (id: string, icon: LucideIcon): NavItem => ({ id, path: `/${id}`, i
 
 /** Menu principal. As rotas são geradas a partir desta lista. */
 export const navGroups: NavGroup[] = [
-  { id: 'cluster', items: [item('nodes', Server), item('namespaces', Layers), item('events', ListChecks)] },
+  {
+    id: 'cluster',
+    items: [item('nodes', Server), item('namespaces', Layers), item('events', ListChecks), item('crds', Puzzle)],
+  },
   {
     id: 'workloads',
     items: [

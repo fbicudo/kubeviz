@@ -1,14 +1,19 @@
 import { Languages, Moon, PanelLeft, Search, Sun } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { languages } from '@/i18n'
 import { useTheme } from '@/lib/theme-context'
+import { useCtrlK } from '@/lib/use-shortcut'
 import { ClusterSelector } from './ClusterSelector'
+import { CommandPalette } from './CommandPalette'
 import { UserMenu } from './UserMenu'
 
 export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { t, i18n } = useTranslation()
   const { theme, toggle } = useTheme()
+  const [searching, setSearching] = useState(false)
+  useCtrlK(useCallback(() => setSearching(true), []))
 
   const nextLang = () => {
     const i = languages.findIndex((l) => l.code === i18n.resolvedLanguage)
@@ -23,9 +28,10 @@ export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 
       <ClusterSelector />
 
-      {/* Busca global: implementação na Fase 1 (RF-14). */}
       <button
         type="button"
+        onClick={() => setSearching(true)}
+        aria-keyshortcuts="Control+K"
         className="ml-auto flex h-8 w-72 items-center gap-2 rounded-md border bg-background px-2 text-muted hover:text-foreground"
       >
         <Search className="size-4" aria-hidden />
@@ -42,6 +48,7 @@ export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
       </Button>
       <div className="mx-1 h-5 w-px bg-border" aria-hidden />
       <UserMenu />
+      <CommandPalette open={searching} onOpenChange={setSearching} />
     </header>
   )
 }

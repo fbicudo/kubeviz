@@ -4,6 +4,9 @@ import { allNavItems } from '@/components/layout/nav'
 import { Overview } from '@/pages/Overview'
 import { Placeholder } from '@/pages/Placeholder'
 import { ApplyYaml } from '@/pages/ApplyYaml'
+import { Crds } from '@/pages/Crds'
+import { Events } from '@/pages/Events'
+import { GenericList } from '@/pages/GenericList'
 import { Detail, type DetailSearch } from '@/pages/Detail'
 import { Pods } from '@/pages/Pods'
 import { ResourcePage, type ResourceSearch } from '@/pages/Resources'
@@ -30,10 +33,13 @@ const validateResourceSearch = (search: Record<string, unknown>): ResourceSearch
   ...(typeof search.k === 'string' && search.k ? { k: search.k } : {}),
 })
 
+// Páginas com componente próprio (as demais do menu usam a lista genérica).
+const customPages = new Set(['/pods', '/apply', '/crds', '/events'])
+
 // Itens do menu: lista genérica quando há tipos no catálogo; placeholder para
 // o que ainda não existe (métricas, uptime, assistentes).
 const sectionRoutes = allNavItems
-  .filter((item) => item.path !== '/pods' && item.path !== '/apply')
+  .filter((item) => !customPages.has(item.path))
   .map((item) =>
     item.id in resourcePages
       ? createRoute({
@@ -62,8 +68,23 @@ const detailRoute = createRoute({
 })
 
 const applyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/apply', component: ApplyYaml })
+const crdsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/crds', component: Crds })
+const eventsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/events',
+  validateSearch: (search: Record<string, unknown>): ResourceSearch =>
+    typeof search.ns === 'string' && search.ns ? { ns: search.ns } : {},
+  component: Events,
+})
+const genericListRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/list/$group/$version/$resource',
+  validateSearch: (search: Record<string, unknown>): ResourceSearch =>
+    typeof search.ns === 'string' && search.ns ? { ns: search.ns } : {},
+  component: GenericList,
+})
 
-const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, applyRoute, ...sectionRoutes])
+const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, applyRoute, crdsRoute, genericListRoute, eventsRoute, ...sectionRoutes])
 
 export function makeRouter(history?: RouterHistory) {
   return createRouter({ routeTree, history })

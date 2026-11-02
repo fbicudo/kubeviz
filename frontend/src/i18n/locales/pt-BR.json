@@ -33,7 +33,8 @@
     "metrics": "Métricas",
     "uptime": "Uptime",
     "wizards": "Assistentes",
-    "apply": "Aplicar YAML"
+    "apply": "Aplicar YAML",
+    "crds": "Recursos personalizados"
   },
   "header": {
     "search": "Buscar recursos…",
@@ -387,5 +388,39 @@
     "deleteTitle": "Excluir {{kind}} {{name}}?",
     "deleteHint": "Esta ação não pode ser desfeita. Objetos dependentes (como os pods de um ReplicaSet) também serão excluídos.",
     "typeName": "Para confirmar, digite"
+  },
+  "crds": {
+    "subtitle": "Tipos de recurso adicionados ao cluster por extensões. Clique no tipo para ver os objetos.",
+    "unknownType": "O cluster não conhece o tipo {{type}}.",
+    "empty": "Nenhum recurso personalizado instalado.",
+    "col": {
+      "kind": "Tipo",
+      "group": "Grupo",
+      "versions": "Versões",
+      "scope": "Escopo",
+      "crd": "CRD",
+      "age": "Idade"
+    },
+    "scope": {
+      "Namespaced": "Por namespace",
+      "Cluster": "Cluster"
+    }
+  },
+  "events": {
+    "type": "Tipo de evento",
+    "all": "Todos ({{count}})",
+    "warnings": "Avisos ({{count}})",
+    "empty": "Nenhum evento com esses filtros.",
+    "capped": "Mostrando os {{max}} eventos mais recentes."
+  },
+  "search": {
+    "title": "Busca global",
+    "placeholder": "Páginas, tipos de recurso ou nomes de objetos…",
+    "hint": "↑↓ para navegar · Enter para abrir · Esc para fechar",
+    "pages": "Páginas",
+    "types": "Tipos de recurso",
+    "objects": "Objetos",
+    "empty": "Nada encontrado.",
+    "loading": "Carregando…"
   }
 }

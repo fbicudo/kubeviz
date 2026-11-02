@@ -125,6 +125,26 @@ console.log('modo local:')
   await page.getByText(/^\d+ objeto\(s\):/).scrollIntoViewIfNeeded()
   await shot(page, 'aplicar-yaml')
 
+  // Eventos: só os avisos, ao vivo.
+  await page.getByRole('link', { name: 'Eventos', exact: true }).click()
+  await page.getByRole('radio', { name: /^Avisos/ }).click()
+  await page.getByText(/Back-off|Failed to pull/).first().waitFor()
+  await shot(page, 'eventos-avisos')
+
+  // Recursos personalizados: o CRD de demonstração e seus objetos.
+  await page.getByRole('link', { name: 'Recursos personalizados' }).click()
+  await page.getByRole('link', { name: 'Widget', exact: true }).click()
+  await page.getByRole('cell', { name: 'alfa' }).waitFor()
+  await page.getByRole('columnheader', { name: 'Cor' }).waitFor()
+  await shot(page, 'crd-widgets')
+
+  // Busca global (Ctrl+K).
+  await page.keyboard.press('Control+k')
+  await page.keyboard.type('web')
+  await page.getByRole('option', { name: /^web Deployments/ }).waitFor()
+  await shot(page, 'busca-global')
+  await page.keyboard.press('Escape')
+
   await page.getByRole('link', { name: 'Controle de acesso' }).click()
   await page.getByRole('tab', { name: 'ClusterRoles' }).click()
   await page.getByRole('cell', { name: 'cluster-admin', exact: true }).waitFor()

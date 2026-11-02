@@ -33,7 +33,8 @@
     "metrics": "Metrics",
     "uptime": "Uptime",
     "wizards": "Wizards",
-    "apply": "Apply YAML"
+    "apply": "Apply YAML",
+    "crds": "Custom resources"
   },
   "header": {
     "search": "Search resources…",
@@ -387,5 +388,39 @@
     "deleteTitle": "Delete {{kind}} {{name}}?",
     "deleteHint": "This can't be undone. Dependent objects (like a ReplicaSet's pods) will also be deleted.",
     "typeName": "To confirm, type"
+  },
+  "crds": {
+    "subtitle": "Resource types added to the cluster by extensions. Click a type to see its objects.",
+    "unknownType": "The cluster doesn't know the type {{type}}.",
+    "empty": "No custom resources installed.",
+    "col": {
+      "kind": "Kind",
+      "group": "Group",
+      "versions": "Versions",
+      "scope": "Scope",
+      "crd": "CRD",
+      "age": "Age"
+    },
+    "scope": {
+      "Namespaced": "Namespaced",
+      "Cluster": "Cluster"
+    }
+  },
+  "events": {
+    "type": "Event type",
+    "all": "All ({{count}})",
+    "warnings": "Warnings ({{count}})",
+    "empty": "No events match these filters.",
+    "capped": "Showing the {{max}} most recent events."
+  },
+  "search": {
+    "title": "Global search",
+    "placeholder": "Pages, resource types or object names…",
+    "hint": "↑↓ to navigate · Enter to open · Esc to close",
+    "pages": "Pages",
+    "types": "Resource types",
+    "objects": "Objects",
+    "empty": "Nothing found.",
+    "loading": "Loading…"
   }
 }

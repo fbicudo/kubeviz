@@ -68,7 +68,9 @@ kind-down: ## Remove o cluster de desenvolvimento
 	kind delete cluster --name kubeviz-dev
 
 demo: ## Aplica o cenário de demonstração no kind e gera ~/.kube/kubeviz-demo.yaml
-	kubectl --context kind-kubeviz-dev apply -f hack/demo/demo.yaml
+	kubectl --context kind-kubeviz-dev apply -f hack/demo/demo.yaml -f hack/demo/crd.yaml
+	kubectl --context kind-kubeviz-dev wait --for=condition=Established crd/widgets.demo.kubeviz.dev --timeout=60s
+	kubectl --context kind-kubeviz-dev apply -f hack/demo/crd-exemplos.yaml
 	hack/demo/kubeconfig.sh
 
 lint: ## Verifica formatação, go vet, tipos e lint do frontend

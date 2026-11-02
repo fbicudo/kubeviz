@@ -494,17 +494,48 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   - capturas: [img/acao-escalar.png](img/acao-escalar.png) e
     [img/acao-excluir.png](img/acao-excluir.png).
 
+### 02/11/2026 — Tarefa 1.8: busca global, eventos e recursos personalizados
+- **Busca global (Ctrl+K ou ⌘K, ou o campo "Buscar recursos…" do cabeçalho):**
+  - encontra páginas do menu, tipos de recurso do cluster (pela descoberta da
+    API, inclusive CRDs) e objetos pelo nome (pods, deployments, statefulsets,
+    daemonsets, jobs, cronjobs, services, ingresses, configmaps, secrets, PVCs,
+    service accounts, nós e namespaces);
+  - os nomes vêm só com os metadados (`PartialObjectMetadataList`), carregados
+    quando a busca abre e guardados por 30 s; tipos sem permissão são ignorados;
+  - ordem: nome igual, começa com o termo, contém o termo; ignora acentos;
+  - a seleção acompanha o primeiro resultado enquanto os objetos chegam.
+- **Página de eventos:** todos ou só avisos (com contagem), namespace, filtro por
+  texto (motivo, mensagem, objeto), ao vivo, do mais recente ao mais antigo, com
+  link para o objeto envolvido; mostra até 500.
+- **Recursos personalizados:** nova página lista os CRDs (tipo, grupo, versões,
+  escopo) com link para a **lista genérica** de qualquer tipo
+  (`/list/<grupo>/<versão>/<recurso>`), que usa as colunas definidas pelo CRD
+  (formato Table). O "voltar" do detalhe e a exclusão levam a essa lista.
+- **Demonstração:** `make demo` cria o CRD `widgets.demo.kubeviz.dev` com dois
+  objetos (`hack/demo/crd.yaml` e `crd-exemplos.yaml`).
+- **Verificado:**
+  - 164 testes Vitest (ordenação e permissões da busca, versão servida do CRD,
+    endereço das listas; paleta pelo atalho e pelo botão, páginas, CRDs,
+    eventos com filtros, tipo desconhecido);
+  - no kind, pelo navegador (Playwright), conferido com `kubectl`: 4 avisos
+    entre 81 eventos; Widgets alfa/beta com as colunas Cor e Tamanho; busca por
+    "web" abrindo o Deployment;
+  - **bug encontrado no teste real e corrigido:** os tipos apareciam antes dos
+    objetos e ficavam selecionados; agora os objetos vêm primeiro e o Enter abre
+    o primeiro resultado;
+  - capturas: [img/busca-global.png](img/busca-global.png),
+    [img/eventos-avisos.png](img/eventos-avisos.png) e
+    [img/crd-widgets.png](img/crd-widgets.png).
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
-   personalizados (CRDs) via discovery.
-2. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
-3. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
-    (kwok).
+1. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
+2. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+   (kwok); inclui medir a busca global com muitos objetos.
 
 ## Como publicar uma versão
 

@@ -1,0 +1,10 @@
+# Objetos de exemplo do CRD Widget (aplicados depois que o CRD está pronto).
+apiVersion: demo.kubeviz.dev/v1
+kind: Widget
+metadata: {name: alfa, namespace: demo}
+spec: {cor: azul, tamanho: 3}
+---
+apiVersion: demo.kubeviz.dev/v1
+kind: Widget
+metadata: {name: beta, namespace: demo}
+spec: {cor: verde, tamanho: 7}

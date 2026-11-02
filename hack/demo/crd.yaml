@@ -1,0 +1,26 @@
+# CRD de demonstração: mostra como o KubeViz lida com recursos personalizados.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: widgets.demo.kubeviz.dev
+spec:
+  group: demo.kubeviz.dev
+  scope: Namespaced
+  names: {plural: widgets, singular: widget, kind: Widget, shortNames: [wg]}
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    additionalPrinterColumns:
+    - {name: Cor, type: string, jsonPath: .spec.cor}
+    - {name: Tamanho, type: integer, jsonPath: .spec.tamanho}
+    - {name: Age, type: date, jsonPath: .metadata.creationTimestamp}
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              cor: {type: string, enum: [azul, verde, laranja]}
+              tamanho: {type: integer, minimum: 1, maximum: 10}
