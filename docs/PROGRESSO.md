@@ -33,6 +33,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - Interface conferida em Chromium headless: tema escuro e claro, pt-BR e inglês,
   navegação pelo menu, sem erros no console nem bloqueios da CSP. Capturas em
   [img/overview-dark.png](img/overview-dark.png) e [img/pods-light.png](img/pods-light.png).
+- Contato do Código de Conduta definido: fbicudo@gmail.com.
 - Cluster de desenvolvimento `kind-kubora-dev` (Kubernetes 1.37, 1 nó) criado e
   definido como contexto atual do kubectl.
 
@@ -57,9 +58,8 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 
 | Item | Por quê | Como resolver |
 |------|---------|---------------|
-| Contato do Código de Conduta | `CODE_OF_CONDUCT.md` tem um campo `<contato-a-definir>` | Definir um e-mail ou canal público do projeto |
-| Usuário do GitHub | `MAINTAINERS.md` e caminhos do chart | Informar o usuário |
-| Domínio `kubora.dev` | O módulo Go usa `kubora.dev/kubora` | Registrar o domínio, ou trocar o caminho do módulo |
+| Usuário do GitHub | `MAINTAINERS.md` e caminhos do chart | Definir antes da tarefa 0.7 (publicação); não bloqueia 0.2 a 0.6 |
+| Domínio `kubora.dev` | O módulo Go usa `kubora.dev/kubora` | Definir antes da tarefa 0.7; se não for registrado, trocar o caminho do módulo (substituição simples nos imports) |
 
 ## Ambiente de desenvolvimento desta máquina
 
