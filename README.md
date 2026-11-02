@@ -16,7 +16,7 @@ performance e uptime e assistentes (wizards) para configurar o ambiente.
 ## Instalação no cluster (Helm)
 
 ```bash
-helm install kubeviz deploy/helm/kubeviz -n kubeviz --create-namespace
+helm install kubeviz oci://ghcr.io/fbicudo/charts/kubeviz -n kubeviz --create-namespace
 kubectl -n kubeviz port-forward svc/kubeviz 8443:443
 ```
 
@@ -52,7 +52,7 @@ O KubeViz imprime no terminal um link com um token de acesso gerado a cada
 execução (`http://127.0.0.1:4466/auth/local?token=...`). Só quem tem o link
 entra, o que impede outras pessoas na mesma máquina de usar o seu kubeconfig.
 
-Licença: [Apache-2.0](LICENSE).
+Imagem: `ghcr.io/fbicudo/kubeviz` (amd64 e arm64). Licença: [Apache-2.0](LICENSE).
 
 ## Documentação
 

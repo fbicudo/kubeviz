@@ -31,7 +31,8 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath \
 FROM gcr.io/distroless/static-debian13:nonroot
 LABEL org.opencontainers.image.title="KubeViz" \
       org.opencontainers.image.description="Console web para gestão de clusters Kubernetes" \
-      org.opencontainers.image.licenses="Apache-2.0"
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.source="https://github.com/fbicudo/kubeviz"
 COPY --from=build /out/kubeviz /kubeviz
 # Dentro do container o endereço precisa aceitar conexões de fora do pod.
 ENV KUBEVIZ_LISTEN=0.0.0.0:4466
