@@ -84,8 +84,13 @@ func isHTTPS(r *http.Request) bool {
 // sessão. Impede que outros usuários da mesma máquina usem o kubeconfig de
 // quem executou o KubeViz.
 func (s *Server) localLogin(w http.ResponseWriter, r *http.Request) {
-	// Com contas locais criadas, o link com token deixa de valer.
-	if s.cluster.Mode() != cluster.ModeLocal || s.opts.LocalToken == "" || s.passwordEnabled() {
+	// Com contas locais criadas, o link com token deixa de valer: quem chega
+	// por um link antigo vai para a tela de login (sem ganhar acesso algum).
+	if s.passwordEnabled() {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	if s.cluster.Mode() != cluster.ModeLocal || s.opts.LocalToken == "" {
 		http.NotFound(w, r)
 		return
 	}

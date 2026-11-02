@@ -47,9 +47,11 @@ func TestPasswordLogin(t *testing.T) {
 	if s := sessionOf(t, h, ""); len(s.LoginMethods) != 1 || s.LoginMethods[0] != "password" {
 		t.Fatalf("métodos de login = %v, quer [password]", s.LoginMethods)
 	}
-	// Com contas criadas, o link com token deixa de valer.
-	if rec := do(t, h, "GET", "/auth/local?token=segredo", "", nil); rec.Code != 404 {
-		t.Errorf("link com token: status %d, quer 404", rec.Code)
+	// Com contas criadas, o link com token deixa de valer: mesmo com o token
+	// certo, só redireciona para a tela de login, sem criar sessão.
+	rec := do(t, h, "GET", "/auth/local?token=segredo", "", nil)
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/" || len(rec.Result().Cookies()) != 0 {
+		t.Errorf("link com token: status %d, Location %q, cookies %v", rec.Code, rec.Header().Get("Location"), rec.Result().Cookies())
 	}
 
 	if code, cookie, _ := login(t, h, testUser, "senha-errada-de-teste"); code != 401 || cookie != "" {
