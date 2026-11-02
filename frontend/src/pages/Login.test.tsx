@@ -120,26 +120,24 @@ describe('login corporativo (OIDC)', () => {
   })
 })
 
-describe('criar conta na tela de login', () => {
-  function signupApi() {
+describe('primeiro acesso', () => {
+  function setupApi(conflict = false) {
     let loggedIn = false
-    const calls: { code: string; username: string; password: string }[] = []
+    const calls: unknown[] = []
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       if (url === '/api/v1/auth/session') {
         return json(
           loggedIn
-            ? { mode: 'local', loginMethods: ['link'], signup: true, authenticated: true, localUser: 'bia', user: { username: 'kubernetes-admin' } }
-            : { mode: 'local', loginMethods: ['link'], signup: true, authenticated: false },
+            ? { mode: 'local', loginMethods: ['password'], authenticated: true, admin: true, localUser: 'fabio', user: { username: 'kubernetes-admin' } }
+            : { mode: 'local', loginMethods: ['link'], setup: 'available', authenticated: false },
         )
       }
-      if (url === '/api/v1/auth/signup' && init?.method === 'POST') {
-        const body = JSON.parse(String(init.body)) as { code: string; username: string; password: string }
-        calls.push(body)
-        if (body.code !== 'codigo-do-terminal') return json({ error: 'código inválido' }, 401)
-        if (body.username === 'fabio') return json({ error: 'já existe uma conta com esse nome' }, 409)
+      if (url === '/api/v1/auth/setup' && init?.method === 'POST') {
+        calls.push(JSON.parse(String(init.body)))
+        if (conflict) return json({ error: 'o KubeViz já tem contas' }, 409)
         loggedIn = true
-        return json({ mode: 'local', loginMethods: ['password'], signup: true, authenticated: true, localUser: body.username })
+        return json({ mode: 'local', loginMethods: ['password'], authenticated: true, admin: true, localUser: 'fabio' })
       }
       if (url === '/api/v1/cluster') return json({ mode: 'local', reachable: true, server: 'x', version: 'v1.37.0' })
       if (url === '/api/v1/contexts') return json({ mode: 'local', contexts: [] })
@@ -148,52 +146,76 @@ describe('criar conta na tela de login', () => {
     return { fetchMock, calls }
   }
 
-  it('exige código, senha conferida e entra com a conta nova', async () => {
+  it('cria a conta de administrador sem código e já entra, com o menu de administração', async () => {
     const user = userEvent.setup()
-    const api = signupApi()
+    const api = setupApi()
     vi.stubGlobal('fetch', api.fetchMock)
     renderApp()
-    await user.click(await screen.findByRole('button', { name: 'Criar conta' }))
-    const submit = screen.getByRole('button', { name: 'Criar conta e entrar' })
-    expect(submit).toBeDisabled()
-
-    await user.type(screen.getByLabelText('Código do terminal'), 'codigo-errado')
-    await user.type(screen.getByLabelText('Usuário'), 'bia')
+    expect(await screen.findByRole('heading', { name: 'Configurar o KubeViz' })).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Código/)).not.toBeInTheDocument()
+    const submit = screen.getByRole('button', { name: 'Criar conta de administrador' })
+    await user.type(screen.getByLabelText('Usuário'), 'fabio')
     await user.type(screen.getByLabelText('Senha'), SENHA)
     await user.type(screen.getByLabelText('Repita a senha'), 'outra')
     expect(screen.getByText('As senhas não conferem.')).toBeInTheDocument()
     expect(submit).toBeDisabled()
     await user.clear(screen.getByLabelText('Repita a senha'))
     await user.type(screen.getByLabelText('Repita a senha'), SENHA)
-
-    await user.click(submit)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Código inválido')
-    await user.clear(screen.getByLabelText('Código do terminal'))
-    await user.type(screen.getByLabelText('Código do terminal'), 'codigo-do-terminal')
     await user.click(submit)
     expect(await screen.findByRole('heading', { name: 'Visão geral' })).toBeInTheDocument()
-    expect(api.calls.at(-1)).toEqual({ code: 'codigo-do-terminal', username: 'bia', password: SENHA })
+    expect(api.calls).toEqual([{ username: 'fabio', password: SENHA }])
+    expect(screen.getByRole('link', { name: 'Usuários' })).toHaveAttribute('href', '/admin/users')
+    expect(screen.getByRole('link', { name: 'Provedores de login' })).toBeInTheDocument()
   })
 
-  it('avisa quando o nome já existe e permite voltar ao login', async () => {
+  it('avisa se outra pessoa criou a conta antes', async () => {
     const user = userEvent.setup()
-    vi.stubGlobal('fetch', signupApi().fetchMock)
+    vi.stubGlobal('fetch', setupApi(true).fetchMock)
     renderApp()
-    await user.click(await screen.findByRole('button', { name: 'Criar conta' }))
-    await user.type(screen.getByLabelText('Código do terminal'), 'codigo-do-terminal')
-    await user.type(screen.getByLabelText('Usuário'), 'fabio')
+    await user.type(await screen.findByLabelText('Usuário'), 'fabio')
     await user.type(screen.getByLabelText('Senha'), SENHA)
     await user.type(screen.getByLabelText('Repita a senha'), SENHA)
-    await user.click(screen.getByRole('button', { name: 'Criar conta e entrar' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Já existe uma conta com esse nome.')
-    await user.click(screen.getByRole('button', { name: 'Voltar para o login' }))
-    expect(screen.getByText(/Abra o link exibido no terminal/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Criar conta de administrador' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Outra pessoa acabou de criar a conta de administrador')
   })
 
-  it('não aparece no modo in-cluster', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json({ mode: 'in-cluster', loginMethods: ['token'], authenticated: false })))
+  it('prazo vencido: explica como fazer', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ mode: 'local', loginMethods: ['link'], setup: 'expired', authenticated: false })))
     renderApp()
-    await screen.findByLabelText('Token de acesso ao Kubernetes')
-    expect(screen.queryByRole('button', { name: 'Criar conta' })).not.toBeInTheDocument()
+    expect(await screen.findByText(/O prazo para criar a conta de administrador acabou/)).toBeInTheDocument()
+  })
+})
+
+describe('provedores na tela de login', () => {
+  const providersApi = () =>
+    vi.fn(async () =>
+      json({
+        mode: 'local',
+        loginMethods: ['password'],
+        authenticated: false,
+        providers: [
+          { id: 'google', type: 'google', name: 'Google' },
+          { id: 'github', type: 'github', name: 'GitHub' },
+        ],
+      }),
+    )
+  afterEach(() => window.history.replaceState(null, '', '/'))
+
+  it('mostra um botão por provedor, voltando para a página atual, além da senha', async () => {
+    vi.stubGlobal('fetch', providersApi())
+    window.history.replaceState(null, '', '/pods?ns=demo')
+    renderApp()
+    expect(await screen.findByRole('link', { name: 'Continuar com Google' })).toHaveAttribute('href', '/auth/provider/google/login?return=%2Fpods%3Fns%3Ddemo')
+    expect(screen.getByRole('link', { name: 'Continuar com GitHub' })).toHaveAttribute('href', '/auth/provider/github/login?return=%2Fpods%3Fns%3Ddemo')
+    expect(screen.getByLabelText('Senha')).toBeInTheDocument()
+    expect(screen.getByText('Sem conta? Peça a um administrador do KubeViz.')).toBeInTheDocument()
+  })
+
+  it('e-mail sem conta: explica o que fazer', async () => {
+    vi.stubGlobal('fetch', providersApi())
+    window.history.replaceState(null, '', '/?loginError=provider_unauthorized')
+    renderApp()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Este e-mail ainda não tem acesso ao KubeViz')
+    expect(window.location.search).toBe('')
   })
 })

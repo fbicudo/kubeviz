@@ -19,6 +19,10 @@ staticClients:
       - http://127.0.0.1:4466/auth/oidc/callback
       - http://localhost:4466/auth/oidc/callback
       - http://127.0.0.1:4477/auth/oidc/callback
+      # Login das contas locais por provedor (Administração › Provedores de login, id "dex").
+      - http://127.0.0.1:4466/auth/provider/dex/callback
+      - http://localhost:4466/auth/provider/dex/callback
+      - http://127.0.0.1:4477/auth/provider/dex/callback
 # Usuária com senha (sem grupos: o Dex não tem grupos em senhas estáticas).
 enablePasswordDB: true
 staticPasswords:

@@ -694,6 +694,65 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
     `/api/v1/version` correto e nenhuma permissão extra para a
     ServiceAccount.
 
+### 02/11/2026 — Contas e login com Google, Microsoft, GitHub e OIDC (pedido do responsável)
+- **Pedido:** criar usuário com a opção de entrar pelo Google ou por outros
+  provedores, sem depender de código do terminal, com instalação e
+  configuração o mais simples possível.
+- **Viabilidade verificada:**
+  - o Google e a Microsoft não aceitam endereço IP no retorno do login (só
+    `localhost` ou um domínio). Por isso a instância da rede passa a ter o nome
+    `10.11.12.103.nip.io`, com um certificado que o inclui;
+  - o cliente OAuth precisa ser criado pelo responsável, na conta dele.
+- **Contas (modo local):**
+  - arquivo JSON (o formato antigo é lido, e as contas dele viram
+    administradoras);
+  - cada conta entra com senha e/ou com e-mails confirmados por provedor;
+  - papel de administrador conferido a cada pedido; conta removida perde a
+    sessão na hora; sempre resta um administrador.
+- **Primeiro acesso sem código:**
+  - sem contas, a tela de login cria a conta de administrador;
+  - exposto na rede, só nos 15 min após iniciar, para ninguém tomar a
+    instalação;
+  - a criação por código do terminal foi removida.
+- **Administração (menu só para administradores):**
+  - **Usuários:** criar, editar e remover contas, e liberar domínios;
+  - **Provedores de login:** Google, Microsoft, GitHub e OIDC configurados pela
+    interface, cada um com passo a passo, endereço de retorno para copiar e
+    aviso quando o acesso é por IP. O secret nunca volta para a interface.
+- **Login por provedor:**
+  - código de autorização com PKCE, `state` (cookie Lax, uso único) e `nonce`;
+  - o provedor só confirma o e-mail; quem entra é decidido pelas contas e pelos
+    domínios liberados, e outros e-mails são recusados com explicação;
+  - Google e OIDC exigem `email_verified`; GitHub usa o e-mail principal
+    verificado;
+  - na Microsoft, o emissor é conferido por inquilino, e contas de
+    organização entram pelo UPN (proteção contra "nOAuth").
+- **Ajuste encontrado no E2E:** ao sair, a próxima pessoa voltava para a
+  página da anterior (inclusive páginas de administração); agora sair volta à
+  página inicial. O aviso "Salvo." dos domínios sumia porque o cartão era
+  recriado ao recarregar; corrigido.
+- **Verificado:**
+  - testes Go: armazenamento e migração, papéis e último administrador,
+    e-mails e domínios, primeiro acesso e prazo, API de administração (sem
+    expor hashes nem secrets), configuração de provedores, identidade da
+    Microsoft, login do GitHub contra uma API falsa e login OIDC de ponta a
+    ponta;
+  - 182 testes Vitest;
+  - **no navegador**, com o Dex fazendo o papel do Google:
+    - primeiro acesso;
+    - provedor configurado pela interface;
+    - conta só com e-mail entrando pelo provedor, sem ver Administração;
+    - e-mail sem conta recusado com explicação;
+    - domínio liberado criando a conta;
+  - capturas: [img/primeiro-acesso.png](img/primeiro-acesso.png),
+    [img/admin-usuarios.png](img/admin-usuarios.png),
+    [img/admin-provedores.png](img/admin-provedores.png) e
+    [img/login-provedores.png](img/login-provedores.png).
+- **Pendente (responsável):** criar o cliente OAuth no Google Cloud (e, se
+  quiser, na Microsoft e no GitHub) com o endereço de retorno mostrado na
+  página, acessando por `https://10.11.12.103.nip.io:4466`. O login real com
+  o Google ainda não foi testado.
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca

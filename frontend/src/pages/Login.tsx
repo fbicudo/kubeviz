@@ -1,9 +1,10 @@
-import { ArrowLeft, Building2, KeyRound, LogIn, Terminal, UserPlus } from 'lucide-react'
+import { Building2, KeyRound, LogIn, ShieldCheck, Terminal } from 'lucide-react'
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { ApiError, type LoginMethod } from '@/lib/api'
-import { useLogin, usePasswordLogin, useSignup } from '@/lib/queries'
+import { ProviderIcon } from '@/components/ui/provider-icon'
+import { ApiError, type LoginMethod, type LoginProvider } from '@/lib/api'
+import { useLogin, usePasswordLogin, useSetupAdmin } from '@/lib/queries'
 
 /** Mesmo mínimo do backend (auth.MinPasswordLength). */
 const MIN_PASSWORD = 12
@@ -11,37 +12,84 @@ const MIN_PASSWORD = 12
 const fieldClass =
   'h-9 w-full rounded-md border bg-background px-2 focus:border-accent focus:outline-none'
 
-/** Motivos de falha do login OIDC que o servidor informa em ?loginError=. */
-const OIDC_ERRORS = ['oidc_denied', 'oidc_state', 'oidc_claims', 'oidc_cluster', 'oidc_impersonate', 'oidc_unavailable', 'oidc_failed']
+/** Motivos de falha que o servidor informa em ?loginError= (login OIDC e por provedor). */
+const LOGIN_ERRORS = [
+  'oidc_denied', 'oidc_state', 'oidc_claims', 'oidc_cluster', 'oidc_impersonate', 'oidc_unavailable', 'oidc_failed',
+  'provider_denied', 'provider_state', 'provider_email', 'provider_unauthorized', 'provider_unavailable', 'provider_failed',
+]
 
 interface LoginProps {
   methods: LoginMethod[]
   oidcName?: string
-  /** A tela pode criar contas locais (modo local, com o código do terminal). */
-  signup?: boolean
+  /** Primeiro acesso (modo local sem contas). */
+  setup?: 'available' | 'expired'
+  /** Provedores das contas locais (Google, Microsoft, GitHub, OIDC). */
+  providers?: LoginProvider[]
 }
 
-export function Login({ methods, oidcName, signup }: LoginProps) {
+/** Motivo da falha do último login (?loginError=), tirado da barra de endereços. */
+function useLoginError() {
+  const [error] = useState(() => new URLSearchParams(window.location.search).get('loginError'))
+  useEffect(() => {
+    if (!error) return
+    const url = new URL(window.location.href)
+    url.searchParams.delete('loginError')
+    window.history.replaceState(window.history.state, '', url)
+  }, [error])
+  return error
+}
+
+/** Para onde voltar depois do login: a página em que a pessoa estava. */
+function returnQuery() {
+  const here = window.location.pathname + window.location.search.replace(/[?&]loginError=[^&]*/, '')
+  return here && here !== '/' ? `?return=${encodeURIComponent(here)}` : ''
+}
+
+export function Login({ methods, oidcName, setup, providers = [] }: LoginProps) {
   const { t } = useTranslation()
-  const [creating, setCreating] = useState(false)
+  const error = useLoginError()
   const oidc = methods.includes('oidc')
   const others = methods.filter((m) => m !== 'oidc')
+  const external = oidc || providers.length > 0
+
   return (
     <div className="flex min-h-full items-center justify-center p-4">
       <div className="w-full max-w-md rounded-lg border bg-surface p-6">
         <div className="mb-5 flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="size-9" />
           <div>
-            <h1 className="text-base font-semibold">{t('auth.title')}</h1>
+            <h1 className="text-base font-semibold">{setup === 'available' ? t('auth.setup.title') : t('auth.title')}</h1>
             <p className="text-muted">{t('app.tagline')}</p>
           </div>
         </div>
-        {creating ? (
-          <SignupForm onBack={() => setCreating(false)} />
+        {error && (
+          <p role="alert" className="mb-4 rounded-md border border-critical/40 bg-critical/5 p-2 text-critical">
+            {t(`auth.errors.${LOGIN_ERRORS.includes(error) ? error : 'oidc_failed'}`)}
+          </p>
+        )}
+        {setup === 'available' ? (
+          <SetupForm />
         ) : (
           <>
+            {setup === 'expired' && (
+              <p className="mb-4 rounded-md border border-warn/40 bg-warn/5 p-2 text-warn">{t('auth.setup.expired')}</p>
+            )}
             {oidc && <OidcLogin name={oidcName} />}
-            {oidc && others.length > 0 && (
+            {providers.length > 0 && (
+              <div className="space-y-2">
+                {providers.map((p) => (
+                  <a
+                    key={p.id}
+                    href={`/auth/provider/${p.id}/login${returnQuery()}`}
+                    className="flex h-9 w-full items-center justify-center gap-2 rounded-md border bg-background font-medium hover:bg-surface-raised"
+                  >
+                    <ProviderIcon type={p.type} className="size-4" />
+                    {t('auth.providers.continue', { name: p.name })}
+                  </a>
+                ))}
+              </div>
+            )}
+            {external && others.length > 0 && (
               <div className="my-5 flex items-center gap-3 text-xs text-subtle" aria-hidden>
                 <span className="h-px flex-1 bg-border" />
                 {t('auth.oidc.or')}
@@ -49,14 +97,6 @@ export function Login({ methods, oidcName, signup }: LoginProps) {
               </div>
             )}
             {others.includes('password') ? <PasswordForm /> : others.includes('token') ? <TokenForm /> : others.includes('link') ? <LocalHelp /> : null}
-            {signup && (
-              <p className="mt-5 border-t pt-4 text-center text-muted">
-                {t('auth.signup.prompt')}{' '}
-                <button type="button" onClick={() => setCreating(true)} className="font-medium text-accent hover:underline">
-                  {t('auth.signup.open')}
-                </button>
-              </p>
-            )}
           </>
         )}
       </div>
@@ -66,27 +106,10 @@ export function Login({ methods, oidcName, signup }: LoginProps) {
 
 function OidcLogin({ name }: { name?: string }) {
   const { t } = useTranslation()
-  // O servidor volta para /?loginError=<motivo> quando o login falha.
-  const [error] = useState(() => new URLSearchParams(window.location.search).get('loginError'))
-  useEffect(() => {
-    if (!error) return
-    const url = new URL(window.location.href)
-    url.searchParams.delete('loginError')
-    window.history.replaceState(window.history.state, '', url)
-  }, [error])
-  // Depois do login, volta para a página em que a pessoa estava.
-  const here = window.location.pathname + window.location.search.replace(/[?&]loginError=[^&]*/, '')
-  const href = `/auth/oidc/login${here && here !== '/' ? `?return=${encodeURIComponent(here)}` : ''}`
-
   return (
-    <div className="space-y-3">
-      {error && (
-        <p role="alert" className="rounded-md border border-critical/40 bg-critical/5 p-2 text-critical">
-          {t(`auth.oidc.errors.${OIDC_ERRORS.includes(error) ? error : 'oidc_failed'}`)}
-        </p>
-      )}
+    <div className="mb-2 space-y-3">
       <a
-        href={href}
+        href={`/auth/oidc/login${returnQuery()}`}
         className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-accent font-medium text-accent-foreground hover:bg-accent/90 [&_svg]:size-4"
       >
         <Building2 aria-hidden />
@@ -227,55 +250,35 @@ function PasswordForm() {
   )
 }
 
-function SignupForm({ onBack }: { onBack: () => void }) {
+/** Primeiro acesso: cria a conta de administrador (sem código, sem terminal). */
+function SetupForm() {
   const { t } = useTranslation()
-  const codeId = useId()
   const userId = useId()
   const passId = useId()
   const repeatId = useId()
-  const [code, setCode] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [repeat, setRepeat] = useState('')
-  const signupMutation = useSignup()
+  const setupMutation = useSetupAdmin()
 
   const short = password.length > 0 && password.length < MIN_PASSWORD
   const mismatch = repeat.length > 0 && repeat !== password
-  const ready = code.trim() && username.trim() && password.length >= MIN_PASSWORD && repeat === password
+  const ready = username.trim() && password.length >= MIN_PASSWORD && repeat === password
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    if (ready) signupMutation.mutate({ code: code.trim(), username: username.trim(), password })
+    if (ready) setupMutation.mutate({ username: username.trim(), password })
   }
 
-  const error = signupMutation.error
-  let errorText = error?.message
-  if (error instanceof ApiError && error.status === 401) errorText = t('auth.signup.badCode')
-  if (error instanceof ApiError && error.status === 409) errorText = t('auth.signup.exists')
-  if (error instanceof ApiError && error.status === 429) errorText = t('auth.password.tooMany', { minutes: 15 })
+  const error = setupMutation.error
+  const errorText = error instanceof ApiError && error.status === 409 ? t('auth.setup.taken') : error?.message
 
   return (
-    <form onSubmit={submit} className="space-y-3" aria-labelledby={`${codeId}-title`}>
-      <h2 id={`${codeId}-title`} className="font-semibold">
-        {t('auth.signup.title')}
-      </h2>
-      <div className="space-y-1">
-        <label htmlFor={codeId} className="block font-medium">
-          {t('auth.signup.code')}
-        </label>
-        {/* Campo de senha: o código dá acesso ao cluster e não deve ficar visível. */}
-        <input
-          id={codeId}
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          autoFocus
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          className={`${fieldClass} font-mono text-xs`}
-        />
-        <p className="text-xs text-muted">{t('auth.signup.codeHelp')}</p>
-      </div>
+    <form onSubmit={submit} className="space-y-3">
+      <p className="flex gap-2 text-muted">
+        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+        {t('auth.setup.intro')}
+      </p>
       <div className="space-y-1">
         <label htmlFor={userId} className="block font-medium">
           {t('auth.password.username')}
@@ -286,11 +289,12 @@ function SignupForm({ onBack }: { onBack: () => void }) {
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
+          autoFocus
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className={fieldClass}
         />
-        <p className="text-xs text-muted">{t('auth.signup.usernameHelp')}</p>
+        <p className="text-xs text-muted">{t('auth.setup.usernameHelp')}</p>
       </div>
       <div className="space-y-1">
         <label htmlFor={passId} className="block font-medium">
@@ -306,11 +310,11 @@ function SignupForm({ onBack }: { onBack: () => void }) {
           aria-invalid={short || undefined}
           className={fieldClass}
         />
-        <p className={short ? 'text-xs text-warn' : 'text-xs text-muted'}>{t('auth.signup.passwordHelp', { min: MIN_PASSWORD })}</p>
+        <p className={short ? 'text-xs text-warn' : 'text-xs text-muted'}>{t('auth.setup.passwordHelp', { min: MIN_PASSWORD })}</p>
       </div>
       <div className="space-y-1">
         <label htmlFor={repeatId} className="block font-medium">
-          {t('auth.signup.repeat')}
+          {t('auth.setup.repeat')}
         </label>
         <input
           id={repeatId}
@@ -321,21 +325,18 @@ function SignupForm({ onBack }: { onBack: () => void }) {
           aria-invalid={mismatch || undefined}
           className={fieldClass}
         />
-        {mismatch && <p className="text-xs text-warn">{t('auth.signup.mismatch')}</p>}
+        {mismatch && <p className="text-xs text-warn">{t('auth.setup.mismatch')}</p>}
       </div>
       {errorText && (
         <p role="alert" className="text-critical">
           {errorText}
         </p>
       )}
-      <Button type="submit" variant="primary" className="w-full" disabled={!ready || signupMutation.isPending}>
-        <UserPlus />
-        {t('auth.signup.submit')}
+      <Button type="submit" variant="primary" className="w-full" disabled={!ready || setupMutation.isPending}>
+        <ShieldCheck />
+        {t('auth.setup.submit')}
       </Button>
-      <button type="button" onClick={onBack} className="flex items-center gap-1 text-xs text-muted hover:text-foreground">
-        <ArrowLeft className="size-3.5" aria-hidden />
-        {t('auth.signup.back')}
-      </button>
+      <p className="text-xs text-muted">{t('auth.setup.after')}</p>
     </form>
   )
 }

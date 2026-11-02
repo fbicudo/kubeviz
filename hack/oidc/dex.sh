@@ -30,7 +30,8 @@ random() { head -c 24 /dev/urandom | base64 | tr -d '/+=' | head -c 24; }
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 "$kubeviz" user add ana --users-file "$tmp/users" < "$dir/password" > /dev/null
-hash="$(grep "^ana:" "$tmp/users" | cut -d: -f2-)"
+hash="$(grep -o '"passwordHash": "[^"]*"' "$tmp/users" | cut -d'"' -f4)"
+[[ "$hash" == \$2* ]] || { echo "não foi possível gerar o hash da senha" >&2; exit 1; }
 sed -e "s|@HASH@|$hash|" -e "s|@SECRET@|$(cat "$dir/client-secret")|" "$here/dex.yaml" > "$dir/dex.yaml"
 chmod 644 "$dir/dex.yaml" # lido pelo usuário do container
 

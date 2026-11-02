@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/fbicudo/kubeviz/backend/internal/auth"
 	"github.com/fbicudo/kubeviz/backend/internal/cluster"
@@ -70,16 +71,23 @@ func main() {
 	}
 	if cl.Mode() == cluster.ModeLocal {
 		opts.Users = auth.NewUsers(cfg.UsersFile)
+		opts.Providers = auth.NewProviders()
 		opts.LocalToken = auth.RandomToken()
 		url := browserURL(cfg.Listen, cfg.TLSCertFile != "")
+		if !opts.LoopbackOnly {
+			// Exposto na rede: a conta de administrador precisa ser criada logo,
+			// para ninguém tomar a instalação antes do dono.
+			opts.SetupUntil = time.Now().Add(15 * time.Minute)
+		}
 		if opts.Users.Enabled() {
-			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto em %s\n  Entre com usuário e senha (contas em %s).\n"+
-				"  Para criar contas pela tela de login, use o código: %s\n\n", url, cfg.UsersFile, opts.LocalToken)
+			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto em %s\n  Entre com sua conta (contas em %s).\n\n", url, cfg.UsersFile)
 		} else {
-			// Como no Jupyter: só quem vê o terminal recebe o link de acesso.
-			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n"+
-				"  Para entrar com usuário e senha, crie uma conta na tela de login (o código é o token\n"+
-				"  deste link) ou rode: kubeviz user add <nome>\n\n", url, opts.LocalToken)
+			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto. Abra %s e crie a conta de administrador", url)
+			if !opts.SetupUntil.IsZero() {
+				fmt.Fprintf(os.Stderr, " até as %s", opts.SetupUntil.Format("15:04"))
+			}
+			// Como no Jupyter: o link do terminal também dá acesso direto.
+			fmt.Fprintf(os.Stderr, ",\n  ou entre direto pelo link:\n\n    %s/auth/local?token=%s\n\n", url, opts.LocalToken)
 		}
 		if !opts.LoopbackOnly {
 			log.Warn("modo local exposto fora de localhost: quem tiver o link usará suas credenciais do kubeconfig", "listen", cfg.Listen)

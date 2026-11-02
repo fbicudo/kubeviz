@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -35,6 +34,16 @@ func (s *Server) session(r *http.Request) (*auth.Session, bool) {
 		return nil, false
 	}
 	sess, ok := s.sessions.Get(c.Value)
+	// Conta removida (ou arquivo de contas trocado): a sessão acaba na hora.
+	if ok && sess.LocalUser != "" {
+		if s.opts.Users == nil {
+			return nil, false
+		}
+		if _, exists := s.opts.Users.Get(sess.LocalUser); !exists {
+			s.sessions.Delete(sess.ID)
+			return nil, false
+		}
+	}
 	if ok && sess.OIDC != nil {
 		if s.opts.OIDC == nil {
 			return nil, false
@@ -186,74 +195,55 @@ func (s *Server) passwordLogin(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
 }
 
-// signupEnabled: no modo local, contas podem ser criadas pela tela de login
-// com o código exibido no terminal (o mesmo do link de acesso).
-func (s *Server) signupEnabled() bool {
-	return s.cluster.Mode() == cluster.ModeLocal && s.opts.Users != nil && s.opts.LocalToken != ""
+// setupState diz se a conta de administrador pode ser criada pela tela de
+// login: só no modo local, sem nenhuma conta e, se o KubeViz estiver exposto
+// na rede, nos primeiros minutos após iniciar (ninguém toma a instalação
+// antes do dono). "available", "expired" ou "" (não se aplica).
+func (s *Server) setupState() string {
+	if s.cluster.Mode() != cluster.ModeLocal || s.opts.Users == nil || s.opts.Users.Enabled() {
+		return ""
+	}
+	if !s.opts.SetupUntil.IsZero() && time.Now().After(s.opts.SetupUntil) {
+		return "expired"
+	}
+	return "available"
 }
 
-// signup cria uma conta local pela tela de login. Exige o código exibido no
-// terminal em que o KubeViz foi iniciado: como no `kubeviz user add`, só quem
-// tem acesso à máquina cria contas (quem entra age com o kubeconfig dela).
-// Códigos errados são limitados por IP; nomes já usados são recusados.
-func (s *Server) signup(w http.ResponseWriter, r *http.Request) {
-	if !s.signupEnabled() {
-		writeError(w, http.StatusNotFound, "criação de contas não está habilitada")
+// setup cria a primeira conta (administradora) e já entra com ela.
+func (s *Server) setup(w http.ResponseWriter, r *http.Request) {
+	switch s.setupState() {
+	case "":
+		writeError(w, http.StatusConflict, "o KubeViz já tem contas; peça a um administrador para criar a sua")
+		return
+	case "expired":
+		writeError(w, http.StatusForbidden, "por segurança, a conta de administrador precisa ser criada logo após iniciar o KubeViz; reinicie-o e tente de novo")
 		return
 	}
 	var body struct {
-		Code     string `json:"code"`
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Code == "" || body.Username == "" || body.Password == "" {
-		writeError(w, http.StatusBadRequest, `corpo inválido: esperado {"code": "...", "username": "...", "password": "..."}`)
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Username == "" || body.Password == "" {
+		writeError(w, http.StatusBadRequest, `corpo inválido: esperado {"username": "...", "password": "..."}`)
 		return
 	}
-	key := "signup-ip:" + clientIP(r)
-	if blocked, wait := s.limiter.Blocked(key); blocked {
-		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
-		writeError(w, http.StatusTooManyRequests, "muitas tentativas; tente novamente mais tarde")
-		return
-	}
-	if !auth.Equal(signupCode(body.Code), s.opts.LocalToken) {
-		s.limiter.Fail(key)
-		s.log.Warn("criação de conta recusada", "motivo", "código inválido", "origem", clientIP(r))
-		writeError(w, http.StatusUnauthorized, "código inválido")
-		return
-	}
-	s.limiter.Reset(key)
-
 	name := strings.ToLower(strings.TrimSpace(body.Username))
-	err := auth.AddUser(s.opts.Users.Path(), name, body.Password)
-	switch {
-	case errors.Is(err, auth.ErrInvalidUsername), errors.Is(err, auth.ErrShortPassword):
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	case errors.Is(err, auth.ErrUserExists):
-		writeError(w, http.StatusConflict, err.Error())
-		return
-	case err != nil:
-		s.log.Error("criando conta", "erro", err)
-		writeError(w, http.StatusInternalServerError, "não foi possível salvar a conta")
+	err := s.opts.Users.Create(auth.Account{Name: name, Admin: true}, body.Password)
+	if errors.Is(err, auth.ErrUserExists) {
+		// Outra pessoa criou a primeira conta neste meio-tempo.
+		writeError(w, http.StatusConflict, "o KubeViz já tem contas; peça a um administrador para criar a sua")
 		return
 	}
-
+	if err != nil {
+		writeAccountError(w, err)
+		return
+	}
 	sess := s.sessions.Create(auth.User{}, "")
 	sess.LocalUser = name
 	s.setSessionCookie(w, r, sess)
-	s.log.Info("conta criada pela tela de login", "usuario", name, "origem", clientIP(r))
+	s.log.Info("conta de administrador criada no primeiro acesso", "usuario", name, "origem", clientIP(r))
 	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
-}
-
-// signupCode aceita o código ou o link inteiro do terminal (…?token=código).
-func signupCode(v string) string {
-	v = strings.TrimSpace(v)
-	if u, err := url.Parse(v); err == nil && u.Query().Get("token") != "" {
-		return u.Query().Get("token")
-	}
-	return v
 }
 
 // clientIP é o endereço de quem fez a requisição (sem confiar em cabeçalhos
@@ -310,8 +300,13 @@ type sessionResponse struct {
 	Authenticated bool         `json:"authenticated"`
 	// LoginMethods: "oidc", "link" (token no terminal), "password" ou "token".
 	LoginMethods []string `json:"loginMethods"`
-	// Signup indica que a tela de login pode criar contas (com o código do terminal).
-	Signup bool `json:"signup,omitempty"`
+	// Setup: "available" quando a tela de login deve criar a conta de
+	// administrador (primeiro acesso); "expired" quando o prazo acabou.
+	Setup string `json:"setup,omitempty"`
+	// Providers são os botões de login por provedor (contas locais).
+	Providers []providerButton `json:"providers,omitempty"`
+	// Admin: a sessão pode gerenciar contas e provedores.
+	Admin bool `json:"admin,omitempty"`
 	// OIDCName é o nome do provedor exibido no botão de login.
 	OIDCName string     `json:"oidcName,omitempty"`
 	User     *auth.User `json:"user,omitempty"`
@@ -328,7 +323,7 @@ type sessionResponse struct {
 func (s *Server) getSession(w http.ResponseWriter, r *http.Request) {
 	sess, ok := s.session(r)
 	if !ok {
-		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods(), OIDCName: s.oidcName(), Signup: s.signupEnabled()})
+		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods(), OIDCName: s.oidcName(), Setup: s.setupState(), Providers: s.loginProviders()})
 		return
 	}
 	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
@@ -340,6 +335,8 @@ func (s *Server) sessionInfo(r *http.Request, sess *auth.Session) sessionRespons
 		Authenticated: true,
 		LoginMethods:  s.loginMethods(),
 		OIDCName:      s.oidcName(),
+		Providers:     s.loginProviders(),
+		Admin:         s.isAdmin(sess),
 		LocalUser:     sess.LocalUser,
 		ExpiresAt:     &sess.Expires,
 	}

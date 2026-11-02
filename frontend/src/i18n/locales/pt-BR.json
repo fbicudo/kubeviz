@@ -12,7 +12,8 @@
       "storage": "Armazenamento",
       "config": "Configuração",
       "observability": "Observabilidade",
-      "tools": "Ferramentas"
+      "tools": "Ferramentas",
+      "admin": "Administração"
     },
     "nodes": "Nós",
     "namespaces": "Namespaces",
@@ -34,7 +35,9 @@
     "uptime": "Uptime",
     "wizards": "Assistentes",
     "apply": "Aplicar YAML",
-    "crds": "Recursos personalizados"
+    "crds": "Recursos personalizados",
+    "adminUsers": "Usuários",
+    "adminProviders": "Provedores de login"
   },
   "header": {
     "search": "Buscar recursos…",
@@ -101,37 +104,43 @@
       "submit": "Entrar",
       "invalid": "Usuário ou senha inválidos.",
       "tooMany": "Muitas tentativas. Tente de novo em {{minutes}} min.",
-      "hint": "Contas criadas com o comando kubeviz user add."
+      "hint": "Sem conta? Peça a um administrador do KubeViz."
     },
     "oidc": {
       "submit": "Entrar com login corporativo",
       "submitNamed": "Entrar com {{name}}",
       "hint": "Você será levado ao provedor de identidade da sua organização e voltará para cá.",
-      "or": "ou",
-      "errors": {
-        "oidc_denied": "O login foi cancelado ou recusado pelo provedor de identidade.",
-        "oidc_state": "O login expirou ou foi iniciado em outra aba. Tente de novo.",
-        "oidc_claims": "O provedor de identidade não informou um usuário válido (e-mail verificado ou o campo configurado). Fale com o administrador.",
-        "oidc_cluster": "O cluster não aceitou o seu login: o API server não confia neste provedor de identidade. Fale com o administrador.",
-        "oidc_impersonate": "O KubeViz não tem permissão para agir em nome dos usuários (impersonate) neste cluster. Fale com o administrador.",
-        "oidc_unavailable": "O provedor de identidade está inacessível. Tente de novo em instantes.",
-        "oidc_failed": "Não foi possível concluir o login. Tente de novo."
-      }
+      "or": "ou"
     },
-    "signup": {
-      "prompt": "Ainda não tem conta?",
-      "open": "Criar conta",
-      "title": "Criar conta",
-      "code": "Código do terminal",
-      "codeHelp": "Exibido no terminal em que o KubeViz foi iniciado (pode colar o link inteiro). Garante que só quem tem acesso à máquina cria contas.",
+    "errors": {
+      "oidc_denied": "O login foi cancelado ou recusado pelo provedor de identidade.",
+      "oidc_state": "O login expirou ou foi iniciado em outra aba. Tente de novo.",
+      "oidc_claims": "O provedor de identidade não informou um usuário válido (e-mail verificado ou o campo configurado). Fale com o administrador.",
+      "oidc_cluster": "O cluster não aceitou o seu login: o API server não confia neste provedor de identidade. Fale com o administrador.",
+      "oidc_impersonate": "O KubeViz não tem permissão para agir em nome dos usuários (impersonate) neste cluster. Fale com o administrador.",
+      "oidc_unavailable": "O provedor de identidade está inacessível. Tente de novo em instantes.",
+      "oidc_failed": "Não foi possível concluir o login. Tente de novo.",
+      "provider_denied": "O login foi cancelado ou recusado pelo provedor.",
+      "provider_state": "O login expirou ou foi iniciado em outra aba. Tente de novo.",
+      "provider_email": "O provedor não confirmou um e-mail verificado para a sua conta.",
+      "provider_unauthorized": "Este e-mail ainda não tem acesso ao KubeViz. Peça a um administrador para criar a sua conta.",
+      "provider_unavailable": "O provedor de login está inacessível. Tente de novo em instantes.",
+      "provider_failed": "Não foi possível concluir o login. Tente de novo."
+    },
+    "setup": {
+      "title": "Configurar o KubeViz",
+      "intro": "Primeiro acesso: crie a conta de administrador. Depois, em Administração, você adiciona outras pessoas e o login com Google, Microsoft ou GitHub.",
       "usernameHelp": "Letras minúsculas, números, ponto, hífen ou sublinhado.",
       "passwordHelp": "Pelo menos {{min}} caracteres.",
       "repeat": "Repita a senha",
       "mismatch": "As senhas não conferem.",
-      "submit": "Criar conta e entrar",
-      "back": "Voltar para o login",
-      "badCode": "Código inválido. Confira o código exibido no terminal.",
-      "exists": "Já existe uma conta com esse nome."
+      "submit": "Criar conta de administrador",
+      "after": "Por segurança, quando o KubeViz está acessível pela rede, esta conta precisa ser criada nos primeiros 15 minutos após iniciá-lo.",
+      "taken": "Outra pessoa acabou de criar a conta de administrador. Peça a ela o seu acesso.",
+      "expired": "O prazo para criar a conta de administrador acabou (15 minutos após iniciar). Reinicie o KubeViz e abra esta página em seguida."
+    },
+    "providers": {
+      "continue": "Continuar com {{name}}"
     }
   },
   "pods": {
@@ -462,5 +471,81 @@
     "next": "Próxima página",
     "last": "Última página",
     "page": "Página {{page}} de {{pages}}"
+  },
+  "admin": {
+    "saved": "Salvo.",
+    "users": {
+      "subtitle": "Quem pode entrar no KubeViz. Nesta instalação (modo local), todas as contas usam as credenciais do kubeconfig da máquina.",
+      "new": "Novo usuário",
+      "newTitle": "Novo usuário",
+      "editTitle": "Editar {{name}}",
+      "dialogHint": "A conta entra com senha, com um dos e-mails abaixo (pelo Google, Microsoft, GitHub ou OIDC configurados), ou com os dois.",
+      "col": {
+        "name": "Usuário",
+        "login": "Como entra",
+        "role": "Papel",
+        "created": "Criada",
+        "actions": "Ações"
+      },
+      "you": "você",
+      "password": "Senha",
+      "admin": "Administrador",
+      "user": "Usuário",
+      "edit": "Editar {{name}}",
+      "remove": "Remover {{name}}",
+      "removeTitle": "Remover a conta {{name}}?",
+      "removeHint": "A pessoa sai na hora e não consegue mais entrar.",
+      "removeSelf": "Esta é a sua conta: você sairá na hora.",
+      "newPassword": "Nova senha",
+      "keepPassword": "Deixe vazio para manter a senha atual.",
+      "passwordOptional": "Opcional se a conta entrar só por e-mail. Mínimo de 12 caracteres.",
+      "removePassword": "Remover a senha (a conta passa a entrar só pelo provedor)",
+      "emails": "E-mails para entrar com um provedor",
+      "emailsHelp": "Um por linha. A pessoa clica em \"Continuar com Google\" (ou outro) e entra se o provedor confirmar este e-mail.",
+      "makeAdmin": "Administrador (gerencia usuários e provedores)",
+      "save": "Salvar",
+      "create": "Criar"
+    },
+    "domains": {
+      "title": "Domínios liberados",
+      "hint": "Quem entrar por um provedor com e-mail destes domínios ganha uma conta (sem ser administrador) no primeiro acesso, sem você precisar criá-la. Um por linha, ex.: empresa.com.br."
+    },
+    "providers": {
+      "subtitle": "Permita entrar com contas do Google, da Microsoft, do GitHub ou de outro provedor OIDC. Só entra quem tem uma conta com o e-mail confirmado pelo provedor (ou de um domínio liberado).",
+      "ipWarning": "Você está acessando o KubeViz por um endereço IP, que o Google e a Microsoft não aceitam no retorno do login. Acesse por um nome, por exemplo <b>{{url}}</b>, e configure os provedores a partir dele.",
+      "on": "Ativo",
+      "off": "Não configurado",
+      "addOidc": "Adicionar provedor OIDC",
+      "newOidc": "Novo provedor OIDC",
+      "id": "Identificador (vai no endereço de retorno)",
+      "callback": "Endereço de retorno (cole no provedor)",
+      "copy": "Copiar",
+      "name": "Nome no botão",
+      "issuer": "Endereço do provedor (issuer)",
+      "clientId": "Client ID",
+      "secret": "Client secret",
+      "keepSecret": "•••••• (mantém o atual)",
+      "tenant": "Inquilino (tenant)",
+      "tenantHelp": "common: contas pessoais e de organizações; organizations: só organizações; consumers: só pessoais; ou o ID (GUID) da sua organização.",
+      "remove": "Remover",
+      "steps": {
+        "google": {
+          "1": "No <a>Google Cloud Console</a>, configure a tela de consentimento e crie credenciais › ID do cliente OAuth › Aplicativo da Web.",
+          "2": "Em \"URIs de redirecionamento autorizados\", cole o endereço de retorno abaixo.",
+          "3": "Copie o ID e a chave secreta do cliente para os campos abaixo e salve."
+        },
+        "microsoft": {
+          "1": "No <a>Microsoft Entra</a>, registre um aplicativo (para contas pessoais e de organizações, escolha \"qualquer diretório organizacional e contas Microsoft pessoais\").",
+          "2": "Em Autenticação, adicione a plataforma Web com o endereço de retorno abaixo; em Certificados e segredos, crie um segredo do cliente.",
+          "3": "Copie o ID do aplicativo (cliente) e o valor do segredo para os campos abaixo e salve."
+        },
+        "github": {
+          "1": "No <a>GitHub</a>, crie um OAuth App (Settings › Developer settings).",
+          "2": "Em \"Authorization callback URL\", cole o endereço de retorno abaixo; depois gere um client secret.",
+          "3": "Copie o Client ID e o secret para os campos abaixo e salve."
+        },
+        "oidc": "Registre o KubeViz como cliente confidencial no provedor (Keycloak, Okta, GitLab, Authentik…), com o endereço de retorno abaixo, e informe o endereço do provedor, o client ID e o secret."
+      }
+    }
   }
 }

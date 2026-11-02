@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
-import { navGroups, overviewItem, type NavItem } from './nav'
+import { useSession } from '@/lib/queries'
+import { adminGroup, navGroups, overviewItem, type NavItem } from './nav'
 
 function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const { t } = useTranslation()
@@ -26,6 +27,8 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
 
 export function Sidebar({ collapsed }: { collapsed: boolean }) {
   const { t } = useTranslation()
+  const session = useSession()
+  const groups = session.data?.admin ? [...navGroups, adminGroup] : navGroups
   return (
     <aside
       className={cn(
@@ -44,7 +47,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
       </div>
       <nav className="flex-1 overflow-y-auto p-2" aria-label="Menu principal">
         <NavLink item={overviewItem} collapsed={collapsed} />
-        {navGroups.map((group) => (
+        {groups.map((group) => (
           <div key={group.id} className="mt-3">
             {!collapsed && (
               <div className="px-2 pb-1 text-[11px] font-medium tracking-wide text-subtle uppercase">

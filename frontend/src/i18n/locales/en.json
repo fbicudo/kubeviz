@@ -12,7 +12,8 @@
       "storage": "Storage",
       "config": "Configuration",
       "observability": "Observability",
-      "tools": "Tools"
+      "tools": "Tools",
+      "admin": "Administration"
     },
     "nodes": "Nodes",
     "namespaces": "Namespaces",
@@ -34,7 +35,9 @@
     "uptime": "Uptime",
     "wizards": "Wizards",
     "apply": "Apply YAML",
-    "crds": "Custom resources"
+    "crds": "Custom resources",
+    "adminUsers": "Users",
+    "adminProviders": "Sign-in providers"
   },
   "header": {
     "search": "Search resources…",
@@ -101,37 +104,43 @@
       "submit": "Sign in",
       "invalid": "Invalid username or password.",
       "tooMany": "Too many attempts. Try again in {{minutes}} min.",
-      "hint": "Accounts are created with the kubeviz user add command."
+      "hint": "No account? Ask a KubeViz administrator."
     },
     "oidc": {
       "submit": "Sign in with SSO",
       "submitNamed": "Sign in with {{name}}",
       "hint": "You will be taken to your organization's identity provider and brought back here.",
-      "or": "or",
-      "errors": {
-        "oidc_denied": "Sign-in was cancelled or denied by the identity provider.",
-        "oidc_state": "Sign-in expired or was started in another tab. Please try again.",
-        "oidc_claims": "The identity provider did not return a valid user (a verified email or the configured claim). Contact your administrator.",
-        "oidc_cluster": "The cluster rejected your sign-in: the API server does not trust this identity provider. Contact your administrator.",
-        "oidc_impersonate": "KubeViz is not allowed to act on behalf of users (impersonate) in this cluster. Contact your administrator.",
-        "oidc_unavailable": "The identity provider is unreachable. Please try again shortly.",
-        "oidc_failed": "Sign-in could not be completed. Please try again."
-      }
+      "or": "or"
     },
-    "signup": {
-      "prompt": "Don't have an account?",
-      "open": "Create account",
-      "title": "Create account",
-      "code": "Terminal code",
-      "codeHelp": "Shown in the terminal where KubeViz was started (you can paste the whole link). Ensures only people with access to the machine create accounts.",
+    "errors": {
+      "oidc_denied": "Sign-in was cancelled or denied by the identity provider.",
+      "oidc_state": "Sign-in expired or was started in another tab. Please try again.",
+      "oidc_claims": "The identity provider did not return a valid user (a verified email or the configured claim). Contact your administrator.",
+      "oidc_cluster": "The cluster rejected your sign-in: the API server does not trust this identity provider. Contact your administrator.",
+      "oidc_impersonate": "KubeViz is not allowed to act on behalf of users (impersonate) in this cluster. Contact your administrator.",
+      "oidc_unavailable": "The identity provider is unreachable. Please try again shortly.",
+      "oidc_failed": "Sign-in could not be completed. Please try again.",
+      "provider_denied": "Sign-in was cancelled or denied by the provider.",
+      "provider_state": "Sign-in expired or was started in another tab. Please try again.",
+      "provider_email": "The provider did not confirm a verified email for your account.",
+      "provider_unauthorized": "This email does not have access to KubeViz yet. Ask an administrator to create your account.",
+      "provider_unavailable": "The sign-in provider is unreachable. Please try again shortly.",
+      "provider_failed": "Sign-in could not be completed. Please try again."
+    },
+    "setup": {
+      "title": "Set up KubeViz",
+      "intro": "First access: create the administrator account. Then, under Administration, you can add other people and sign-in with Google, Microsoft or GitHub.",
       "usernameHelp": "Lowercase letters, digits, dot, hyphen or underscore.",
       "passwordHelp": "At least {{min}} characters.",
       "repeat": "Repeat the password",
       "mismatch": "Passwords do not match.",
-      "submit": "Create account and sign in",
-      "back": "Back to sign in",
-      "badCode": "Invalid code. Check the code shown in the terminal.",
-      "exists": "An account with this name already exists."
+      "submit": "Create administrator account",
+      "after": "For security, when KubeViz is reachable over the network, this account must be created within 15 minutes of starting it.",
+      "taken": "Someone else just created the administrator account. Ask them for access.",
+      "expired": "The time to create the administrator account is over (15 minutes after start). Restart KubeViz and open this page right away."
+    },
+    "providers": {
+      "continue": "Continue with {{name}}"
     }
   },
   "pods": {
@@ -462,5 +471,81 @@
     "next": "Next page",
     "last": "Last page",
     "page": "Page {{page}} of {{pages}}"
+  },
+  "admin": {
+    "saved": "Saved.",
+    "users": {
+      "subtitle": "Who can sign in to KubeViz. In this installation (local mode), every account uses the machine's kubeconfig credentials.",
+      "new": "New user",
+      "newTitle": "New user",
+      "editTitle": "Edit {{name}}",
+      "dialogHint": "The account signs in with a password, with one of the emails below (through the configured Google, Microsoft, GitHub or OIDC), or both.",
+      "col": {
+        "name": "User",
+        "login": "Signs in with",
+        "role": "Role",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "you": "you",
+      "password": "Password",
+      "admin": "Administrator",
+      "user": "User",
+      "edit": "Edit {{name}}",
+      "remove": "Remove {{name}}",
+      "removeTitle": "Remove the account {{name}}?",
+      "removeHint": "They are signed out immediately and can no longer sign in.",
+      "removeSelf": "This is your account: you will be signed out immediately.",
+      "newPassword": "New password",
+      "keepPassword": "Leave empty to keep the current password.",
+      "passwordOptional": "Optional if the account signs in by email only. At least 12 characters.",
+      "removePassword": "Remove the password (the account signs in through a provider only)",
+      "emails": "Emails to sign in with a provider",
+      "emailsHelp": "One per line. The person clicks \"Continue with Google\" (or another) and gets in if the provider confirms this email.",
+      "makeAdmin": "Administrator (manages users and providers)",
+      "save": "Save",
+      "create": "Create"
+    },
+    "domains": {
+      "title": "Allowed domains",
+      "hint": "Anyone signing in through a provider with an email from these domains gets an account (not administrator) on first access, without you creating it. One per line, e.g. company.com."
+    },
+    "providers": {
+      "subtitle": "Allow signing in with Google, Microsoft, GitHub or another OIDC provider accounts. Only people with an account for the email confirmed by the provider (or from an allowed domain) get in.",
+      "ipWarning": "You are accessing KubeViz by IP address, which Google and Microsoft do not accept as a sign-in redirect. Use a name instead, for example <b>{{url}}</b>, and configure the providers from it.",
+      "on": "Active",
+      "off": "Not configured",
+      "addOidc": "Add OIDC provider",
+      "newOidc": "New OIDC provider",
+      "id": "Identifier (part of the redirect URL)",
+      "callback": "Redirect URL (paste it in the provider)",
+      "copy": "Copy",
+      "name": "Button name",
+      "issuer": "Provider URL (issuer)",
+      "clientId": "Client ID",
+      "secret": "Client secret",
+      "keepSecret": "•••••• (keeps the current one)",
+      "tenant": "Tenant",
+      "tenantHelp": "common: personal and work accounts; organizations: work only; consumers: personal only; or your organization's ID (GUID).",
+      "remove": "Remove",
+      "steps": {
+        "google": {
+          "1": "In the <a>Google Cloud Console</a>, set up the consent screen and create credentials › OAuth client ID › Web application.",
+          "2": "Under \"Authorized redirect URIs\", paste the redirect URL below.",
+          "3": "Copy the client ID and secret into the fields below and save."
+        },
+        "microsoft": {
+          "1": "In <a>Microsoft Entra</a>, register an application (for personal and work accounts, choose \"any organizational directory and personal Microsoft accounts\").",
+          "2": "Under Authentication, add the Web platform with the redirect URL below; under Certificates & secrets, create a client secret.",
+          "3": "Copy the application (client) ID and the secret value into the fields below and save."
+        },
+        "github": {
+          "1": "On <a>GitHub</a>, create an OAuth App (Settings › Developer settings).",
+          "2": "Under \"Authorization callback URL\", paste the redirect URL below; then generate a client secret.",
+          "3": "Copy the Client ID and secret into the fields below and save."
+        },
+        "oidc": "Register KubeViz as a confidential client in the provider (Keycloak, Okta, GitLab, Authentik…) with the redirect URL below, and enter the provider URL, client ID and secret."
+      }
+    }
   }
 }

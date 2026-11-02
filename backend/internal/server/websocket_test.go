@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -124,7 +125,11 @@ func TestAuditLogOfClusterWrites(t *testing.T) {
 	fc := newFakeCluster()
 	fc.host = api.URL
 	var logs bytes.Buffer
-	s := New(slog.New(slog.NewTextHandler(&logs, nil)), testAssets, fc, Options{WhoAmI: fakeWhoAmI})
+	users := auth.NewUsers(filepath.Join(t.TempDir(), "users"))
+	if err := users.Create(auth.Account{Name: "fabio", Admin: true}, testPassword); err != nil {
+		t.Fatal(err)
+	}
+	s := New(slog.New(slog.NewTextHandler(&logs, nil)), testAssets, fc, Options{WhoAmI: fakeWhoAmI, Users: users})
 	h := s.Handler()
 	sess := s.sessions.Create(auth.User{}, "")
 	sess.LocalUser = "fabio"

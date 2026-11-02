@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import { LogOut, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -7,6 +8,7 @@ export function UserMenu() {
   const { t } = useTranslation()
   const { data } = useSession()
   const logoutMutation = useLogout()
+  const navigate = useNavigate()
 
   const name = data?.localUser ?? data?.user?.username ?? t('auth.unknownUser')
   const groups = data?.user?.groups?.join(', ')
@@ -25,7 +27,11 @@ export function UserMenu() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => logoutMutation.mutate()}
+        onClick={() => {
+          // Quem entrar depois pode ser outra pessoa: volta para a página inicial.
+          void navigate({ to: '/' })
+          logoutMutation.mutate()
+        }}
         disabled={logoutMutation.isPending}
         aria-label={t('auth.logout')}
         title={t('auth.logout')}

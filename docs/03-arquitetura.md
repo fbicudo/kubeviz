@@ -141,13 +141,16 @@ GitOps).
     terminal um link `/auth/local?token=...`, como o Jupyter. Só quem vê o
     terminal entra; outros usuários da mesma máquina não usam o kubeconfig de
     quem executou o KubeViz. O token é trocado por uma sessão e sai da URL.
-  - *Contas locais (modo local):* `kubeviz user add` cria contas com senha
-    (bcrypt) em `~/.config/kubeviz/users`; com contas, o login é por usuário e
-    senha e o link deixa de valer. Tentativas erradas são limitadas por IP e
-    por usuário. Contas também podem ser criadas na tela de login, com o
-    código exibido no terminal (o mesmo token do link): como no `kubeviz user
-    add`, só quem tem acesso à máquina cria contas; nomes existentes são
-    recusados e códigos errados, limitados por IP.
+  - *Contas locais (modo local):* arquivo JSON (0600) com contas que entram
+    com senha (bcrypt) e/ou com e-mails confirmados por provedores (Google,
+    Microsoft, GitHub ou OIDC, configurados pela interface); papel de
+    administrador conferido a cada pedido; domínios liberados criam contas no
+    primeiro acesso. Sem contas, a tela de login cria a de administrador (prazo
+    de 15 min após iniciar quando exposto na rede); `kubeviz user add` continua
+    para recuperação. Tentativas erradas de senha são limitadas por IP e por
+    usuário. Microsoft: contas de organização identificadas pelo UPN (o e-mail
+    delas não é verificado, "nOAuth"). Detalhes em
+    [login-provedores.md](login-provedores.md).
   - *Modo in-cluster:* login com token do Kubernetes (ServiceAccount ou
     usuário), validado com `SelfSubjectReview`. As requisições seguem para a
     API **com o próprio token do usuário** (repasse), sem nenhuma credencial da

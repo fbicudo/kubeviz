@@ -5,6 +5,8 @@ import { Overview } from '@/pages/Overview'
 import { Placeholder } from '@/pages/Placeholder'
 import { ApplyYaml } from '@/pages/ApplyYaml'
 import { Crds } from '@/pages/Crds'
+import { AdminProviders } from '@/pages/AdminProviders'
+import { AdminUsers } from '@/pages/AdminUsers'
 import { Events } from '@/pages/Events'
 import { GenericList } from '@/pages/GenericList'
 import { Detail, type DetailSearch } from '@/pages/Detail'
@@ -68,6 +70,8 @@ const detailRoute = createRoute({
 })
 
 const applyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/apply', component: ApplyYaml })
+const adminUsersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/users', component: AdminUsers })
+const adminProvidersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/providers', component: AdminProviders })
 const crdsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/crds', component: Crds })
 const eventsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -84,7 +88,7 @@ const genericListRoute = createRoute({
   component: GenericList,
 })
 
-const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, applyRoute, crdsRoute, genericListRoute, eventsRoute, ...sectionRoutes])
+const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, applyRoute, crdsRoute, genericListRoute, eventsRoute, adminUsersRoute, adminProvidersRoute, ...sectionRoutes])
 
 export function makeRouter(history?: RouterHistory) {
   return createRouter({ routeTree, history })

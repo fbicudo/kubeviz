@@ -36,6 +36,12 @@ type Options struct {
 	// Users, no modo local, habilita o login por usuário e senha quando o
 	// arquivo de contas tem ao menos uma conta. Nil = desabilitado.
 	Users *auth.Users
+	// SetupUntil limita o prazo para criar a conta de administrador pela tela
+	// de login (KubeViz exposto na rede); zero = sem prazo.
+	SetupUntil time.Time
+	// Providers faz o login das contas locais por Google, Microsoft, GitHub ou
+	// OIDC (configurados pela interface). Nil = desabilitado.
+	Providers *auth.Providers
 	// OIDC habilita o login corporativo. Nil = desabilitado.
 	OIDC *auth.OIDC
 	// WhoAmI identifica o dono de uma credencial; nil = auth.WhoAmI.
@@ -87,10 +93,22 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /auth/local", s.localLogin)
 	mux.HandleFunc("GET /auth/oidc/login", s.oidcLogin)
 	mux.HandleFunc("GET /auth/oidc/callback", s.oidcCallback)
+	mux.HandleFunc("GET /auth/provider/{id}/login", s.providerLogin)
+	mux.HandleFunc("GET /auth/provider/{id}/callback", s.providerCallback)
 	mux.HandleFunc("GET /api/v1/auth/session", s.getSession)
 	mux.HandleFunc("POST /api/v1/auth/login", s.login)
 	mux.HandleFunc("POST /api/v1/auth/password", s.passwordLogin)
-	mux.HandleFunc("POST /api/v1/auth/signup", s.signup)
+	mux.HandleFunc("POST /api/v1/auth/setup", s.setup)
+
+	// Administração das contas locais (exigem sessão de administrador).
+	mux.HandleFunc("GET /api/v1/admin/users", s.requireAdmin(s.listAccounts))
+	mux.HandleFunc("POST /api/v1/admin/users", s.requireAdmin(s.createAccount))
+	mux.HandleFunc("PUT /api/v1/admin/users/{name}", s.requireAdmin(s.updateAccount))
+	mux.HandleFunc("DELETE /api/v1/admin/users/{name}", s.requireAdmin(s.deleteAccount))
+	mux.HandleFunc("PUT /api/v1/admin/domains", s.requireAdmin(s.putDomains))
+	mux.HandleFunc("GET /api/v1/admin/providers", s.requireAdmin(s.listProviders))
+	mux.HandleFunc("PUT /api/v1/admin/providers/{id}", s.requireAdmin(s.putProvider))
+	mux.HandleFunc("DELETE /api/v1/admin/providers/{id}", s.requireAdmin(s.deleteProvider))
 	mux.HandleFunc("POST /api/v1/auth/logout", s.logout)
 
 	// Exigem sessão.

@@ -24,7 +24,7 @@ func TestUsersLifecycle(t *testing.T) {
 		t.Fatalf("arquivo de contas: %v, permissão %v (quer 0600)", err, info.Mode().Perm())
 	}
 	content, _ := os.ReadFile(path)
-	if strings.Contains(string(content), "senha-muito-longa-1") || !strings.Contains(string(content), "ana:$2") {
+	if strings.Contains(string(content), "senha-muito-longa-1") || !strings.Contains(string(content), `"passwordHash": "$2`) {
 		t.Fatalf("o arquivo deve guardar só o hash bcrypt: %q", content)
 	}
 
@@ -119,5 +119,99 @@ func TestAddUserRefusesExisting(t *testing.T) {
 	}
 	if !NewUsers(path).Verify("ana", "senha-de-teste-com-tamanho") {
 		t.Error("a senha original foi trocada")
+	}
+}
+
+func TestLegacyFileStillWorks(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "users")
+	hash, _ := hashPassword("senha-de-teste-com-tamanho")
+	legacy := "# Contas do KubeViz (modo local)\nfabio:" + hash + "\n"
+	if err := os.WriteFile(path, []byte(legacy), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	u := NewUsers(path)
+	acc, ok := u.Get("fabio")
+	if !ok || !acc.Admin || !u.Verify("fabio", "senha-de-teste-com-tamanho") {
+		t.Fatalf("conta do formato antigo: %+v", acc)
+	}
+	// A primeira alteração grava no formato novo, sem perder a conta.
+	if err := u.Create(Account{Name: "bia", Emails: []string{"Bia@Exemplo.com"}}, ""); err != nil {
+		t.Fatal(err)
+	}
+	content, _ := os.ReadFile(path)
+	if !strings.HasPrefix(string(content), "{") || !u.Verify("fabio", "senha-de-teste-com-tamanho") {
+		t.Fatalf("migração: %s", content)
+	}
+}
+
+func TestAccountsEmailsAndAdmins(t *testing.T) {
+	u := NewUsers(filepath.Join(t.TempDir(), "users"))
+	if err := u.Create(Account{Name: "admin", Admin: true}, "senha-de-teste-com-tamanho"); err != nil {
+		t.Fatal(err)
+	}
+	// Só e-mail (entra por provedor); e-mail normalizado.
+	if err := u.Create(Account{Name: "bia", Emails: []string{" Bia@Exemplo.com "}}, ""); err != nil {
+		t.Fatal(err)
+	}
+	if acc, created, err := u.ForEmail("bia@exemplo.com"); err != nil || created || acc.Name != "bia" {
+		t.Fatalf("ForEmail: %+v %v %v", acc, created, err)
+	}
+	// Sem senha nem e-mail não serve; e-mail de outra conta também não.
+	if err := u.Create(Account{Name: "vazio"}, ""); !errors.Is(err, ErrNoLoginMethod) {
+		t.Errorf("sem método: %v", err)
+	}
+	if err := u.Create(Account{Name: "copia", Emails: []string{"bia@exemplo.com"}}, ""); !errors.Is(err, ErrEmailInUse) {
+		t.Errorf("e-mail repetido: %v", err)
+	}
+	if err := u.Create(Account{Name: "x", Emails: []string{"nao-e-email"}}, ""); !errors.Is(err, ErrInvalidEmail) {
+		t.Errorf("e-mail inválido: %v", err)
+	}
+	// Senha só por provedor: Verify nunca aceita conta sem senha.
+	if u.Verify("bia", "") {
+		t.Error("conta sem senha aceitou senha vazia")
+	}
+
+	// E-mail desconhecido: recusado, a não ser que o domínio esteja liberado.
+	if _, _, err := u.ForEmail("carla.souza@empresa.com"); !errors.Is(err, ErrUserNotFound) {
+		t.Errorf("e-mail desconhecido: %v", err)
+	}
+	if err := u.SetAllowedDomains([]string{"@Empresa.com", "", "empresa.com"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := u.SetAllowedDomains([]string{"sem ponto"}); !errors.Is(err, ErrInvalidDomain) {
+		t.Errorf("domínio inválido: %v", err)
+	}
+	acc, created, err := u.ForEmail("carla.souza@empresa.com")
+	if err != nil || !created || acc.Name != "carla.souza" || acc.Admin {
+		t.Fatalf("conta criada pelo domínio: %+v %v %v", acc, created, err)
+	}
+	if acc, created, _ := u.ForEmail("carla.souza@empresa.com"); created || acc.Name != "carla.souza" {
+		t.Errorf("segundo acesso não deve criar outra conta: %+v", acc)
+	}
+	if _, _, err := u.ForEmail("intruso@empresa.com.evil.io"); !errors.Is(err, ErrUserNotFound) {
+		t.Errorf("subdomínio de outro domínio aceito: %v", err)
+	}
+
+	// Sempre sobra um administrador.
+	no := false
+	if err := u.Update("admin", AccountChanges{Admin: &no}); !errors.Is(err, ErrLastAdmin) {
+		t.Errorf("rebaixar o último admin: %v", err)
+	}
+	if err := u.Remove("admin"); !errors.Is(err, ErrLastAdmin) {
+		t.Errorf("remover o último admin: %v", err)
+	}
+	yes := true
+	if err := u.Update("bia", AccountChanges{Admin: &yes}); err != nil {
+		t.Fatal(err)
+	}
+	if err := u.Remove("admin"); err != nil {
+		t.Errorf("com outro admin, remover deveria funcionar: %v", err)
+	}
+	// Tirar a senha de quem não tem e-mail deixaria a conta sem acesso.
+	if err := u.Create(Account{Name: "so-senha"}, "senha-de-teste-com-tamanho"); err != nil {
+		t.Fatal(err)
+	}
+	if err := u.Update("so-senha", AccountChanges{RemovePassword: true}); !errors.Is(err, ErrNoLoginMethod) {
+		t.Errorf("remover a única forma de entrar: %v", err)
 	}
 }

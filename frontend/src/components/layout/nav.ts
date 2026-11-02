@@ -5,6 +5,7 @@ import {
   FilePlus2,
   FileCog,
   Gauge,
+  KeySquare,
   KeyRound,
   LayoutDashboard,
   Layers,
@@ -15,6 +16,7 @@ import {
   Shield,
   Shuffle,
   Timer,
+  UserCog,
   Wand2,
   type LucideIcon,
 } from 'lucide-react'
@@ -65,3 +67,12 @@ export const navGroups: NavGroup[] = [
 export const overviewItem: NavItem = { id: 'overview', path: '/', icon: LayoutDashboard }
 
 export const allNavItems = navGroups.flatMap((g) => g.items)
+
+/** Administração do KubeViz: só aparece para administradores (modo local). */
+export const adminGroup: NavGroup = {
+  id: 'admin',
+  items: [
+    { id: 'adminUsers', path: '/admin/users', icon: UserCog },
+    { id: 'adminProviders', path: '/admin/providers', icon: KeySquare },
+  ],
+}

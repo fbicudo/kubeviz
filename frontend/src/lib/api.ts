@@ -34,8 +34,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(res.status, message)
   }
-  if (res.status === 204) return undefined as T
-  return (await res.json()) as T
+  // 204, ou 201 sem corpo: nada a interpretar.
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
 
 export interface VersionInfo {
@@ -89,8 +90,12 @@ export interface SessionInfo {
   loginMethods: LoginMethod[]
   /** Nome do provedor OIDC exibido no botão de login. */
   oidcName?: string
-  /** A tela de login pode criar contas locais (com o código do terminal). */
-  signup?: boolean
+  /** Primeiro acesso: a tela de login cria a conta de administrador ("expired" = prazo acabou). */
+  setup?: 'available' | 'expired'
+  /** Botões de login por provedor (Google, Microsoft, GitHub, OIDC). */
+  providers?: LoginProvider[]
+  /** Pode gerenciar contas e provedores. */
+  admin?: boolean
   user?: User
   /** Conta local usada no login por usuário e senha. */
   localUser?: string
@@ -102,8 +107,15 @@ export const getSession = () => apiGet<SessionInfo>('/api/v1/auth/session')
 
 export const login = (token: string) => apiSend<SessionInfo>('POST', '/api/v1/auth/login', { token })
 
-export const signup = (code: string, username: string, password: string) =>
-  apiSend<SessionInfo>('POST', '/api/v1/auth/signup', { code, username, password })
+export interface LoginProvider {
+  id: string
+  type: 'google' | 'microsoft' | 'github' | 'oidc'
+  name: string
+}
+
+/** Primeiro acesso: cria a conta de administrador e já entra com ela. */
+export const setupAdmin = (username: string, password: string) =>
+  apiSend<SessionInfo>('POST', '/api/v1/auth/setup', { username, password })
 
 export const passwordLogin = (username: string, password: string) =>
   apiSend<SessionInfo>('POST', '/api/v1/auth/password', { username, password })

@@ -31,7 +31,10 @@ permite; a ServiceAccount do KubeViz não tem permissão nenhuma. Sem
 testes. Opções em [values.yaml](deploy/helm/kubeviz/values.yaml).
 
 Para login corporativo (Keycloak, Dex, Entra ID, Okta…), veja
-[Login corporativo (OIDC)](docs/oidc.md).
+[Login corporativo (OIDC)](docs/oidc.md). Rodando como binário ou container, o
+primeiro acesso cria a conta de administrador pela própria tela, e os usuários
+podem entrar com Google, Microsoft, GitHub ou OIDC configurados pela interface:
+[Contas e provedores de login](docs/login-provedores.md).
 
 ## Desenvolvimento
 
@@ -79,6 +82,7 @@ Imagem: `ghcr.io/fbicudo/kubeviz` (amd64 e arm64). Licença: [Apache-2.0](LICENS
 | 5 | [Roadmap](docs/05-roadmap.md) | Fases, entregas e critérios de pronto |
 | 6 | [Decisões e perguntas em aberto](docs/06-perguntas-em-aberto.md) | Decisões de produto já tomadas e o que ainda falta decidir |
 | — | [Login corporativo (OIDC)](docs/oidc.md) | Configuração, modos impersonate e token, solução de problemas |
+| — | [Contas e provedores de login](docs/login-provedores.md) | Primeiro acesso, usuários, Google, Microsoft, GitHub e OIDC no modo local |
 | — | [Desempenho](docs/desempenho.md) | Como medir com milhares de pods (kwok) e os resultados |
 
 ## Resumo executivo
