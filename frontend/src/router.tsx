@@ -9,6 +9,7 @@ import { Account } from '@/pages/Account'
 import { AdminProviders } from '@/pages/AdminProviders'
 import { AdminUsers } from '@/pages/AdminUsers'
 import { Events } from '@/pages/Events'
+import { Metrics } from '@/pages/Metrics'
 import { GenericList } from '@/pages/GenericList'
 import { Detail, type DetailSearch } from '@/pages/Detail'
 import { Pods } from '@/pages/Pods'
@@ -37,7 +38,7 @@ const validateResourceSearch = (search: Record<string, unknown>): ResourceSearch
 })
 
 // Páginas com componente próprio (as demais do menu usam a lista genérica).
-const customPages = new Set(['/pods', '/apply', '/crds', '/events'])
+const customPages = new Set(['/pods', '/apply', '/crds', '/events', '/metrics'])
 
 // Itens do menu: lista genérica quando há tipos no catálogo; placeholder para
 // o que ainda não existe (métricas, uptime, assistentes).
@@ -71,6 +72,7 @@ const detailRoute = createRoute({
 })
 
 const applyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/apply', component: ApplyYaml })
+const metricsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/metrics', component: Metrics })
 const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: '/account', component: Account })
 const adminUsersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/users', component: AdminUsers })
 const adminProvidersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/providers', component: AdminProviders })
@@ -90,7 +92,7 @@ const genericListRoute = createRoute({
   component: GenericList,
 })
 
-const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, applyRoute, crdsRoute, genericListRoute, eventsRoute, adminUsersRoute, adminProvidersRoute, accountRoute, ...sectionRoutes])
+const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, applyRoute, crdsRoute, genericListRoute, eventsRoute, adminUsersRoute, adminProvidersRoute, accountRoute, metricsRoute, ...sectionRoutes])
 
 export function makeRouter(history?: RouterHistory) {
   return createRouter({ routeTree, history })

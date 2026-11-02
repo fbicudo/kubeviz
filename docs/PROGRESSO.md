@@ -802,17 +802,84 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   - capturas: [img/minha-conta-passkeys.png](img/minha-conta-passkeys.png) e
     [img/login-passkey.png](img/login-passkey.png).
 
+### 02/11/2026 — Tarefa 2.1: métricas ao vivo (início da Fase 2)
+- **Fonte:** metrics-server (API `metrics.k8s.io`), lido com a credencial de
+  quem está logado, como o resto do KubeViz. Sem metrics-server ou sem
+  permissão, a página explica o motivo e mostra o comando de instalação.
+- **Visão geral:** os blocos de CPU e memória mostram o uso do cluster sobre
+  a capacidade alocável dos nós, com link para Métricas.
+- **Página Métricas** (atualiza a cada 15 s):
+  - CPU e memória em uso e reservadas (requests) no cluster;
+  - nós com barras de uso sobre a capacidade e um marcador do total
+    reservado;
+  - **maiores consumidores** por workload ou por pod, ordenados por CPU ou
+    memória, com requests e limits;
+  - namespaces.
+  Responde "o que está consumindo recursos agora?".
+- **Detalhes:**
+  - quantidades do Kubernetes lidas em todas as notações (`250m`,
+    `123456789n`, `128Mi`, `1e3`…);
+  - CPU exibida como `152m` ou `1.5 CPU`;
+  - pods de Deployment agrupados pelo nome do ReplicaSet menos o
+    `pod-template-hash`;
+  - pods terminados não contam como reservas;
+  - as barras de uso sobre capacidade mudam de cor a 75% e 90%; as
+    comparativas, só entre os itens da lista, têm cor neutra.
+- **Demonstração:** `make demo` instala o metrics-server v0.9.0 no kind
+  (`hack/demo/metrics-server.sh`, com `--kubelet-insecure-tls`, só para
+  desenvolvimento).
+- **Gráficos:** a arquitetura previa ECharts e uPlot. As séries temporais
+  (2.2) vão usar só o uPlot, pequeno e rápido; o ECharts (~1 MB) fica para
+  quando algo exigir.
+- **Verificado:**
+  - testes de leitura das quantidades, dono dos pods, reservas e somas por
+    namespace e por nó;
+  - página e Visão geral com e sem metrics-server;
+  - 196 testes Vitest no total;
+  - no kind, conferido com `kubectl top`.
+  - **Encontrado no teste real e corrigido:**
+    - os pods estáticos do plano de controle (apiserver, etcd…) têm o nó
+      como "dono" e apareciam somados como um único workload; agora cada um
+      aparece como ele mesmo;
+    - as barras comparativas ficavam vermelhas no primeiro da lista, o que
+      sugeria um problema inexistente.
+  - capturas: [img/metricas.png](img/metricas.png) e
+    [img/visao-geral.png](img/visao-geral.png).
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca
 global, eventos, login OIDC e escala para 5.000 pods. Próximo passo: Fase 2
 (performance e uptime, [roadmap](05-roadmap.md)).
 
-## Próximos passos
+## Próximas tarefas (Fase 2 — Performance e uptime)
 
-A Fase 1 está concluída. A Fase 2 (performance e uptime) é a próxima, com
-escopo no [roadmap](05-roadmap.md#fase-2--performance-e-uptime-68-semanas--v03);
-será dividida em tarefas pequenas quando começar.
+Escopo no [roadmap](05-roadmap.md#fase-2--performance-e-uptime-68-semanas--v03)
+e nos requisitos RF-30 a RF-36. Fica pronta quando o KubeViz responder, sem
+Grafana, "o que está consumindo recursos?" e "qual foi a disponibilidade do
+serviço X no último mês?".
+
+1. **2.1 — Métricas ao vivo:**
+   - CPU e memória por nó, namespace e pod (metrics-server), comparados com
+     requests, limits e capacidade;
+   - blocos de CPU e memória na Visão geral;
+   - página Métricas com os maiores consumidores.
+2. **2.2 — Coletor embutido e histórico:**
+   - SQLite, amostras a cada 30 s com retenção configurável;
+   - gráficos (uPlot) com seletor de período de 15 min a 30 d;
+   - acesso conferido pelo RBAC de quem consulta.
+3. **2.3 — Prometheus:** detecção (endereço configurado ou Service) e
+   consultas PromQL prontas, usadas no lugar do coletor quando houver.
+4. **2.4 — Indicadores e métricas no detalhe:**
+   - reinícios, OOMKilled, pods pendentes e nós NotReady;
+   - aba de métricas no detalhe de pods, workloads e nós.
+5. **2.5 — Uptime:**
+   - estado de workloads (réplicas prontas) e nós (Ready);
+   - histórico de transições, % em 24 h, 7 d e 30 d, linha do tempo.
+6. **2.6 — Sondas sintéticas:** HTTP/TCP configuráveis (intervalo, timeout,
+   código esperado), combinadas com o estado do Kubernetes no uptime.
+7. **2.7 — Escala e fechamento:** coletor e uptime com 5.000 pods (backend
+   abaixo de 256 MB), documentação e versão.
 
 Pendências da Fase 1, que podem ser retomadas a qualquer momento:
 - teste com 10 mil pods e confirmação da primeira carga (< 2 s) numa máquina

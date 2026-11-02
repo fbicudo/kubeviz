@@ -60,7 +60,7 @@ contribuidores. Não compensa para uma aplicação limitada por I/O.
 | Componentes | **shadcn/ui** (Radix + Tailwind CSS) | Visual profissional, acessível, código próprio (sem lock-in). Tema próprio no estilo painel de observabilidade: escuro por padrão, alta densidade, tipografia compacta |
 | Roteamento / dados | **TanStack Router** + **TanStack Query** | Tipagem forte, cache e revalidação |
 | Tabelas | **TanStack Table** + virtualização (**TanStack Virtual**) | Milhares de linhas sem travar |
-| Gráficos | **Apache ECharts** (painéis) e **uPlot** (séries temporais densas) | ECharts: rico e acessível; uPlot: muito rápido para tempo real |
+| Gráficos | **uPlot** (séries temporais); **Apache ECharts** só se algum painel exigir | uPlot: pequeno e muito rápido; o ECharts (~1 MB) fica de reserva (decisão da tarefa 2.1) |
 | Editor YAML | **CodeMirror 6** + validação pelo próprio cluster (dry-run com `fieldValidation=Strict`) | Decisão da tarefa 1.4: ~10× menor que o Monaco, sem web workers nem CDN (funciona isolado da internet); o cluster valida com o esquema real, inclusive de CRDs |
 | Terminal | **xterm.js** | Padrão para `exec` |
 | Formulários (assistentes) | **React Hook Form** + **Zod** | Validação declarativa e passo a passo |

@@ -84,6 +84,7 @@ demo: ## Aplica o cenário de demonstração no kind e gera ~/.kube/kubeviz-demo
 	kubectl --context kind-kubeviz-dev apply -f hack/demo/demo.yaml -f hack/demo/crd.yaml
 	kubectl --context kind-kubeviz-dev wait --for=condition=Established crd/widgets.demo.kubeviz.dev --timeout=60s
 	kubectl --context kind-kubeviz-dev apply -f hack/demo/crd-exemplos.yaml
+	hack/demo/metrics-server.sh
 	hack/demo/kubeconfig.sh
 
 lint: ## Verifica formatação, go vet, tipos e lint do frontend

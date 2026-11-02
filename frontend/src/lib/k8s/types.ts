@@ -11,6 +11,7 @@ export interface ObjectMeta {
   labels?: Record<string, string>
   /** Removido nas listas grandes (ver slim em watch.ts). */
   managedFields?: unknown[]
+  ownerReferences?: OwnerReference[]
 }
 
 export interface List<T> {
@@ -41,9 +42,20 @@ export interface ContainerStatus {
   state?: ContainerState
 }
 
+/** Recursos pedidos (requests) e máximos (limits) de um container. */
+export interface Resources {
+  requests?: Record<string, string>
+  limits?: Record<string, string>
+}
+
+export interface PodContainer {
+  name: string
+  resources?: Resources
+}
+
 export interface Pod {
   metadata: ObjectMeta
-  spec: { nodeName?: string; containers: { name: string }[]; initContainers?: { name: string }[] }
+  spec: { nodeName?: string; containers: PodContainer[]; initContainers?: PodContainer[] }
   status: {
     phase?: 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown'
     reason?: string
@@ -60,7 +72,7 @@ export interface NodeCondition {
 
 export interface Node {
   metadata: ObjectMeta
-  status: { conditions?: NodeCondition[] }
+  status: { conditions?: NodeCondition[]; capacity?: Record<string, string>; allocatable?: Record<string, string> }
 }
 
 export interface Namespace {

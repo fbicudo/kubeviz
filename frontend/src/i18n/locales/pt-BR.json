@@ -54,7 +54,6 @@
     "pods": "Pods em execução",
     "cpu": "Uso de CPU",
     "memory": "Uso de memória",
-    "pending": "Disponível na Fase 2, com a coleta de métricas.",
     "backend": "Backend",
     "backendOk": "Conectado · {{version}}",
     "backendDown": "Indisponível",
@@ -63,7 +62,13 @@
     "nodesNotReady_other": "{{count}} nós não estão prontos",
     "podsFailing_one": "{{count}} pod com falha",
     "podsFailing_other": "{{count}} pods com falha",
-    "podsAllGood": "Nenhum pod com falha"
+    "podsAllGood": "Nenhum pod com falha",
+    "usageOf": "{{used}} de {{total}} alocáveis",
+    "metrics": {
+      "missing": "Instale o metrics-server para ver o uso",
+      "forbidden": "Sem permissão para ler métricas",
+      "error": "Métricas indisponíveis"
+    }
   },
   "placeholder": {
     "title": "Em construção",
@@ -577,6 +582,50 @@
         "insecure": "Passkeys exigem HTTPS com certificado confiável (ou localhost)."
       },
       "hostBound": "As passkeys valem só para o endereço em que foram criadas ({{host}})."
+    }
+  },
+  "metrics": {
+    "subtitle": "O que está consumindo CPU e memória agora (metrics-server). O histórico chega na próxima etapa.",
+    "updated": "atualizado às {{time}}",
+    "cpuUsed": "CPU em uso",
+    "cpuRequested": "CPU reservada (requests)",
+    "memoryUsed": "Memória em uso",
+    "memoryRequested": "Memória reservada (requests)",
+    "ofAllocatable": "{{used}} de {{total}} alocáveis",
+    "nodes": "Nós",
+    "namespaces": "Namespaces",
+    "top": "Maiores consumidores",
+    "workloads": "Workloads",
+    "pods": "Pods",
+    "scope": "Mostrar",
+    "sortBy": "Ordenar por",
+    "cpuOf": "CPU de {{name}}",
+    "memoryOf": "Memória de {{name}}",
+    "barHint": "A barra mostra o uso sobre a capacidade alocável do nó; o traço marca o total reservado (requests) pelos pods.",
+    "col": {
+      "node": "Nó",
+      "cpu": "CPU",
+      "memory": "Memória",
+      "pods": "Pods",
+      "workload": "Workload",
+      "namespace": "Namespace",
+      "pod": "Pod",
+      "cpuReqLim": "CPU requests / limits",
+      "memReqLim": "Memória requests / limits"
+    },
+    "problem": {
+      "missing": {
+        "title": "O cluster não tem o metrics-server",
+        "body": "O KubeViz lê o uso de CPU e memória da API metrics.k8s.io, oferecida pelo metrics-server. Para instalá-lo:"
+      },
+      "forbidden": {
+        "title": "Sem permissão para ler métricas",
+        "body": "O seu usuário não pode ler a API metrics.k8s.io. Peça a um administrador do cluster permissão de leitura (get/list em nodes e pods do grupo metrics.k8s.io)."
+      },
+      "error": {
+        "title": "Métricas indisponíveis",
+        "body": "O metrics-server não respondeu. Ele pode estar iniciando; a página tenta de novo sozinha."
+      }
     }
   }
 }

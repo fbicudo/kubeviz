@@ -7,6 +7,7 @@ import { ApiError, getVersion } from '@/lib/api'
 import { isNodeReady, summarizePod } from '@/lib/k8s/pods'
 import { useNodes, useNodesLive, usePods, usePodsLive } from '@/lib/k8s/queries'
 import { useClusterInfo } from '@/lib/queries'
+import { formatBytes, formatCpu, metricsProblem, nodeRows, useNodeMetrics } from '@/lib/k8s/metrics'
 
 export function Overview() {
   const { t } = useTranslation()
@@ -28,8 +29,7 @@ export function Overview() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <NodesTile />
         <PodsTile />
-        <StatTile label={t('overview.cpu')} value="—" hint={t('overview.pending')} />
-        <StatTile label={t('overview.memory')} value="—" hint={t('overview.pending')} />
+        <UsageTiles />
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:max-w-4xl">
@@ -134,5 +134,50 @@ function ClusterTile() {
         </>
       }
     />
+  )
+}
+
+/** CPU e memória em uso no cluster, sobre a capacidade alocável dos nós. */
+function UsageTiles() {
+  const { t } = useTranslation()
+  const nodes = useNodes()
+  const metrics = useNodeMetrics()
+  const rows = useMemo(() => nodeRows(nodes.data?.items ?? [], metrics.data?.items ?? [], []), [nodes.data, metrics.data])
+  if (metrics.isError) {
+    const hint = t(`overview.metrics.${metricsProblem(metrics.error)}`)
+    return (
+      <>
+        <StatTile label={t('overview.cpu')} value="—" hint={hint} />
+        <StatTile label={t('overview.memory')} value="—" hint={hint} />
+      </>
+    )
+  }
+  const sum = (f: (r: (typeof rows)[number]) => number) => rows.reduce((a, r) => a + f(r), 0)
+  const cpu = sum((r) => r.cpu)
+  const cpuAlloc = sum((r) => r.cpuAllocatable)
+  const mem = sum((r) => r.memory)
+  const memAlloc = sum((r) => r.memoryAllocatable)
+  const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0)
+  const status = (a: number, b: number) => (!metrics.data || b === 0 ? 'unknown' : a / b >= 0.9 ? 'critical' : a / b >= 0.75 ? 'warn' : 'ok')
+  const link = (text: string) => (
+    <Link to="/metrics" className="hover:text-foreground">
+      {text}
+    </Link>
+  )
+  return (
+    <>
+      <StatTile
+        label={t('overview.cpu')}
+        status={status(cpu, cpuAlloc)}
+        value={metrics.data ? `${pct(cpu, cpuAlloc)}%` : '…'}
+        hint={metrics.data ? link(t('overview.usageOf', { used: formatCpu(cpu), total: formatCpu(cpuAlloc) })) : undefined}
+      />
+      <StatTile
+        label={t('overview.memory')}
+        status={status(mem, memAlloc)}
+        value={metrics.data ? `${pct(mem, memAlloc)}%` : '…'}
+        hint={metrics.data ? link(t('overview.usageOf', { used: formatBytes(mem), total: formatBytes(memAlloc) })) : undefined}
+      />
+    </>
   )
 }
