@@ -1,14 +1,11 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { RefreshCw, Search, ShieldAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
-import { Combobox } from '@/components/ui/combobox'
+import { FilterInput, LoadError, NamespacePicker, RefreshButton } from '@/components/resources/common'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { ApiError } from '@/lib/api'
 import { age } from '@/lib/format'
 import { summarizePod } from '@/lib/k8s/pods'
-import { useNamespaces, usePods } from '@/lib/k8s/queries'
+import { usePods } from '@/lib/k8s/queries'
 import type { Pod } from '@/lib/k8s/types'
 
 /** Lista de pods. Namespace vem de ?ns=; ausente = todos os namespaces. */
@@ -38,77 +35,15 @@ export function Pods() {
           </p>
         </div>
         <NamespacePicker value={namespace} onChange={setNamespace} />
-        <label className="flex h-8 w-64 items-center gap-2 rounded-md border bg-surface px-2 text-muted focus-within:border-accent">
-          <Search className="size-4" aria-hidden />
-          <input
-            className="w-full bg-transparent text-foreground outline-none placeholder:text-subtle"
-            placeholder={t('pods.filter')}
-            aria-label={t('pods.filter')}
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-        </label>
-        <Button size="icon" onClick={() => void pods.refetch()} aria-label={t('pods.refresh')} title={t('pods.refresh')}>
-          <RefreshCw className={pods.isFetching ? 'animate-spin' : undefined} />
-        </Button>
+        <FilterInput value={filter} onChange={setFilter} />
+        <RefreshButton onClick={() => void pods.refetch()} spinning={pods.isFetching} />
       </div>
 
       {pods.isError ? (
-        <LoadError error={pods.error} namespace={namespace} />
+        <LoadError error={pods.error} what="pods" namespace={namespace} namespaced />
       ) : (
         <PodTable pods={rows} loading={pods.isPending} showNamespace={!namespace} now={pods.dataUpdatedAt} />
       )}
-    </div>
-  )
-}
-
-/**
- * Seletor de namespace com busca. Sem permissão para listar namespaces, a
- * lista fica vazia e o usuário digita o nome (opção "Usar …").
- */
-function NamespacePicker({ value, onChange }: { value: string; onChange: (ns: string) => void }) {
-  const { t } = useTranslation()
-  const namespaces = useNamespaces()
-  const names = namespaces.data?.items.map((n) => n.metadata.name).sort() ?? []
-  const options = [
-    ...(namespaces.isError ? [] : [{ value: '', label: t('pods.allNamespaces') }]),
-    ...names.map((n) => ({ value: n, label: n })),
-  ]
-
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-muted">{t('pods.namespace')}</span>
-      <Combobox
-        label={t('pods.namespace')}
-        value={value}
-        options={options}
-        onChange={onChange}
-        allowCustom
-        searchPlaceholder={t('pods.namespacePlaceholder')}
-        emptyText={namespaces.isError ? t('pods.namespaceTypeHint') : undefined}
-        className="w-52"
-      >
-        {value || (namespaces.isError ? <span className="text-subtle">{t('pods.namespacePlaceholder')}</span> : t('pods.allNamespaces'))}
-      </Combobox>
-    </div>
-  )
-}
-
-function LoadError({ error, namespace }: { error: Error; namespace: string }) {
-  const { t } = useTranslation()
-  const forbidden = error instanceof ApiError && error.status === 403
-  return (
-    <div role="alert" className="flex max-w-3xl gap-3 rounded-lg border border-critical/40 bg-critical/5 p-4">
-      <ShieldAlert className="mt-0.5 size-5 shrink-0 text-critical" aria-hidden />
-      <div className="space-y-1">
-        <div className="font-medium">
-          {forbidden
-            ? t('pods.forbidden', { scope: namespace || t('pods.allNamespaces').toLowerCase() })
-            : t('pods.loadError')}
-        </div>
-        <p className="font-mono text-xs break-all text-muted">{error.message}</p>
-        {forbidden && !namespace && <p className="text-muted">{t('pods.forbiddenHint')}</p>}
-      </div>
     </div>
   )
 }

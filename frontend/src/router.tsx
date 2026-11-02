@@ -4,6 +4,8 @@ import { allNavItems } from '@/components/layout/nav'
 import { Overview } from '@/pages/Overview'
 import { Placeholder } from '@/pages/Placeholder'
 import { Pods } from '@/pages/Pods'
+import { ResourcePage, type ResourceSearch } from '@/pages/Resources'
+import { resourcePages } from '@/lib/k8s/catalog'
 
 const rootRoute = createRootRoute({
   component: AppShell,
@@ -21,17 +23,28 @@ const podsRoute = createRoute({
   component: Pods,
 })
 
-const implemented = new Set(['/pods'])
+const validateResourceSearch = (search: Record<string, unknown>): ResourceSearch => ({
+  ...(typeof search.ns === 'string' && search.ns ? { ns: search.ns } : {}),
+  ...(typeof search.k === 'string' && search.k ? { k: search.k } : {}),
+})
 
-// Enquanto as telas não existem, cada item do menu aponta para um placeholder.
+// Itens do menu: lista genérica quando há tipos no catálogo; placeholder para
+// o que ainda não existe (métricas, uptime, assistentes).
 const sectionRoutes = allNavItems
-  .filter((item) => !implemented.has(item.path))
+  .filter((item) => item.path !== '/pods')
   .map((item) =>
-    createRoute({
-      getParentRoute: () => rootRoute,
-      path: item.path,
-      component: () => <Placeholder titleKey={`nav.${item.id}`} />,
-    }),
+    item.id in resourcePages
+      ? createRoute({
+          getParentRoute: () => rootRoute,
+          path: item.path,
+          validateSearch: validateResourceSearch,
+          component: () => <ResourcePage pageId={item.id} />,
+        })
+      : createRoute({
+          getParentRoute: () => rootRoute,
+          path: item.path,
+          component: () => <Placeholder titleKey={`nav.${item.id}`} />,
+        }),
   )
 
 const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, ...sectionRoutes])

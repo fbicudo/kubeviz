@@ -96,14 +96,6 @@
   "pods": {
     "count_one": "{{shown}} de {{count}} pod",
     "count_other": "{{shown}} de {{count}} pods",
-    "filter": "Filtrar por nome ou namespace",
-    "refresh": "Atualizar",
-    "namespace": "Namespace",
-    "allNamespaces": "Todos os namespaces",
-    "namespacePlaceholder": "Buscar ou digitar namespace",
-    "forbidden": "Sem permissão para listar pods em {{scope}}",
-    "forbiddenHint": "Escolha um namespace em que você tenha acesso.",
-    "loadError": "Não foi possível carregar os pods",
     "empty": "Nenhum pod encontrado.",
     "loading": "Carregando…",
     "col": {
@@ -115,12 +107,59 @@
       "age": "Idade",
       "node": "Nó",
       "ip": "IP"
-    },
-    "namespaceTypeHint": "Digite o nome do namespace."
+    }
   },
   "combobox": {
     "search": "Buscar…",
     "empty": "Nada encontrado.",
     "useCustom": "Usar “{{value}}”"
+  },
+  "resources": {
+    "allNamespaces": "Todos os namespaces",
+    "namespace": "Namespace",
+    "namespacePlaceholder": "Buscar ou digitar namespace",
+    "namespaceTypeHint": "Digite o nome do namespace.",
+    "filter": "Filtrar por nome ou namespace",
+    "refresh": "Atualizar",
+    "forbidden": "Sem permissão para listar {{what}} em {{scope}}",
+    "forbiddenCluster": "Sem permissão para listar {{what}}",
+    "forbiddenHint": "Escolha um namespace em que você tenha acesso.",
+    "loadError": "Não foi possível carregar {{what}}",
+    "notInstalled": "{{what}} não está instalado neste cluster",
+    "notInstalledHint": "Este tipo de recurso vem de uma extensão (CRD) que o cluster não tem.",
+    "empty": "Nenhum item encontrado.",
+    "loading": "Carregando…",
+    "count_one": "{{shown}} de {{count}} item",
+    "count_other": "{{shown}} de {{count}} itens",
+    "wide": "Mais colunas",
+    "kinds": "Tipos de recurso"
+  },
+  "kinds": {
+    "nodes": "Nodes",
+    "namespaces": "Namespaces",
+    "events": "Events",
+    "deployments": "Deployments",
+    "statefulsets": "StatefulSets",
+    "daemonsets": "DaemonSets",
+    "replicasets": "ReplicaSets",
+    "jobs": "Jobs",
+    "cronjobs": "CronJobs",
+    "services": "Services",
+    "endpointslices": "EndpointSlices",
+    "ingresses": "Ingresses",
+    "ingressclasses": "IngressClasses",
+    "gateways": "Gateways",
+    "httproutes": "HTTPRoutes",
+    "networkpolicies": "NetworkPolicies",
+    "pvcs": "PersistentVolumeClaims",
+    "pvs": "PersistentVolumes",
+    "storageclasses": "StorageClasses",
+    "configmaps": "ConfigMaps",
+    "secrets": "Secrets",
+    "serviceaccounts": "ServiceAccounts",
+    "roles": "Roles",
+    "rolebindings": "RoleBindings",
+    "clusterroles": "ClusterRoles",
+    "clusterrolebindings": "ClusterRoleBindings"
   }
 }

@@ -3,7 +3,7 @@
 Ponto de partida de cada sessão de trabalho: o que foi feito, o que vem a seguir
 e o que está bloqueado. Atualize ao fim de cada tarefa.
 
-**Fase atual:** 0 concluída em 02/11/2026 (`v0.1.0`); próxima: 1 — Navegação e operação ([roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02))
+**Fase atual:** 1 — Navegação e operação (Fase 0 concluída em 02/11/2026, `v0.1.0`) ([roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02))
 
 ## Concluído
 
@@ -249,13 +249,56 @@ lista de pods, HTTPS, imagem de 47 MB, Helm chart sem permissões para a
 ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
 (unidade, envtest de RBAC, integração com kind) e 86 no frontend.
 
+### 02/11/2026 — Tarefa 1.1: listas genéricas
+- **15 páginas do menu** passaram a listar recursos de verdade (eram
+  placeholders): nós, namespaces, eventos, deployments (+ ReplicaSets),
+  StatefulSets, DaemonSets, Jobs/CronJobs, Services (+ EndpointSlices),
+  Ingress/IngressClasses/Gateways/HTTPRoutes, NetworkPolicies, PVCs/PVs,
+  StorageClasses, ConfigMaps, Secrets e RBAC (ServiceAccounts, Roles,
+  RoleBindings, ClusterRoles, ClusterRoleBindings).
+- **Decisão: formato Table da API** (`Accept: application/json;as=Table;v=v1;g=meta.k8s.io`),
+  o mesmo do `kubectl get`. O cluster define as colunas de cada tipo,
+  inclusive de CRDs, sem código específico; colunas de prioridade > 0 aparecem
+  em "Mais colunas" (como `-o wide`). Em Secrets, a resposta traz só metadados,
+  nunca os valores.
+- `lib/k8s/catalog.ts`: tipos de recurso (grupo, versão, escopo) e páginas.
+  `pages/Resources.tsx`: lista genérica com abas (`?k=`), namespace (`?ns=`),
+  filtro, status coloridos, idade para colunas de data e mensagens de 403 e de
+  extensão não instalada (404). Seletor de namespace e mensagens de erro
+  extraídos para `components/resources/common.tsx` (Pods usa os mesmos).
+- **Verificado:**
+  - 95 testes Vitest (9 novos);
+  - varredura no kind das 26 abas: como administrador, contagens reais e
+    Gateway API "não instalada"; como `dev-limitado`, 403 em todas (só lê pods);
+    nenhum erro de página;
+  - capturas novas: [img/recursos-deployments.png](img/recursos-deployments.png)
+    e [img/recursos-rbac.png](img/recursos-rbac.png);
+  - corrigidos na conferência visual: nomes quebrando em duas linhas e datas
+    cruas (ISO) em vez de idade.
+- **Limitações:** clicar numa linha ainda não abre o detalhe (1.3); listas se
+  atualizam a cada 10 s, sem watch (1.2).
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
-Detalhar em tarefas pequenas no início da fase. Escopo do
-[roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02):
-listas e detalhes de todos os recursos (genérico via discovery + telas dos
-principais), tempo real com watch, editor YAML com validação e diff, logs,
-exec, eventos, ações (escalar, reiniciar, rollback, excluir) e OIDC.
+Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
+Dividido em tarefas pequenas, cada uma testada, commitada e com versão
+utilizável:
+
+1. **1.2 — Tempo real:** watch pelo proxy (stream), com reconexão e
+   `resourceVersion`; listas atualizadas sem recarregar.
+2. **1.3 — Detalhe de recurso:** metadados, labels, condições, eventos do objeto
+   e YAML somente leitura; recursos personalizados (CRDs) via discovery.
+3. **1.4 — Edição:** editor YAML (Monaco) com validação, dry-run no servidor,
+   diff e server-side apply; aplicar YAML arbitrário.
+4. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
+5. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
+   verificação de origem).
+6. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
+   confirmação; ações ocultas quando o RBAC não permite.
+7. **1.8 — Busca global** (Ctrl+K) e página de eventos com filtros.
+8. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
+9. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+    (kwok).
 
 ## Como publicar uma versão
 

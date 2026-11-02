@@ -96,14 +96,6 @@
   "pods": {
     "count_one": "{{shown}} of {{count}} pod",
     "count_other": "{{shown}} of {{count}} pods",
-    "filter": "Filter by name or namespace",
-    "refresh": "Refresh",
-    "namespace": "Namespace",
-    "allNamespaces": "All namespaces",
-    "namespacePlaceholder": "Search or type a namespace",
-    "forbidden": "Not allowed to list pods in {{scope}}",
-    "forbiddenHint": "Pick a namespace you have access to.",
-    "loadError": "Could not load pods",
     "empty": "No pods found.",
     "loading": "Loading…",
     "col": {
@@ -115,12 +107,59 @@
       "age": "Age",
       "node": "Node",
       "ip": "IP"
-    },
-    "namespaceTypeHint": "Type the namespace name."
+    }
   },
   "combobox": {
     "search": "Search…",
     "empty": "No results.",
     "useCustom": "Use “{{value}}”"
+  },
+  "resources": {
+    "allNamespaces": "All namespaces",
+    "namespace": "Namespace",
+    "namespacePlaceholder": "Search or type a namespace",
+    "namespaceTypeHint": "Type the namespace name.",
+    "filter": "Filter by name or namespace",
+    "refresh": "Refresh",
+    "forbidden": "Not allowed to list {{what}} in {{scope}}",
+    "forbiddenCluster": "Not allowed to list {{what}}",
+    "forbiddenHint": "Pick a namespace you have access to.",
+    "loadError": "Could not load {{what}}",
+    "notInstalled": "{{what}} is not installed in this cluster",
+    "notInstalledHint": "This resource type comes from an extension (CRD) the cluster doesn't have.",
+    "empty": "No items found.",
+    "loading": "Loading…",
+    "count_one": "{{shown}} of {{count}} item",
+    "count_other": "{{shown}} of {{count}} items",
+    "wide": "More columns",
+    "kinds": "Resource types"
+  },
+  "kinds": {
+    "nodes": "Nodes",
+    "namespaces": "Namespaces",
+    "events": "Events",
+    "deployments": "Deployments",
+    "statefulsets": "StatefulSets",
+    "daemonsets": "DaemonSets",
+    "replicasets": "ReplicaSets",
+    "jobs": "Jobs",
+    "cronjobs": "CronJobs",
+    "services": "Services",
+    "endpointslices": "EndpointSlices",
+    "ingresses": "Ingresses",
+    "ingressclasses": "IngressClasses",
+    "gateways": "Gateways",
+    "httproutes": "HTTPRoutes",
+    "networkpolicies": "NetworkPolicies",
+    "pvcs": "PersistentVolumeClaims",
+    "pvs": "PersistentVolumes",
+    "storageclasses": "StorageClasses",
+    "configmaps": "ConfigMaps",
+    "secrets": "Secrets",
+    "serviceaccounts": "ServiceAccounts",
+    "roles": "Roles",
+    "rolebindings": "RoleBindings",
+    "clusterroles": "ClusterRoles",
+    "clusterrolebindings": "ClusterRoleBindings"
   }
 }

@@ -76,6 +76,19 @@ console.log('modo local:')
   await shot(page, 'pods-claro')
   await page.getByRole('button', { name: 'Alternar tema' }).click()
 
+  await page.getByRole('link', { name: 'Deployments', exact: true }).click()
+  await page.getByRole('cell', { name: 'coredns' }).waitFor()
+  await page.getByRole('button', { name: 'Mais colunas' }).click()
+  await shot(page, 'recursos-deployments')
+
+  await page.getByRole('link', { name: 'Controle de acesso' }).click()
+  await page.getByRole('tab', { name: 'ClusterRoles' }).click()
+  await page.getByRole('cell', { name: 'cluster-admin', exact: true }).waitFor()
+  await shot(page, 'recursos-rbac')
+
+  await page.getByRole('link', { name: 'Pods', exact: true }).click()
+  await page.getByText('imagem-inexistente').waitFor()
+
   await pick(page, 'Cluster', 'dev-limitado')
   await page.getByText('Sem permissão para listar pods em todos os namespaces').waitFor()
   await shot(page, 'pods-sem-permissao')

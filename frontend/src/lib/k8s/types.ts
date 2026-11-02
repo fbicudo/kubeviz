@@ -64,3 +64,26 @@ export interface Namespace {
   metadata: ObjectMeta
   status: { phase?: string }
 }
+
+/** Formato Table (meta.k8s.io/v1), o mesmo usado pelo `kubectl get`. */
+export interface TableColumn {
+  name: string
+  type: 'string' | 'integer' | 'number' | 'boolean' | 'date'
+  format?: string
+  description?: string
+  /** 0 = coluna padrão; maior que 0 = só no modo "wide". */
+  priority: number
+}
+
+export interface TableRow {
+  cells: unknown[]
+  /** Com includeObject=Metadata (padrão): apenas os metadados do objeto. */
+  object: { metadata: ObjectMeta }
+}
+
+export interface Table {
+  kind: 'Table'
+  columnDefinitions: TableColumn[]
+  rows: TableRow[]
+  metadata: { resourceVersion?: string }
+}
