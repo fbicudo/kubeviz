@@ -4,7 +4,7 @@ import { StatTile } from '@/components/ui/stat-tile'
 import { Link } from '@tanstack/react-router'
 import { ApiError, getVersion } from '@/lib/api'
 import { isNodeReady, summarizePod } from '@/lib/k8s/pods'
-import { useNodes, usePods } from '@/lib/k8s/queries'
+import { useNodes, useNodesLive, usePods, usePodsLive } from '@/lib/k8s/queries'
 import { useClusterInfo } from '@/lib/queries'
 
 export function Overview() {
@@ -57,6 +57,7 @@ function useClusterDown() {
 function NodesTile() {
   const { t } = useTranslation()
   const nodes = useNodes()
+  useNodesLive(nodes.isSuccess)
   if (useClusterDown()) {
     return <StatTile label={t('overview.nodes')} status="critical" value="—" hint={t('cluster.unreachable')} />
   }
@@ -78,6 +79,7 @@ function NodesTile() {
 function PodsTile() {
   const { t } = useTranslation()
   const pods = usePods('')
+  usePodsLive('', pods.isSuccess)
   if (useClusterDown()) {
     return <StatTile label={t('overview.pods')} status="critical" value="—" hint={t('cluster.unreachable')} />
   }

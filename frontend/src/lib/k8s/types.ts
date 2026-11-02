@@ -7,6 +7,7 @@ export interface ObjectMeta {
   uid: string
   creationTimestamp: string
   deletionTimestamp?: string
+  resourceVersion?: string
   labels?: Record<string, string>
 }
 

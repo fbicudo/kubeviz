@@ -278,26 +278,48 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
 - **Limitações:** clicar numa linha ainda não abre o detalhe (1.3); listas se
   atualizam a cada 10 s, sem watch (1.2).
 
+### 02/11/2026 — Tarefa 1.2: tempo real
+- **Watch pela API** (`lib/k8s/watch.ts`): a lista carrega normalmente e, a
+  partir do seu `resourceVersion`, abre um watch (stream NDJSON) cujos eventos
+  são aplicados ao cache (ADDED, MODIFIED, DELETED, BOOKMARK). Reconecta quando
+  o servidor encerra o stream; com `410 Gone`, recarrega a lista; com erro de
+  rede, tenta de novo com espera crescente (1 s a 30 s); sem permissão de watch
+  (403) ou sem `resourceVersion`, volta à consulta a cada 10 s.
+- Com o watch ativo, a consulta periódica é desligada. Funciona também no
+  formato Table (listas genéricas), na página de Pods e nos indicadores da
+  visão geral. Indicador "Ao vivo" / "Conectando…" / "A cada 10 s" nas listas.
+- Idades ("3m") passam a ser recalculadas a cada 30 s por um relógio, já que a
+  lista não é mais recarregada.
+- **Backend:** novo teste garante que o proxy repassa cada evento do stream sem
+  acumular (atravessando todos os middlewares).
+- **Verificado:**
+  - 102 testes Vitest (unidade: eventos partidos entre pedaços, inclusive
+    caracteres multibyte; aplicação de eventos a listas e Tables; integração:
+    pods surgindo e sumindo por eventos, recuo para consulta com 403);
+  - no kind, com `kubectl scale`: pod novo na lista em 0,5 s, pod removido em
+    1,4 s, coluna Ready de Deployments em 0,1 s; nenhuma consulta periódica em
+    12 s com o watch ativo.
+- **Problema evitado:** sem `resourceVersion` (respostas incompletas), o hook
+  entrava em laço de recarga; agora recua para consulta periódica.
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.2 — Tempo real:** watch pelo proxy (stream), com reconexão e
-   `resourceVersion`; listas atualizadas sem recarregar.
-2. **1.3 — Detalhe de recurso:** metadados, labels, condições, eventos do objeto
+1. **1.3 — Detalhe de recurso:** metadados, labels, condições, eventos do objeto
    e YAML somente leitura; recursos personalizados (CRDs) via discovery.
-3. **1.4 — Edição:** editor YAML (Monaco) com validação, dry-run no servidor,
+2. **1.4 — Edição:** editor YAML (Monaco) com validação, dry-run no servidor,
    diff e server-side apply; aplicar YAML arbitrário.
-4. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
-5. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
+3. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
+4. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
    verificação de origem).
-6. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
+5. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
    confirmação; ações ocultas quando o RBAC não permite.
-7. **1.8 — Busca global** (Ctrl+K) e página de eventos com filtros.
-8. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
-9. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+6. **1.8 — Busca global** (Ctrl+K) e página de eventos com filtros.
+7. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
+8. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
     (kwok).
 
 ## Como publicar uma versão

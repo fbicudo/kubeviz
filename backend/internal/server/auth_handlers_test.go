@@ -1,11 +1,14 @@
 package server
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/fbicudo/kubeviz/backend/internal/cluster"
 )
@@ -174,5 +177,56 @@ func TestProxyClusterDown(t *testing.T) {
 	rec := do(t, s.Handler(), "GET", "/api/k8s/version", "", map[string]string{"Cookie": loggedIn(s, "")})
 	if rec.Code != http.StatusBadGateway || !strings.Contains(rec.Body.String(), "inacessível") {
 		t.Errorf("cluster fora do ar: %d %s", rec.Code, rec.Body)
+	}
+}
+
+// O watch do Kubernetes é um stream longo: cada evento precisa chegar ao
+// navegador assim que gerado, sem esperar a resposta terminar.
+func TestProxyStreamsWatchWithoutBuffering(t *testing.T) {
+	release := make(chan struct{})
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintln(w, `{"type":"ADDED","object":{"metadata":{"name":"primeiro"}}}`)
+		w.(http.Flusher).Flush()
+		<-release // o segundo evento só existe depois que o primeiro chegou
+		fmt.Fprintln(w, `{"type":"ADDED","object":{"metadata":{"name":"segundo"}}}`)
+	}))
+	defer api.Close()
+
+	fc := newFakeCluster()
+	fc.host = api.URL
+	s := newServer(fc, Options{})
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	req, _ := http.NewRequest("GET", srv.URL+"/api/k8s/api/v1/pods?watch=1", nil)
+	req.Header.Set("Cookie", loggedIn(s, ""))
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	lines := bufio.NewScanner(resp.Body)
+	got := make(chan string, 2)
+	go func() {
+		for lines.Scan() {
+			got <- lines.Text()
+		}
+		close(got)
+	}()
+
+	select {
+	case line := <-got:
+		if !strings.Contains(line, "primeiro") {
+			t.Fatalf("primeiro evento = %q", line)
+		}
+	case <-time.After(3 * time.Second):
+		close(release)
+		t.Fatal("o primeiro evento ficou retido no proxy")
+	}
+	close(release)
+	if line := <-got; !strings.Contains(line, "segundo") {
+		t.Fatalf("segundo evento = %q", line)
 	}
 }

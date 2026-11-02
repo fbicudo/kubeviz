@@ -8,7 +8,9 @@ import type { Status } from '@/components/ui/stat-tile'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { age } from '@/lib/format'
 import { resourcePages, type ResourceKind } from '@/lib/k8s/catalog'
-import { useResourceTable } from '@/lib/k8s/queries'
+import { useResourceTable, useResourceTableLive } from '@/lib/k8s/queries'
+import { LiveIndicator } from '@/components/resources/LiveIndicator'
+import { useNow } from '@/lib/use-now'
 import type { TableColumn, TableRow } from '@/lib/k8s/types'
 import { cn } from '@/lib/utils'
 
@@ -75,6 +77,8 @@ function ResourceList({ kind, namespace, onNamespace }: ResourceListProps) {
   const [filter, setFilter] = useState('')
   const [wide, setWide] = useState(false)
   const table = useResourceTable(kind, namespace)
+  const live = useResourceTableLive(kind, namespace, table.isSuccess)
+  const now = useNow()
   const what = t(`kinds.${kind.id}`)
 
   const rows = useMemo(() => {
@@ -92,6 +96,7 @@ function ResourceList({ kind, namespace, onNamespace }: ResourceListProps) {
         <p className="mr-auto text-muted">
           {table.data && !table.isError ? t('resources.count', { shown: rows.length, count: table.data.rows.length }) : ' '}
         </p>
+        {!table.isError && <LiveIndicator state={live} />}
         {kind.namespaced && <NamespacePicker value={namespace} onChange={onNamespace} />}
         <FilterInput value={filter} onChange={setFilter} />
         {hasWide && (
@@ -112,7 +117,7 @@ function ResourceList({ kind, namespace, onNamespace }: ResourceListProps) {
           wide={wide}
           showNamespace={kind.namespaced && !namespace}
           loading={table.isPending}
-          now={table.dataUpdatedAt}
+          now={now}
         />
       )}
     </div>

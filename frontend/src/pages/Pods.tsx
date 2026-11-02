@@ -5,7 +5,9 @@ import { FilterInput, LoadError, NamespacePicker, RefreshButton } from '@/compon
 import { StatusBadge } from '@/components/ui/status-badge'
 import { age } from '@/lib/format'
 import { summarizePod } from '@/lib/k8s/pods'
-import { usePods } from '@/lib/k8s/queries'
+import { usePods, usePodsLive } from '@/lib/k8s/queries'
+import { LiveIndicator } from '@/components/resources/LiveIndicator'
+import { useNow } from '@/lib/use-now'
 import type { Pod } from '@/lib/k8s/types'
 
 /** Lista de pods. Namespace vem de ?ns=; ausente = todos os namespaces. */
@@ -15,6 +17,8 @@ export function Pods() {
   const navigate = useNavigate()
   const [filter, setFilter] = useState('')
   const pods = usePods(namespace)
+  const live = usePodsLive(namespace, pods.isSuccess)
+  const now = useNow()
 
   const setNamespace = (ns: string) => void navigate({ to: '/pods', search: ns ? { ns } : {} })
 
@@ -27,13 +31,14 @@ export function Pods() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
           <h1 className="text-lg font-semibold">{t('nav.pods')}</h1>
           <p className="text-muted">
             {pods.data && !pods.isError ? t('pods.count', { shown: rows.length, count: pods.data.items.length }) : ' '}
           </p>
         </div>
+        <LiveIndicator state={live} />
         <NamespacePicker value={namespace} onChange={setNamespace} />
         <FilterInput value={filter} onChange={setFilter} />
         <RefreshButton onClick={() => void pods.refetch()} spinning={pods.isFetching} />
@@ -42,7 +47,7 @@ export function Pods() {
       {pods.isError ? (
         <LoadError error={pods.error} what="pods" namespace={namespace} namespaced />
       ) : (
-        <PodTable pods={rows} loading={pods.isPending} showNamespace={!namespace} now={pods.dataUpdatedAt} />
+        <PodTable pods={rows} loading={pods.isPending} showNamespace={!namespace} now={now} />
       )}
     </div>
   )

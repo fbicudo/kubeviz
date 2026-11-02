@@ -161,5 +161,13 @@
     "rolebindings": "RoleBindings",
     "clusterroles": "ClusterRoles",
     "clusterrolebindings": "ClusterRoleBindings"
+  },
+  "live": {
+    "live": "Live",
+    "liveHint": "Updated in real time (Kubernetes API watch).",
+    "connecting": "Connecting…",
+    "connectingHint": "Opening the real-time connection; retrying if it drops.",
+    "polling": "Every 10 s",
+    "pollingHint": "No watch permission: the list is fetched every 10 seconds."
   }
 }
