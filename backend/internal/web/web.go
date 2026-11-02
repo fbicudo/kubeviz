@@ -22,9 +22,9 @@ func Assets() fs.FS {
 	return sub
 }
 
-const notBuilt = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Kubora</title>
+const notBuilt = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>KubeViz</title>
 <body style="font-family:system-ui;background:#0b0e14;color:#c9d1d9;padding:2rem">
-<h1>Kubora</h1><p>A interface não foi compilada neste binário. Rode <code>make build</code>
+<h1>KubeViz</h1><p>A interface não foi compilada neste binário. Rode <code>make build</code>
 ou use <code>make dev-frontend</code> durante o desenvolvimento.</p></body></html>`
 
 // Handler serve arquivos estáticos de assets. Rotas que não correspondem a um

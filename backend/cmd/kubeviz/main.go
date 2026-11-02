@@ -1,4 +1,4 @@
-// Comando kubora: console web para gestão de clusters Kubernetes.
+// Comando kubeviz: console web para gestão de clusters Kubernetes.
 package main
 
 import (
@@ -10,24 +10,24 @@ import (
 	"os/signal"
 	"syscall"
 
-	"kubora.dev/kubora/internal/auth"
-	"kubora.dev/kubora/internal/cluster"
-	"kubora.dev/kubora/internal/config"
-	"kubora.dev/kubora/internal/server"
-	"kubora.dev/kubora/internal/version"
-	"kubora.dev/kubora/internal/web"
+	"kubeviz.dev/kubeviz/internal/auth"
+	"kubeviz.dev/kubeviz/internal/cluster"
+	"kubeviz.dev/kubeviz/internal/config"
+	"kubeviz.dev/kubeviz/internal/server"
+	"kubeviz.dev/kubeviz/internal/version"
+	"kubeviz.dev/kubeviz/internal/web"
 )
 
 func main() {
 	cfg := config.MustLoad()
 	v := version.Get()
 	if cfg.ShowVersion {
-		fmt.Printf("kubora %s (commit %s, %s, %s)\n", v.Version, v.Commit, v.Date, v.GoVersion)
+		fmt.Printf("kubeviz %s (commit %s, %s, %s)\n", v.Version, v.Commit, v.Date, v.GoVersion)
 		return
 	}
 	log := newLogger(cfg)
 
-	log.Info("iniciando Kubora", "versao", v.Version, "commit", v.Commit)
+	log.Info("iniciando KubeViz", "versao", v.Version, "commit", v.Commit)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -36,7 +36,7 @@ func main() {
 		Mode:       cfg.Mode,
 		Kubeconfig: cfg.Kubeconfig,
 		Context:    cfg.Context,
-		UserAgent:  "kubora/" + v.Version,
+		UserAgent:  "kubeviz/" + v.Version,
 	})
 	if err != nil {
 		log.Error("não foi possível configurar o acesso ao cluster", "erro", err)
@@ -50,7 +50,7 @@ func main() {
 	if cl.Mode() == cluster.ModeLocal {
 		opts.LocalToken = auth.RandomToken()
 		// Como no Jupyter: só quem vê o terminal recebe o link de acesso.
-		fmt.Fprintf(os.Stderr, "\n  Kubora pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n", browserURL(cfg.Listen), opts.LocalToken)
+		fmt.Fprintf(os.Stderr, "\n  KubeViz pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n", browserURL(cfg.Listen), opts.LocalToken)
 		if !opts.LoopbackOnly {
 			log.Warn("modo local exposto fora de localhost: quem tiver o link usará suas credenciais do kubeconfig", "listen", cfg.Listen)
 		}

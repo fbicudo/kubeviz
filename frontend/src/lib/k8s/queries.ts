@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
 import type { List, Namespace, Node, Pod } from './types'
 
-/** Chamada à API do Kubernetes pelo proxy autenticado do Kubora. */
+/** Chamada à API do Kubernetes pelo proxy autenticado do KubeViz. */
 export const k8sGet = <T>(path: string) => apiGet<T>(`/api/k8s${path}`)
 
 /** Até o watch em tempo real (Fase 1), as listas são reconsultadas a cada 10 s. */

@@ -1,8 +1,8 @@
-// Package cluster gerencia a conexão do Kubora com a API do Kubernetes.
+// Package cluster gerencia a conexão do KubeViz com a API do Kubernetes.
 //
 // Há dois modos:
 //   - local: usa o kubeconfig do usuário e permite trocar de contexto. A troca
-//     vale só para o Kubora; o kubeconfig nunca é alterado.
+//     vale só para o KubeViz; o kubeconfig nunca é alterado.
 //   - in-cluster: usa a ServiceAccount do pod (Helm chart).
 package cluster
 
@@ -216,7 +216,7 @@ func (m *Manager) RESTConfig() *rest.Config {
 // ConfigForToken devolve a configuração ativa com as credenciais trocadas
 // pelo token do usuário. Usada no modo in-cluster: cada requisição chega à
 // API com a identidade de quem fez login, nunca com a da ServiceAccount do
-// Kubora. Mantém apenas endereço e CA do cluster.
+// KubeViz. Mantém apenas endereço e CA do cluster.
 func (m *Manager) ConfigForToken(token string) *rest.Config {
 	m.mu.RLock()
 	base := m.config

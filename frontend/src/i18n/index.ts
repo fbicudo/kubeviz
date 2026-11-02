@@ -20,7 +20,7 @@ void i18n
     interpolation: { escapeValue: false },
     detection: {
       order: ['localStorage', 'navigator'],
-      lookupLocalStorage: 'kubora.lang',
+      lookupLocalStorage: 'kubeviz.lang',
       caches: ['localStorage'],
       // "pt", "pt-PT" etc. caem em pt-BR; qualquer outro idioma, em inglês.
       convertDetectedLanguage: (lng) => (lng.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'),

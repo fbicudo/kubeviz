@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	"kubora.dev/kubora/internal/cluster"
+	"kubeviz.dev/kubeviz/internal/cluster"
 )
 
 const devUser = "system:serviceaccount:time-a:dev"
@@ -104,7 +104,7 @@ func TestRBACWithRealAPIServer(t *testing.T) {
 
 	// Modo in-cluster: a configuração base tem credenciais de administrador,
 	// que nunca devem ser usadas nas requisições dos usuários.
-	mgr := cluster.NewInCluster(cfg, "kubora-envtest")
+	mgr := cluster.NewInCluster(cfg, "kubeviz-envtest")
 	srv := httptest.NewServer(New(slog.New(slog.DiscardHandler), testAssets, mgr, Options{}).Handler())
 	t.Cleanup(srv.Close)
 

@@ -1,4 +1,4 @@
-# Como contribuir com o Kubora
+# Como contribuir com o KubeViz
 
 Obrigado pelo interesse! Contribuições de todos os tipos são bem-vindas: código,
 documentação, traduções, testes, relatos de bugs e sugestões.
@@ -21,7 +21,7 @@ com cluster, Docker + kind.
 make dev-backend    # API em http://localhost:4466
 make dev-frontend   # UI com recarga automática em http://localhost:5173
 make test           # testes do backend e do frontend
-make build          # binário único em bin/kubora (inclui a UI)
+make build          # binário único em bin/kubeviz (inclui a UI)
 make test-envtest   # testes de RBAC contra um API server real
 ```
 

@@ -5,7 +5,7 @@ import "runtime"
 
 // Preenchidas em tempo de build:
 //
-//	go build -ldflags "-X kubora.dev/kubora/internal/version.Version=v0.1.0 ..."
+//	go build -ldflags "-X kubeviz.dev/kubeviz/internal/version.Version=v0.1.0 ..."
 var (
 	Version = "dev"
 	Commit  = "none"

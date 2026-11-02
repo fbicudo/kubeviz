@@ -8,7 +8,7 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"kubora.dev/kubora/internal/cluster"
+	"kubeviz.dev/kubeviz/internal/cluster"
 )
 
 // Cluster é o que o servidor precisa da conexão com o Kubernetes.

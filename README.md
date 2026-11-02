@@ -1,4 +1,4 @@
-# Kubora
+# KubeViz
 
 Interface web open source para gestão de clusters Kubernetes, com painéis de
 performance e uptime e assistentes (wizards) para configurar o ambiente.
@@ -7,7 +7,7 @@ performance e uptime e assistentes (wizards) para configurar o ambiente.
 > contexto, autentica usuários, respeita o RBAC de cada um e já lista pods com
 > status. Acompanhe em [docs/PROGRESSO.md](docs/PROGRESSO.md).
 
-![Lista de pods do Kubora num cluster kind](docs/img/pods-admin.png)
+![Lista de pods do KubeViz num cluster kind](docs/img/pods-admin.png)
 
 ## Desenvolvimento
 
@@ -17,19 +17,19 @@ Requisitos: Go 1.27+, Node.js LTS, pnpm. Detalhes em [CONTRIBUTING.md](CONTRIBUT
 make deps           # dependências
 make dev-backend    # API em http://127.0.0.1:4466
 make dev-frontend   # UI em http://localhost:5173
-make build          # binário único em bin/kubora
+make build          # binário único em bin/kubeviz
 make test-envtest   # testes de RBAC contra um API server real (sem Docker)
 ```
 
 Executando:
 
 ```bash
-./bin/kubora                              # usa o kubeconfig e o contexto atuais
-./bin/kubora --context prod --log-level debug
-./bin/kubora --kubeconfig ~/outro.yaml
+./bin/kubeviz                              # usa o kubeconfig e o contexto atuais
+./bin/kubeviz --context prod --log-level debug
+./bin/kubeviz --kubeconfig ~/outro.yaml
 ```
 
-O Kubora imprime no terminal um link com um token de acesso gerado a cada
+O KubeViz imprime no terminal um link com um token de acesso gerado a cada
 execução (`http://127.0.0.1:4466/auth/local?token=...`). Só quem tem o link
 entra, o que impede outras pessoas na mesma máquina de usar o seu kubeconfig.
 
@@ -63,7 +63,7 @@ Licença: [Apache-2.0](LICENSE).
   container**, instalável com um comando via **Helm**.
 - **Licença:** **Apache-2.0** (padrão do ecossistema CNCF, inclui concessão de
   patentes).
-- **Decisões já tomadas:** nome **Kubora**; projeto de comunidade open source; produto próprio (não
+- **Decisões já tomadas:** nome **KubeViz**; projeto de comunidade open source; produto próprio (não
   plugin do Headlamp); um cluster por instalação no MVP; métricas via Prometheus
   com coletor embutido; uptime por estado do Kubernetes + sondas; oito assistentes;
   login OIDC; visual de painel de observabilidade; pt-BR e inglês. Lista completa

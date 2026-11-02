@@ -1,4 +1,4 @@
-# Progresso do Kubora
+# Progresso do KubeViz
 
 Ponto de partida de cada sessão de trabalho: o que foi feito, o que vem a seguir
 e o que está bloqueado. Atualize ao fim de cada tarefa.
@@ -11,8 +11,8 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - Repositório git, licença Apache-2.0, `CONTRIBUTING`, `CODE_OF_CONDUCT`
   (Contributor Covenant 2.1), `SECURITY`, `GOVERNANCE`, `MAINTAINERS`, modelos de
   issue e PR, `.editorconfig`, `Makefile`, CI do GitHub Actions.
-- **Backend Go** (`backend/`, módulo `kubora.dev/kubora`): configuração por
-  flags/ambiente (`KUBORA_*`), servidor HTTP com encerramento gracioso, logs
+- **Backend Go** (`backend/`, módulo `kubeviz.dev/kubeviz`): configuração por
+  flags/ambiente (`KUBEVIZ_*`), servidor HTTP com encerramento gracioso, logs
   estruturados (slog), `/healthz`, `/readyz`, `/api/v1/version`, 404 em JSON para
   rotas de API, cabeçalhos de segurança (CSP etc.), UI embutida com `go:embed` e
   fallback de SPA, `--version`.
@@ -34,7 +34,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   navegação pelo menu, sem erros no console nem bloqueios da CSP. Capturas em
   [img/overview-dark.png](img/overview-dark.png) e [img/pods-light.png](img/pods-light.png).
 - Contato do Código de Conduta definido: fbicudo@gmail.com.
-- Cluster de desenvolvimento `kind-kubora-dev` (Kubernetes 1.37, 1 nó) criado e
+- Cluster de desenvolvimento `kind-kubeviz-dev` (Kubernetes 1.37, 1 nó) criado e
   definido como contexto atual do kubectl.
 
 ### 02/11/2026 — Tarefa 0.2: conexão com o cluster
@@ -43,7 +43,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   de contexto em memória, sem alterar o kubeconfig do usuário. Consulta
   `/version` com timeout de 5 s; erros de conexão aparecem no estado, não
   derrubam o servidor.
-- **Novas flags:** `--context` e `--mode` (env `KUBORA_CONTEXT`, `KUBORA_MODE`).
+- **Novas flags:** `--context` e `--mode` (env `KUBEVIZ_CONTEXT`, `KUBEVIZ_MODE`).
 - **API:** `GET /api/v1/cluster`, `GET /api/v1/contexts`,
   `PUT /api/v1/contexts/current`.
 - **Segurança do modo local** (o servidor usa as credenciais do kubeconfig e
@@ -74,7 +74,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   a do kubeconfig, consultada na hora (muda com o contexto).
 - **Modo in-cluster:** `POST /api/v1/auth/login` com token do Kubernetes,
   validado por `SelfSubjectReview`. **Decisão:** em vez de impersonation, o
-  token do próprio usuário é repassado à API; a ServiceAccount do Kubora não
+  token do próprio usuário é repassado à API; a ServiceAccount do KubeViz não
   age em nome de ninguém. Impersonation fica para o OIDC (Fase 1).
 - **Sessões** (pacote `internal/auth`): em memória, cookie `HttpOnly` +
   `SameSite=Strict` (+ `Secure` atrás de HTTPS), 12 h; `GET /api/v1/auth/session`
@@ -92,7 +92,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
     Docker): a ServiceAccount `time-a/dev` lê pods de `time-a` e recebe 403 em
     outro namespace, em secrets, na lista de namespaces e ao criar pods; os 403
     citam a própria ServiceAccount, provando que a credencial de administrador do
-    Kubora não é usada; cabeçalhos `Impersonate-*` do navegador são descartados;
+    KubeViz não é usada; cabeçalhos `Impersonate-*` do navegador são descartados;
   - de ponta a ponta no kind (modo local): 401 sem sessão e com token errado;
     link correto redireciona para `/` com cookie `HttpOnly`; proxy lista os 8
     pods de `kube-system`; logout encerra o acesso;
@@ -137,6 +137,18 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - **Limitações conhecidas:** listas sem virtualização e sem watch (Fase 1);
   o seletor de contexto e de namespace usam `<select>` nativo (tarefa 0.6).
 
+### 02/11/2026 — Projeto renomeado para KubeViz
+- Nome anterior: Kubora. Trocados nome exibido, binário (`kubeviz`), módulo Go
+  (`kubeviz.dev/kubeviz`), variáveis de ambiente (`KUBEVIZ_*`), cookie de sessão
+  (`kubeviz_session`), chaves do `localStorage` e documentação. Verificação do
+  nome em [06 §6.2](06-perguntas-em-aberto.md#62-verificação-do-nome-kubeviz-02112026).
+- Cluster kind recriado como `kubeviz-dev`. O cenário de demonstração passou a
+  ser versionado em `hack/demo/` e aplicado com `make demo`.
+- Capturas de pods e da visão geral refeitas com o novo nome; as capturas das
+  tarefas 0.1 a 0.3 ainda mostram "Kubora".
+- A pasta local do projeto continua `~/k8s-console`; renomear quando o
+  repositório for criado no GitHub.
+
 ## Próximas tarefas (Fase 0)
 
 1. **0.5 — Empacotamento:** Dockerfile (distroless, multi-arquitetura) e Helm
@@ -153,7 +165,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 | Item | Por quê | Como resolver |
 |------|---------|---------------|
 | Usuário do GitHub | `MAINTAINERS.md` e caminhos do chart | Definir antes da tarefa 0.7 (publicação); não bloqueia 0.2 a 0.6 |
-| Domínio `kubora.dev` | O módulo Go usa `kubora.dev/kubora` | Definir antes da tarefa 0.7; se não for registrado, trocar o caminho do módulo (substituição simples nos imports) |
+| Domínio `kubeviz.dev` | O módulo Go usa `kubeviz.dev/kubeviz` | Definir antes da tarefa 0.7; se não for registrado, trocar o caminho do módulo (substituição simples nos imports) |
 
 ## Ambiente de desenvolvimento desta máquina
 
@@ -162,12 +174,10 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - Pelo apt: Docker 29.1, make 4.4, dependências do Chromium.
 - O usuário foi adicionado ao grupo `docker`; até o próximo login, use
   `sg docker -c "<comando>"` ou abra uma nova sessão.
-- Cenário de demonstração no kind: namespace `demo` com pods de exemplo e a
-  ServiceAccount `demo/dev` (só lê pods de `demo`). O arquivo
-  `~/.kube/kubora-demo.yaml` (fora do repositório) tem os contextos
-  `kind-kubora-dev` (administrador) e `dev-limitado` (token de 48 h, gerado em
-  02/11/2026). Rodar com `./bin/kubora --kubeconfig ~/.kube/kubora-demo.yaml`.
-- Cluster: `kind-kubora-dev` (recriar com
-  `kind create cluster --name kubora-dev`; remover com
-  `kind delete cluster --name kubora-dev`). A máquina tem 3,3 GB de RAM, então
+- Cenário de demonstração: `make demo` aplica `hack/demo/demo.yaml` (namespace
+  `demo` com pods de exemplo e a ServiceAccount `demo/dev`, que só lê pods de
+  `demo`) e gera `~/.kube/kubeviz-demo.yaml` (fora do repositório) com os
+  contextos `kind-kubeviz-dev` (administrador) e `dev-limitado` (token de 48 h).
+  Rodar com `./bin/kubeviz --kubeconfig ~/.kube/kubeviz-demo.yaml`.
+- Cluster: `kind-kubeviz-dev` (`make kind-up` / `make kind-down`). A máquina tem 3,3 GB de RAM, então
   manter apenas um cluster por vez.

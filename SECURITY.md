@@ -1,6 +1,6 @@
 # Política de segurança
 
-O Kubora acessa clusters Kubernetes com as credenciais dos usuários; falhas de
+O KubeViz acessa clusters Kubernetes com as credenciais dos usuários; falhas de
 segurança são tratadas com prioridade máxima.
 
 ## Como relatar uma vulnerabilidade

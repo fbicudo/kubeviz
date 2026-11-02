@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Kubora",
+    "name": "KubeViz",
     "tagline": "Kubernetes console"
   },
   "nav": {
@@ -62,7 +62,7 @@
   },
   "placeholder": {
     "title": "Under construction",
-    "body": "This area is part of the Kubora roadmap and has not been implemented yet."
+    "body": "This area is part of the KubeViz roadmap and has not been implemented yet."
   },
   "cluster": {
     "checking": "Checking connection",
@@ -77,12 +77,12 @@
     }
   },
   "auth": {
-    "title": "Sign in to Kubora",
+    "title": "Sign in to KubeViz",
     "unknownUser": "Unknown user",
     "groups": "Groups",
     "logout": "Sign out",
     "local": {
-      "body": "Open the link shown in the terminal where Kubora was started.",
+      "body": "Open the link shown in the terminal where KubeViz was started.",
       "hint": "The link carries an access token generated on each run, so other people on this machine cannot use your kubeconfig credentials."
     },
     "token": {

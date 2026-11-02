@@ -24,8 +24,8 @@ func TestLoadDefaults(t *testing.T) {
 
 func TestFlagOverridesEnv(t *testing.T) {
 	c, err := Load([]string{"--listen", ":9000"}, env(map[string]string{
-		"KUBORA_LISTEN":    "0.0.0.0:4466",
-		"KUBORA_LOG_LEVEL": "debug",
+		"KUBEVIZ_LISTEN":    "0.0.0.0:4466",
+		"KUBEVIZ_LOG_LEVEL": "debug",
 	}))
 	if err != nil {
 		t.Fatal(err)

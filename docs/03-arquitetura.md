@@ -137,14 +137,14 @@ GitOps).
 - Autenticação: OIDC (padrão recomendado), token de ServiceAccount/bearer e, no modo
   local, o kubeconfig do usuário.
 - **Como está implementado (tarefa 0.3):**
-  - *Modo local:* a cada execução o Kubora gera um token aleatório e imprime no
+  - *Modo local:* a cada execução o KubeViz gera um token aleatório e imprime no
     terminal um link `/auth/local?token=...`, como o Jupyter. Só quem vê o
     terminal entra; outros usuários da mesma máquina não usam o kubeconfig de
-    quem executou o Kubora. O token é trocado por uma sessão e sai da URL.
+    quem executou o KubeViz. O token é trocado por uma sessão e sai da URL.
   - *Modo in-cluster:* login com token do Kubernetes (ServiceAccount ou
     usuário), validado com `SelfSubjectReview`. As requisições seguem para a
     API **com o próprio token do usuário** (repasse), sem nenhuma credencial da
-    ServiceAccount do Kubora. A impersonation fica reservada para o OIDC, quando
+    ServiceAccount do KubeViz. A impersonation fica reservada para o OIDC, quando
     o API server não confia no provedor de identidade.
   - *Sessões:* ID aleatório de 256 bits em cookie `HttpOnly`, `SameSite=Strict`
     e `Secure` atrás de HTTPS; duração de 12 h; guardadas em memória (reiniciar
@@ -166,7 +166,7 @@ GitOps).
 ## 3.7 Estrutura de repositório proposta
 
 ```
-kubora/
+kubeviz/
 ├── backend/            # Go: cmd/, internal/{auth,proxy,metrics,uptime,wizards,store}
 ├── frontend/           # React + TS (Vite)
 ├── wizards/            # definições declarativas dos assistentes
@@ -191,7 +191,7 @@ kubora/
 - Repositório público no GitHub (conta pessoal no início). Se migrar para uma
   organização, o GitHub redireciona o repositório, mas imagens no GHCR e o endereço
   do Helm chart mudam; por isso, publicar a documentação de instalação apontando
-  para um domínio próprio do projeto (ex.: `charts.kubora.dev`) assim que houver
+  para um domínio próprio do projeto (ex.: `charts.kubeviz.dev`) assim que houver
   nome definitivo.
 - Arquivos desde a Fase 0: `LICENSE` (Apache-2.0), `CONTRIBUTING.md`,
   `CODE_OF_CONDUCT.md` (Contributor Covenant), `SECURITY.md` (canal privado para

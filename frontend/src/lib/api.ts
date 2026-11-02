@@ -1,4 +1,4 @@
-/** Erro devolvido pela API do Kubora (`{"error": "..."}`). */
+/** Erro devolvido pela API do KubeViz (`{"error": "..."}`). */
 export class ApiError extends Error {
   readonly status: number
 
@@ -26,7 +26,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     let message = res.statusText
     try {
-      // Erros do Kubora vêm em {"error"}; os da API do Kubernetes, em {"message"}.
+      // Erros do KubeViz vêm em {"error"}; os da API do Kubernetes, em {"message"}.
       const body = (await res.json()) as { error?: string; message?: string }
       message = body.error ?? body.message ?? message
     } catch {

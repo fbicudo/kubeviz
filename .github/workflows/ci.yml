@@ -46,5 +46,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: kubora-linux-amd64
-          path: bin/kubora
+          name: kubeviz-linux-amd64
+          path: bin/kubeviz

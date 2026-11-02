@@ -9,11 +9,11 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"kubora.dev/kubora/internal/auth"
-	"kubora.dev/kubora/internal/cluster"
+	"kubeviz.dev/kubeviz/internal/auth"
+	"kubeviz.dev/kubeviz/internal/cluster"
 )
 
-const sessionCookie = "kubora_session"
+const sessionCookie = "kubeviz_session"
 
 type sessionKey struct{}
 
@@ -79,7 +79,7 @@ func isHTTPS(r *http.Request) bool {
 
 // localLogin troca o token de inicialização (exibido no terminal) por uma
 // sessão. Impede que outros usuários da mesma máquina usem o kubeconfig de
-// quem executou o Kubora.
+// quem executou o KubeViz.
 func (s *Server) localLogin(w http.ResponseWriter, r *http.Request) {
 	if s.cluster.Mode() != cluster.ModeLocal || s.opts.LocalToken == "" {
 		http.NotFound(w, r)
@@ -88,7 +88,7 @@ func (s *Server) localLogin(w http.ResponseWriter, r *http.Request) {
 	if !auth.Equal(r.URL.Query().Get("token"), s.opts.LocalToken) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("Token inválido. Use o link exibido no terminal em que o Kubora foi iniciado.\n"))
+		_, _ = w.Write([]byte("Token inválido. Use o link exibido no terminal em que o KubeViz foi iniciado.\n"))
 		return
 	}
 	sess := s.sessions.Create(auth.User{}, "")

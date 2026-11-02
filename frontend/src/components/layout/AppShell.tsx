@@ -4,7 +4,7 @@ import { safeStorage } from '@/lib/utils'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 
-const COLLAPSED_KEY = 'kubora.sidebar.collapsed'
+const COLLAPSED_KEY = 'kubeviz.sidebar.collapsed'
 
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(() => safeStorage.get(COLLAPSED_KEY) === '1')

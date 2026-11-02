@@ -20,27 +20,27 @@
 | P14 | Idiomas | **pt-BR e inglês**, estrutura pronta para traduções da comunidade | RF-52 |
 | P15 | Licença | **Apache-2.0** | ADR-007 |
 | P16 | Repositório | **GitHub, conta pessoal**, com possibilidade de migrar para uma organização depois | [Arquitetura §3.9](03-arquitetura.md#39-governança-open-source) |
-| P17 | Nome | **Kubora** (binário, imagem e Helm chart: `kubora`) | Toda a documentação |
+| P17 | Nome | **KubeViz** (binário, imagem e Helm chart: `kubeviz`). Renomeado em 02/11/2026; o nome provisório anterior era "Kubora" | Toda a documentação |
 | P18 | Dedicação | **Variável**, conforme a disponibilidade de tokens. Esforço medido em semanas de trabalho, não em datas | [Viabilidade §2.5](02-viabilidade.md#25-estimativa-de-esforço), [Roadmap](05-roadmap.md) |
 | P19 | CNCF | **Talvez, decidir depois da 1.0.** Seguir desde já as práticas exigidas (governança, DCO, SECURITY.md) | [Arquitetura §3.9](03-arquitetura.md#39-governança-open-source) |
 
-## 6.2 Verificação do nome "Kubora" (02/11/2026)
+## 6.2 Verificação do nome "KubeViz" (02/11/2026)
 
 | Item | Situação |
 |------|----------|
-| Software/projeto Kubernetes com o mesmo nome | Nenhum encontrado (GitHub e web) |
-| `github.com/Kubora` | **Ocupado** por uma conta pessoal pouco ativa (1 repositório). Repositório ficará em `github.com/<seu-usuário>/kubora`; para uma futura organização, usar `kubora-dev` ou similar |
-| `kubora.com` | Registrado, estacionado para venda (Afternic) |
-| `kubora.dev`, `kubora.io`, `kubora.org` | Sem DNS configurado, provavelmente livres. **Confirmar em um registrador** |
+| Produto Kubernetes estabelecido com o mesmo nome | Nenhum. No GitHub há 6 repositórios pequenos com "kubeviz" no nome (0 estrelas; dois abandonados desde 2018–2019) |
+| Nome parecido | **KubeVirt** (projeto da CNCF para máquinas virtuais no Kubernetes). A busca por "KubeViz" retorna só KubeVirt; risco de confusão em buscas e na pronúncia |
+| `github.com/kubeviz` | **Livre** (conta/organização inexistente). Pode ser reservado já como organização, mesmo que o repositório comece na conta pessoal |
+| `kubeviz.dev`, `kubeviz.io`, `kubeviz.com`, `kubeviz.org` | Sem DNS configurado, provavelmente livres. **Confirmar em um registrador** |
 | Marca "Kubernetes" | A Linux Foundation não permite "Kubernetes" no nome de produtos; o prefixo "kube" é aceito |
 
-Recomendação: registrar `kubora.dev` antes de publicar o repositório, para usar
+Recomendação: registrar `kubeviz.dev` antes de publicar o repositório, para usar
 como endereço estável da documentação e do Helm chart.
 
 ## 6.3 Pendências não bloqueantes
 
 Podem ser resolvidas durante a Fase 0:
 
-- **Logo e paleta de cores** do Kubora, dentro do estilo painel de observabilidade.
+- **Logo e paleta de cores** do KubeViz, dentro do estilo painel de observabilidade.
 - **Registro do domínio** (ver 6.2).
 - **Criação do repositório** no GitHub.

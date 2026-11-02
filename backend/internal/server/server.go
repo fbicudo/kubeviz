@@ -1,4 +1,4 @@
-// Package server monta o servidor HTTP do Kubora: API, health checks e UI.
+// Package server monta o servidor HTTP do KubeViz: API, health checks e UI.
 package server
 
 import (
@@ -13,9 +13,9 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"kubora.dev/kubora/internal/auth"
-	"kubora.dev/kubora/internal/version"
-	"kubora.dev/kubora/internal/web"
+	"kubeviz.dev/kubeviz/internal/auth"
+	"kubeviz.dev/kubeviz/internal/version"
+	"kubeviz.dev/kubeviz/internal/web"
 )
 
 // Options ajusta o comportamento do servidor.
@@ -33,7 +33,7 @@ type Options struct {
 	WhoAmI func(context.Context, *rest.Config) (auth.User, error)
 }
 
-// Server é o servidor HTTP do Kubora.
+// Server é o servidor HTTP do KubeViz.
 type Server struct {
 	log      *slog.Logger
 	assets   fs.FS

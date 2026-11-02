@@ -12,8 +12,8 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"kubora.dev/kubora/internal/auth"
-	"kubora.dev/kubora/internal/cluster"
+	"kubeviz.dev/kubeviz/internal/auth"
+	"kubeviz.dev/kubeviz/internal/cluster"
 )
 
 type fakeCluster struct {
@@ -225,7 +225,7 @@ func TestLoopbackHostOnly(t *testing.T) {
 	// Sem LoopbackOnly (in-cluster, atrás de Ingress), qualquer Host é aceito.
 	h = newServer(newFakeCluster(), Options{}).Handler()
 	req := httptest.NewRequest("GET", "/api/v1/version", nil)
-	req.Host = "kubora.empresa.com"
+	req.Host = "kubeviz.empresa.com"
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != 200 {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"kubora.dev/kubora/internal/cluster"
+	"kubeviz.dev/kubeviz/internal/cluster"
 )
 
 func sessionOf(t *testing.T, h http.Handler, cookie string) sessionResponse {

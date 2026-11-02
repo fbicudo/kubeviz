@@ -72,9 +72,9 @@ consolidadas no ecossistema.
 
 Atende ao requisito de "fácil deployment":
 
-- **No cluster:** `helm install kubora oci://ghcr.io/<usuario>/charts/kubora` → 1 Deployment,
+- **No cluster:** `helm install kubeviz oci://ghcr.io/<usuario>/charts/kubeviz` → 1 Deployment,
   1 Service, ServiceAccount com permissões mínimas, Ingress opcional.
-- **Local:** `kubora` (binário) ou `docker run` usando o kubeconfig do usuário,
+- **Local:** `kubeviz` (binário) ou `docker run` usando o kubeconfig do usuário,
   abrindo `http://localhost:4466`.
 - Imagem de container estimada em 30–50 MB (distroless), sem dependências externas
   obrigatórias. SQLite embutido para configurações e histórico de uptime; PostgreSQL

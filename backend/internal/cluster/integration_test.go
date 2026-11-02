@@ -11,7 +11,7 @@ import (
 // Requer um cluster acessível pelo kubeconfig padrão (ex.: kind).
 // Rode com: make test-integration
 func TestIntegrationRealCluster(t *testing.T) {
-	m, err := New(Options{Mode: "local", Kubeconfig: os.Getenv("KUBECONFIG"), UserAgent: "kubora-integration"})
+	m, err := New(Options{Mode: "local", Kubeconfig: os.Getenv("KUBECONFIG"), UserAgent: "kubeviz-integration"})
 	if err != nil {
 		t.Fatal(err)
 	}

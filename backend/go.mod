@@ -1,4 +1,4 @@
-module kubora.dev/kubora
+module kubeviz.dev/kubeviz
 
 go 1.27.3
 

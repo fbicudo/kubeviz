@@ -1,15 +1,15 @@
-# Kubora — tarefas de desenvolvimento.
+# KubeViz — tarefas de desenvolvimento.
 # Requer: Go, Node.js LTS e pnpm. Rode `make help` para a lista.
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
-PKG     := kubora.dev/kubora/internal/version
+PKG     := kubeviz.dev/kubeviz/internal/version
 LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT) -X $(PKG).Date=$(DATE)
 WEBDIST := backend/internal/web/dist
 
-.PHONY: help deps dev-backend dev-frontend frontend build test test-integration test-envtest kind-up kind-down lint clean
+.PHONY: help deps dev-backend dev-frontend frontend build test test-integration test-envtest kind-up kind-down demo lint clean
 
 help: ## Mostra esta ajuda
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -19,7 +19,7 @@ deps: ## Instala as dependências do frontend e baixa os módulos Go
 	cd backend && go mod download
 
 dev-backend: ## Roda a API em http://127.0.0.1:4466
-	cd backend && go run ./cmd/kubora --log-level debug
+	cd backend && go run ./cmd/kubeviz --log-level debug
 
 dev-frontend: ## Roda a UI com recarga automática em http://localhost:5173
 	cd frontend && pnpm dev
@@ -29,8 +29,8 @@ frontend: ## Compila a UI e copia para dentro do backend (go:embed)
 	find $(WEBDIST) -mindepth 1 ! -name .gitkeep -delete
 	cp -r frontend/dist/. $(WEBDIST)/
 
-build: frontend ## Gera o binário único bin/kubora com a UI embutida
-	cd backend && CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o ../bin/kubora ./cmd/kubora
+build: frontend ## Gera o binário único bin/kubeviz com a UI embutida
+	cd backend && CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o ../bin/kubeviz ./cmd/kubeviz
 
 test: ## Roda os testes do backend e do frontend
 	cd backend && go test ./...
@@ -46,11 +46,15 @@ test-envtest: ## Testes de RBAC contra um API server real (envtest, sem Docker)
 	cd backend && KUBEBUILDER_ASSETS="$$($$(go env GOPATH)/bin/setup-envtest use $(ENVTEST_K8S) -p path)" \
 		go test -tags envtest -count=1 -v ./internal/server/ -run RBAC
 
-kind-up: ## Cria o cluster de desenvolvimento kind-kubora-dev
-	kind create cluster --name kubora-dev --wait 120s
+kind-up: ## Cria o cluster de desenvolvimento kind-kubeviz-dev
+	kind create cluster --name kubeviz-dev --wait 120s
 
 kind-down: ## Remove o cluster de desenvolvimento
-	kind delete cluster --name kubora-dev
+	kind delete cluster --name kubeviz-dev
+
+demo: ## Aplica o cenário de demonstração no kind e gera ~/.kube/kubeviz-demo.yaml
+	kubectl --context kind-kubeviz-dev apply -f hack/demo/demo.yaml
+	hack/demo/kubeconfig.sh
 
 lint: ## Verifica formatação, go vet, tipos e lint do frontend
 	@test -z "$$(gofmt -l backend)" || (echo "arquivos sem gofmt:"; gofmt -l backend; exit 1)

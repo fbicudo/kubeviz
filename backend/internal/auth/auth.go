@@ -1,6 +1,6 @@
 // Package auth cuida das sessões dos usuários da console.
 //
-// O Kubora não tem usuários próprios: quem decide o que cada pessoa pode
+// O KubeViz não tem usuários próprios: quem decide o que cada pessoa pode
 // fazer é o RBAC do cluster. As sessões apenas guardam, no servidor, a
 // credencial com que cada navegador fala com a API do Kubernetes.
 package auth
@@ -40,7 +40,7 @@ type Session struct {
 	Expires time.Time
 }
 
-// Store guarda sessões em memória. Reiniciar o Kubora encerra todas as
+// Store guarda sessões em memória. Reiniciar o KubeViz encerra todas as
 // sessões; múltiplas réplicas exigirão um armazenamento compartilhado.
 type Store struct {
 	ttl time.Duration

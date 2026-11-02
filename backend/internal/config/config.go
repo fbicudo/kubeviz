@@ -1,4 +1,4 @@
-// Package config lê a configuração do Kubora a partir de flags e variáveis de
+// Package config lê a configuração do KubeViz a partir de flags e variáveis de
 // ambiente. Flags têm precedência sobre variáveis de ambiente.
 package config
 
@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-const envPrefix = "KUBORA_"
+const envPrefix = "KUBEVIZ_"
 
 // Config reúne as opções de execução.
 type Config struct {
@@ -37,7 +37,7 @@ type Config struct {
 // Load interpreta args (sem o nome do programa) usando getenv para ler o
 // ambiente. Recebe getenv como parâmetro para facilitar os testes.
 func Load(args []string, getenv func(string) string) (Config, error) {
-	fs := flag.NewFlagSet("kubora", flag.ContinueOnError)
+	fs := flag.NewFlagSet("kubeviz", flag.ContinueOnError)
 
 	env := func(name, def string) string {
 		if v := getenv(envPrefix + name); v != "" {
@@ -48,12 +48,12 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 
 	var c Config
 	var level string
-	fs.StringVar(&c.Listen, "listen", env("LISTEN", "127.0.0.1:4466"), "endereço HTTP (env KUBORA_LISTEN)")
-	fs.StringVar(&c.Kubeconfig, "kubeconfig", env("KUBECONFIG", ""), "caminho do kubeconfig (env KUBORA_KUBECONFIG)")
-	fs.StringVar(&c.Context, "context", env("CONTEXT", ""), "contexto inicial do kubeconfig (env KUBORA_CONTEXT)")
-	fs.StringVar(&c.Mode, "mode", env("MODE", "auto"), "auto|local|in-cluster (env KUBORA_MODE)")
-	fs.StringVar(&level, "log-level", env("LOG_LEVEL", "info"), "debug|info|warn|error (env KUBORA_LOG_LEVEL)")
-	fs.StringVar(&c.LogFormat, "log-format", env("LOG_FORMAT", "text"), "text|json (env KUBORA_LOG_FORMAT)")
+	fs.StringVar(&c.Listen, "listen", env("LISTEN", "127.0.0.1:4466"), "endereço HTTP (env KUBEVIZ_LISTEN)")
+	fs.StringVar(&c.Kubeconfig, "kubeconfig", env("KUBECONFIG", ""), "caminho do kubeconfig (env KUBEVIZ_KUBECONFIG)")
+	fs.StringVar(&c.Context, "context", env("CONTEXT", ""), "contexto inicial do kubeconfig (env KUBEVIZ_CONTEXT)")
+	fs.StringVar(&c.Mode, "mode", env("MODE", "auto"), "auto|local|in-cluster (env KUBEVIZ_MODE)")
+	fs.StringVar(&level, "log-level", env("LOG_LEVEL", "info"), "debug|info|warn|error (env KUBEVIZ_LOG_LEVEL)")
+	fs.StringVar(&c.LogFormat, "log-format", env("LOG_FORMAT", "text"), "text|json (env KUBEVIZ_LOG_FORMAT)")
 	fs.BoolVar(&c.ShowVersion, "version", false, "imprime a versão e sai")
 
 	if err := fs.Parse(args); err != nil {
@@ -80,7 +80,7 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 }
 
 // ListenIsLoopback indica se o servidor escuta apenas em localhost. Nesse
-// caso, o Kubora age com as credenciais do kubeconfig de quem o executa e
+// caso, o KubeViz age com as credenciais do kubeconfig de quem o executa e
 // precisa recusar requisições vindas de outros sites (ver server.Options).
 func (c Config) ListenIsLoopback() bool {
 	host, _, err := net.SplitHostPort(c.Listen)

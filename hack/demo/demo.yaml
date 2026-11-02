@@ -1,0 +1,58 @@
+# Cenário de demonstração do KubeViz: workloads em vários estados e um usuário
+# (ServiceAccount demo/dev) que só pode ler pods do namespace demo.
+# Aplicado por `make demo`.
+apiVersion: v1
+kind: Namespace
+metadata: {name: demo}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: web, namespace: demo}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: web}}
+  template:
+    metadata: {labels: {app: web}}
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.29-alpine
+        resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
+---
+# Sai com erro a cada execução: CrashLoopBackOff.
+apiVersion: v1
+kind: Pod
+metadata: {name: quebrado, namespace: demo}
+spec:
+  containers:
+  - name: app
+    image: busybox:1.37
+    command: ["sh", "-c", "echo falhando; sleep 2; exit 1"]
+---
+# Imagem que não existe: ErrImagePull / ImagePullBackOff.
+apiVersion: v1
+kind: Pod
+metadata: {name: imagem-inexistente, namespace: demo}
+spec:
+  containers:
+  - name: app
+    image: registry.invalid/nao-existe:1.0
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: dev, namespace: demo}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: ler-pods, namespace: demo}
+rules:
+- apiGroups: [""]
+  resources: [pods]
+  verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: dev-ler-pods, namespace: demo}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: ler-pods}
+subjects:
+- {kind: ServiceAccount, name: dev, namespace: demo}

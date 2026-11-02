@@ -1,6 +1,6 @@
 # Governança
 
-O Kubora está em fase inicial e segue um modelo simples, que deve evoluir
+O KubeViz está em fase inicial e segue um modelo simples, que deve evoluir
 conforme a comunidade crescer.
 
 ## Papéis

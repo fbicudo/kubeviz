@@ -164,7 +164,7 @@ describe('App autenticado', () => {
   it('sai e volta à tela de entrada', async () => {
     renderAt('/')
     await userEvent.click(await screen.findByRole('button', { name: 'Sair' }))
-    expect(await screen.findByRole('heading', { name: 'Entrar no Kubora' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Entrar no KubeViz' })).toBeInTheDocument()
   })
 })
 

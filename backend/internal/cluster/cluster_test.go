@@ -61,7 +61,7 @@ func TestLocalModeInfoAndContexts(t *testing.T) {
 	b := fakeAPIServer(t, "v1.36.4")
 	kc := writeKubeconfig(t, a.URL, b.URL)
 
-	m, err := New(Options{Kubeconfig: kc, UserAgent: "kubora-test"})
+	m, err := New(Options{Kubeconfig: kc, UserAgent: "kubeviz-test"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestLocalModeInfoAndContexts(t *testing.T) {
 	if info := m.Info(context.Background()); info.Version != "v1.36.4" || info.Context != "b" {
 		t.Fatalf("após troca: %+v", info)
 	}
-	if got := m.RESTConfig().UserAgent; got != "kubora-test" {
+	if got := m.RESTConfig().UserAgent; got != "kubeviz-test" {
 		t.Errorf("UserAgent = %q", got)
 	}
 }
@@ -188,7 +188,7 @@ func TestConfigForTokenDropsServiceAccountCredentials(t *testing.T) {
 		Impersonate:     rest.ImpersonationConfig{UserName: "admin"},
 		TLSClientConfig: rest.TLSClientConfig{CAData: []byte("ca"), CertData: []byte("cert"), KeyData: []byte("key")},
 	}
-	m := NewInCluster(base, "kubora-test")
+	m := NewInCluster(base, "kubeviz-test")
 
 	cfg := m.ConfigForToken("token-do-usuario")
 	if cfg.BearerToken != "token-do-usuario" || cfg.BearerTokenFile != "" {
@@ -197,7 +197,7 @@ func TestConfigForTokenDropsServiceAccountCredentials(t *testing.T) {
 	if cfg.Impersonate.UserName != "" || cfg.CertData != nil || cfg.KeyData != nil {
 		t.Error("credenciais da ServiceAccount vazaram para a configuração do usuário")
 	}
-	if cfg.Host != base.Host || string(cfg.CAData) != "ca" || cfg.UserAgent != "kubora-test" {
+	if cfg.Host != base.Host || string(cfg.CAData) != "ca" || cfg.UserAgent != "kubeviz-test" {
 		t.Errorf("endereço/CA/UserAgent não preservados: %+v", cfg)
 	}
 }
