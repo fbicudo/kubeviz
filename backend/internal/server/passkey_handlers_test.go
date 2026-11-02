@@ -64,8 +64,8 @@ func TestPasskeys(t *testing.T) {
 	if rec := passkeyDo(t, h, "POST", "/api/v1/me/passkeys/finish", finishBody(cer, "Notebook", dev.Create(opts, origin)), cookie); rec.Code != 201 {
 		t.Fatalf("cadastro: %d %s", rec.Code, rec.Body)
 	}
-	// O desafio é de uso único.
-	if rec := passkeyDo(t, h, "POST", "/api/v1/me/passkeys/finish", finishBody(cer, "De novo", dev.Create(opts, origin)), cookie); rec.Code != 400 {
+	// O desafio é de uso único (outro dispositivo tentando reaproveitá-lo).
+	if rec := passkeyDo(t, h, "POST", "/api/v1/me/passkeys/finish", finishBody(cer, "De novo", webauthntest.New(t).Create(opts, origin)), cookie); rec.Code != 400 {
 		t.Errorf("desafio reutilizado: %d", rec.Code)
 	}
 	rec := passkeyDo(t, h, "GET", "/api/v1/me/passkeys", "", cookie)

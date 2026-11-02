@@ -18,8 +18,8 @@ import (
 // Authenticator guarda as passkeys criadas, como um celular ou chave física.
 type Authenticator struct {
 	t     *testing.T
-	keys  map[string]*passkey
-	Count uint32 // contador de uso; os testes podem fazê-lo voltar atrás
+	keys  []*passkey // em ordem de criação (Get usa a primeira do RP)
+	Count uint32     // contador de uso; os testes podem fazê-lo voltar atrás
 }
 
 type passkey struct {
@@ -31,7 +31,7 @@ type passkey struct {
 
 // New cria um autenticador vazio.
 func New(t *testing.T) *Authenticator {
-	return &Authenticator{t: t, keys: map[string]*passkey{}}
+	return &Authenticator{t: t}
 }
 
 var b64 = base64.RawURLEncoding
@@ -89,7 +89,7 @@ func (a *Authenticator) Create(optionsJSON []byte, origin string) []byte {
 	if err != nil {
 		a.t.Fatalf("user.id: %v", err)
 	}
-	a.keys[b64.EncodeToString(id)] = &passkey{id: id, key: key, userHandle: userHandle, rpID: o.PublicKey.RP.ID}
+	a.keys = append(a.keys, &passkey{id: id, key: key, userHandle: userHandle, rpID: o.PublicKey.RP.ID})
 
 	x, y := key.X.FillBytes(make([]byte, 32)), key.Y.FillBytes(make([]byte, 32))
 	cose, _ := cbor.Marshal(map[int]any{1: 2, 3: -7, -1: 1, -2: x, -3: y})
