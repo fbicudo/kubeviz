@@ -678,6 +678,22 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   - capturas: [img/criar-conta.png](img/criar-conta.png) e
     [img/pods-paginacao.png](img/pods-paginacao.png).
 
+### 02/11/2026 — Publicação: v0.2.0 e v0.2.1
+- **v0.2.0** publicada (tag, imagem amd64/arm64 no GHCR, chart OCI, release
+  com notas da Fase 1).
+- **Verificação após publicar:** a instalação in-cluster do kind foi
+  atualizada com o chart publicado e **falhou** num
+  `helm upgrade --reuse-values` vindo da 0.1.0. Com essa opção, o Helm não
+  traz os valores padrão novos, então `oidc` chegava vazio e os templates
+  quebravam (`nil pointer evaluating .enabled`).
+- **v0.2.1:**
+  - templates tolerantes a valores antigos (`default dict`/`dig`);
+  - `make helm-lint` passa a renderizar também sem `oidc`, reproduzindo o
+    erro com os templates antigos;
+  - verificado com o upgrade real no kind: pod com a imagem publicada,
+    `/api/v1/version` correto e nenhuma permissão extra para a
+    ServiceAccount.
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca

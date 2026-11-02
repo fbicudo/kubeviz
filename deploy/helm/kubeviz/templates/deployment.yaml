@@ -47,7 +47,7 @@ spec:
               value: {{ required "oidc.issuerURL é obrigatório com oidc.enabled" .issuerURL | quote }}
             - name: KUBEVIZ_OIDC_CLIENT_ID
               value: {{ .clientID | quote }}
-            {{- if .clientSecret.existingSecret }}
+            {{- if dig "clientSecret" "existingSecret" "" . }}
             - name: KUBEVIZ_OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -102,7 +102,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- $oidcCA := and .Values.oidc.enabled .Values.oidc.caConfigMap }}
+          {{- $oidcCA := and (dig "enabled" false (.Values.oidc | default dict)) (dig "caConfigMap" "" (.Values.oidc | default dict)) }}
           {{- if or .Values.tls.enabled $oidcCA }}
           volumeMounts:
             {{- if .Values.tls.enabled }}
@@ -126,7 +126,7 @@ spec:
         {{- if $oidcCA }}
         - name: oidc-ca
           configMap:
-            name: {{ .Values.oidc.caConfigMap }}
+            name: {{ $oidcCA }}
         {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}

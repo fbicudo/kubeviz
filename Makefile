@@ -37,9 +37,10 @@ IMAGE ?= kubeviz:dev
 image: ## Gera a imagem de container $(IMAGE)
 	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) --build-arg DATE=$(DATE) .
 
-helm-lint: ## Valida o Helm chart
+helm-lint: ## Valida o Helm chart (inclui valores de versões antigas, como num upgrade com --reuse-values)
 	helm lint deploy/helm/kubeviz
 	helm template kubeviz deploy/helm/kubeviz > /dev/null
+	helm template kubeviz deploy/helm/kubeviz --set oidc=null > /dev/null
 
 kind-install: image ## Instala o chart no kind com a imagem local (modo in-cluster, HTTPS)
 	kind load docker-image $(IMAGE) --name kubeviz-dev

@@ -1,4 +1,6 @@
-{{- if and .Values.oidc.enabled (eq .Values.oidc.mode "impersonate") }}
+{{- /* default dict: upgrades com --reuse-values de versões sem "oidc" */ -}}
+{{- $oidc := .Values.oidc | default dict }}
+{{- if and $oidc.enabled (eq ($oidc.mode | default "impersonate") "impersonate") }}
 # Login OIDC no modo impersonate: o KubeViz age pelo usuário que entrou no
 # provedor, com os cabeçalhos Impersonate-User e Impersonate-Group. Os nomes
 # recebem os prefixos oidc.usernamePrefix e oidc.groupsPrefix, e o KubeViz
