@@ -32,7 +32,8 @@
     "rbac": "Access control",
     "metrics": "Metrics",
     "uptime": "Uptime",
-    "wizards": "Wizards"
+    "wizards": "Wizards",
+    "apply": "Apply YAML"
   },
   "header": {
     "search": "Search resources…",
@@ -247,5 +248,41 @@
     "sameLines_one": "… {{count}} unchanged line",
     "sameLines_other": "… {{count}} unchanged lines",
     "unknownField": "Unknown field: {{field}} (check spelling and indentation)"
+  },
+  "applyYaml": {
+    "subtitle": "Paste or import one or more objects in YAML. The cluster validates before applying.",
+    "namespaceHint": "used for objects without a namespace",
+    "importFile": "Import file",
+    "editorLabel": "YAML to apply",
+    "applyAll": "Apply",
+    "results": "Validation result",
+    "docProblem": "Document {{index}}: {{message}}",
+    "docNumber": "document {{index}}",
+    "notObject": "is not an object",
+    "missingType": "apiVersion and kind are missing",
+    "missingName": "{{kind}} without metadata.name (server-side apply doesn't accept generateName)",
+    "unknownKind": "the cluster doesn't know the type {{type}} (is the extension/CRD installed?)",
+    "defaultedNamespace": "No namespace in the YAML: it will be created in \"{{ns}}\".",
+    "droppedNamespace": "This type has no namespace; the YAML namespace was ignored.",
+    "summary": "{{total}} object(s): {{new}} new, {{changed}} changed, {{unchanged}} unchanged.",
+    "appliedAll_one": "{{count}} object applied.",
+    "appliedAll_other": "{{count}} objects applied.",
+    "appliedWithErrors": "Applied with errors: see below.",
+    "waitingHint": "This object's namespace is created by this same YAML; full validation happens when applying.",
+    "showDiff": "Show differences",
+    "hideDiff": "Hide differences",
+    "state": {
+      "new": "New",
+      "changed": "Changed",
+      "unchanged": "Unchanged",
+      "waitingNamespace": "Waiting for namespace",
+      "error": "Error",
+      "applied": "Applied"
+    },
+    "validating": "Validating in the cluster…",
+    "summaryWaiting_one": "{{count}} waits for a namespace in this batch.",
+    "summaryWaiting_other": "{{count}} wait for a namespace in this batch.",
+    "summaryErrors_one": "{{count}} with errors.",
+    "summaryErrors_other": "{{count}} with errors."
   }
 }

@@ -383,24 +383,55 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
     e diff acusando `apiVersion` por ordem de chaves;
   - captura: [img/editar-yaml.png](img/editar-yaml.png).
 
+### 02/11/2026 — Tarefa 1.4b: aplicar YAML novo
+- **Página "Aplicar YAML"** (menu Ferramentas, `/apply`): colar ou importar um
+  arquivo `.yaml/.yml/.json` com um ou vários documentos (inclusive `kind: List`);
+  namespace padrão para objetos sem namespace; namespace ignorado (com aviso)
+  em tipos sem namespace.
+- **Descoberta agregada** (`lib/k8s/discovery.ts`, apidiscovery.k8s.io/v2):
+  duas chamadas (`/api`, `/apis`) indexam todos os tipos do cluster por
+  `apiVersion/Kind`, inclusive CRDs. Será reaproveitada na busca global (1.8).
+- **Validar em lote:** para cada documento, consulta o objeto atual e faz
+  server-side apply em dry-run; mostra **Novo**, **Alterado** (com diff),
+  **Sem mudanças** ou o erro. Objetos cujo namespace é criado no próprio lote
+  aparecem como **Aguarda namespace** em vez de erro (o dry-run não cria o
+  namespace). Problemas por documento: sem `apiVersion/kind`, sem nome
+  (`generateName` não é aceito pelo SSA), tipo desconhecido pelo cluster,
+  sintaxe.
+- **Aplicar** na ordem do arquivo, só depois de validar o mesmo texto; cada
+  objeto aplicado vira link para o detalhe; conflitos usam o mesmo "Validar
+  forçando" da 1.4a.
+- `hack/demo/exemplo-app.yaml`: exemplo (namespace + ConfigMap + Deployment +
+  Service), usado nas capturas.
+- **Verificado:**
+  - 130 testes Vitest (descoberta: core, grupos, CRDs e recusa sem v2;
+    preparação: vários documentos, List, namespace completado/ignorado,
+    problemas por documento; página: novo / aguarda namespace / alterado com
+    diff, ordem de aplicação, tipo desconhecido bloqueia);
+  - no kind, pelo navegador: o exemplo foi validado (1 novo, 3 aguardando o
+    namespace), aplicado (4 objetos; `kubectl` confirma conteúdo e
+    gerenciador `kubeviz`) e, validado de novo, "nada para mudar"; namespace de
+    teste removido em seguida;
+  - corrigido: ao validar de novo na mesma página, o resultado anterior era
+    exibido (e recontado) durante a validação; o resumo passou a contar os que
+    aguardam namespace e os com erro;
+  - captura: [img/aplicar-yaml.png](img/aplicar-yaml.png).
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.4b — Aplicar YAML novo:** colar ou importar YAML com vários documentos,
-   descoberta do tipo de cada um (discovery), validação e aplicação em lote.
-   (A edição de objetos existentes, 1.4a, está pronta.)
-2. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
-3. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
+1. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
+2. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
    verificação de origem).
-4. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
+3. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
    confirmação; ações ocultas quando o RBAC não permite.
-5. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
+4. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
    personalizados (CRDs) via discovery.
-6. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
-7. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+5. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
+6. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
     (kwok).
 
 ## Como publicar uma versão

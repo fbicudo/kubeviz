@@ -107,6 +107,15 @@ console.log('modo local:')
   await shot(page, 'editar-yaml')
   await page.getByRole('button', { name: 'Cancelar' }).click()
 
+  // Aplicar YAML: só validação (dry-run); nada é criado no cluster.
+  await page.getByRole('link', { name: 'Aplicar YAML' }).click()
+  await page.getByLabel('YAML a aplicar').waitFor()
+  await page.setInputFiles('input[type=file]', new URL('../../hack/demo/exemplo-app.yaml', import.meta.url).pathname)
+  await page.getByRole('button', { name: 'Validar' }).click()
+  await page.getByText(/^\d+ objeto\(s\):/).waitFor()
+  await page.getByText(/^\d+ objeto\(s\):/).scrollIntoViewIfNeeded()
+  await shot(page, 'aplicar-yaml')
+
   await page.getByRole('link', { name: 'Controle de acesso' }).click()
   await page.getByRole('tab', { name: 'ClusterRoles' }).click()
   await page.getByRole('cell', { name: 'cluster-admin', exact: true }).waitFor()

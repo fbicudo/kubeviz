@@ -32,7 +32,8 @@
     "rbac": "Controle de acesso",
     "metrics": "Métricas",
     "uptime": "Uptime",
-    "wizards": "Assistentes"
+    "wizards": "Assistentes",
+    "apply": "Aplicar YAML"
   },
   "header": {
     "search": "Buscar recursos…",
@@ -247,5 +248,41 @@
     "sameLines_one": "… {{count}} linha igual",
     "sameLines_other": "… {{count}} linhas iguais",
     "unknownField": "Campo desconhecido: {{field}} (confira a grafia e a indentação)"
+  },
+  "applyYaml": {
+    "subtitle": "Cole ou importe um ou mais objetos em YAML. O cluster valida antes de aplicar.",
+    "namespaceHint": "usado nos objetos sem namespace",
+    "importFile": "Importar arquivo",
+    "editorLabel": "YAML a aplicar",
+    "applyAll": "Aplicar",
+    "results": "Resultado da validação",
+    "docProblem": "Documento {{index}}: {{message}}",
+    "docNumber": "documento {{index}}",
+    "notObject": "não é um objeto",
+    "missingType": "faltam apiVersion e kind",
+    "missingName": "{{kind}} sem metadata.name (o server-side apply não aceita generateName)",
+    "unknownKind": "o cluster não conhece o tipo {{type}} (a extensão/CRD está instalada?)",
+    "defaultedNamespace": "Sem namespace no YAML: será criado em \"{{ns}}\".",
+    "droppedNamespace": "Este tipo não tem namespace; o namespace do YAML foi ignorado.",
+    "summary": "{{total}} objeto(s): {{new}} novo(s), {{changed}} alterado(s), {{unchanged}} sem mudanças.",
+    "appliedAll_one": "{{count}} objeto aplicado.",
+    "appliedAll_other": "{{count}} objetos aplicados.",
+    "appliedWithErrors": "Aplicado com erros: veja abaixo.",
+    "waitingHint": "O namespace deste objeto é criado por este mesmo YAML; a validação completa acontece ao aplicar.",
+    "showDiff": "Ver diferenças",
+    "hideDiff": "Ocultar diferenças",
+    "state": {
+      "new": "Novo",
+      "changed": "Alterado",
+      "unchanged": "Sem mudanças",
+      "waitingNamespace": "Aguarda namespace",
+      "error": "Erro",
+      "applied": "Aplicado"
+    },
+    "validating": "Validando no cluster…",
+    "summaryWaiting_one": "{{count}} aguarda o namespace deste lote.",
+    "summaryWaiting_other": "{{count}} aguardam o namespace deste lote.",
+    "summaryErrors_one": "{{count}} com erro.",
+    "summaryErrors_other": "{{count}} com erro."
   }
 }

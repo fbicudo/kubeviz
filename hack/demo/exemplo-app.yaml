@@ -1,0 +1,39 @@
+# Exemplo para a página "Aplicar YAML" do KubeViz: um namespace com uma
+# aplicação simples (ConfigMap, Deployment e Service).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeviz-teste
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: kubeviz-teste
+data:
+  mensagem: olá do KubeViz
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello
+  namespace: kubeviz-teste
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: hello}}
+  template:
+    metadata: {labels: {app: hello}}
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.29-alpine
+        resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello
+  namespace: kubeviz-teste
+spec:
+  selector: {app: hello}
+  ports: [{port: 80}]

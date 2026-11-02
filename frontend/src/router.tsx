@@ -3,6 +3,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { allNavItems } from '@/components/layout/nav'
 import { Overview } from '@/pages/Overview'
 import { Placeholder } from '@/pages/Placeholder'
+import { ApplyYaml } from '@/pages/ApplyYaml'
 import { Detail, type DetailSearch } from '@/pages/Detail'
 import { Pods } from '@/pages/Pods'
 import { ResourcePage, type ResourceSearch } from '@/pages/Resources'
@@ -32,7 +33,7 @@ const validateResourceSearch = (search: Record<string, unknown>): ResourceSearch
 // Itens do menu: lista genérica quando há tipos no catálogo; placeholder para
 // o que ainda não existe (métricas, uptime, assistentes).
 const sectionRoutes = allNavItems
-  .filter((item) => item.path !== '/pods')
+  .filter((item) => item.path !== '/pods' && item.path !== '/apply')
   .map((item) =>
     item.id in resourcePages
       ? createRoute({
@@ -58,7 +59,9 @@ const detailRoute = createRoute({
   component: Detail,
 })
 
-const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, ...sectionRoutes])
+const applyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/apply', component: ApplyYaml })
+
+const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, applyRoute, ...sectionRoutes])
 
 export function makeRouter(history?: RouterHistory) {
   return createRouter({ routeTree, history })

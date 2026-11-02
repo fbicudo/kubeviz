@@ -2,6 +2,7 @@ import {
   Activity,
   Boxes,
   Database,
+  FilePlus2,
   FileCog,
   Gauge,
   KeyRound,
@@ -54,7 +55,7 @@ export const navGroups: NavGroup[] = [
     items: [item('configmaps', FileCog), item('secrets', KeyRound), item('rbac', Shield)],
   },
   { id: 'observability', items: [item('metrics', Gauge), item('uptime', Activity)] },
-  { id: 'tools', items: [item('wizards', Wand2)] },
+  { id: 'tools', items: [item('apply', FilePlus2), item('wizards', Wand2)] },
 ]
 
 export const overviewItem: NavItem = { id: 'overview', path: '/', icon: LayoutDashboard }
