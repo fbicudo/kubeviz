@@ -144,7 +144,10 @@ GitOps).
   - *Contas locais (modo local):* `kubeviz user add` cria contas com senha
     (bcrypt) em `~/.config/kubeviz/users`; com contas, o login é por usuário e
     senha e o link deixa de valer. Tentativas erradas são limitadas por IP e
-    por usuário.
+    por usuário. Contas também podem ser criadas na tela de login, com o
+    código exibido no terminal (o mesmo token do link): como no `kubeviz user
+    add`, só quem tem acesso à máquina cria contas; nomes existentes são
+    recusados e códigos errados, limitados por IP.
   - *Modo in-cluster:* login com token do Kubernetes (ServiceAccount ou
     usuário), validado com `SelfSubjectReview`. As requisições seguem para a
     API **com o próprio token do usuário** (repasse), sem nenhuma credencial da

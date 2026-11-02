@@ -33,7 +33,11 @@ var (
 	ErrInvalidUsername = errors.New("nome de usuário inválido: use até 32 letras minúsculas, números, ponto, hífen ou sublinhado")
 	ErrShortPassword   = fmt.Errorf("a senha precisa ter pelo menos %d caracteres", MinPasswordLength)
 	ErrUserNotFound    = errors.New("usuário não encontrado")
+	ErrUserExists      = errors.New("já existe uma conta com esse nome")
 )
+
+// editMu serializa as alterações do arquivo feitas por este processo (duas
+// contas criadas ao mesmo tempo pela tela de login, por exemplo).
 
 // dummyHash é comparado quando o usuário não existe, para que a resposta leve
 // o mesmo tempo e não revele quais nomes existem.
@@ -156,17 +160,34 @@ func loadForEdit(path string) (map[string][]byte, error) {
 	return hashes, err
 }
 
+var editMu sync.Mutex
+
 // SetUser cria a conta ou troca a senha de uma existente.
 func SetUser(path, name, password string) error {
+	return setUser(path, name, password, true)
+}
+
+// AddUser cria uma conta nova; recusa nomes já usados (ErrUserExists), para
+// que ninguém troque a senha de outra pessoa ao "criar" uma conta.
+func AddUser(path, name, password string) error {
+	return setUser(path, name, password, false)
+}
+
+func setUser(path, name, password string, replace bool) error {
 	if !validUsername.MatchString(name) {
 		return ErrInvalidUsername
 	}
 	if len([]rune(password)) < MinPasswordLength {
 		return ErrShortPassword
 	}
+	editMu.Lock()
+	defer editMu.Unlock()
 	hashes, err := loadForEdit(path)
 	if err != nil {
 		return err
+	}
+	if _, exists := hashes[name]; exists && !replace {
+		return ErrUserExists
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
 	if err != nil {
@@ -178,6 +199,8 @@ func SetUser(path, name, password string) error {
 
 // RemoveUser apaga uma conta.
 func RemoveUser(path, name string) error {
+	editMu.Lock()
+	defer editMu.Unlock()
 	hashes, err := loadForEdit(path)
 	if err != nil {
 		return err

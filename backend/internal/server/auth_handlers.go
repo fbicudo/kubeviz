@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -185,6 +186,76 @@ func (s *Server) passwordLogin(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
 }
 
+// signupEnabled: no modo local, contas podem ser criadas pela tela de login
+// com o código exibido no terminal (o mesmo do link de acesso).
+func (s *Server) signupEnabled() bool {
+	return s.cluster.Mode() == cluster.ModeLocal && s.opts.Users != nil && s.opts.LocalToken != ""
+}
+
+// signup cria uma conta local pela tela de login. Exige o código exibido no
+// terminal em que o KubeViz foi iniciado: como no `kubeviz user add`, só quem
+// tem acesso à máquina cria contas (quem entra age com o kubeconfig dela).
+// Códigos errados são limitados por IP; nomes já usados são recusados.
+func (s *Server) signup(w http.ResponseWriter, r *http.Request) {
+	if !s.signupEnabled() {
+		writeError(w, http.StatusNotFound, "criação de contas não está habilitada")
+		return
+	}
+	var body struct {
+		Code     string `json:"code"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Code == "" || body.Username == "" || body.Password == "" {
+		writeError(w, http.StatusBadRequest, `corpo inválido: esperado {"code": "...", "username": "...", "password": "..."}`)
+		return
+	}
+	key := "signup-ip:" + clientIP(r)
+	if blocked, wait := s.limiter.Blocked(key); blocked {
+		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+		writeError(w, http.StatusTooManyRequests, "muitas tentativas; tente novamente mais tarde")
+		return
+	}
+	if !auth.Equal(signupCode(body.Code), s.opts.LocalToken) {
+		s.limiter.Fail(key)
+		s.log.Warn("criação de conta recusada", "motivo", "código inválido", "origem", clientIP(r))
+		writeError(w, http.StatusUnauthorized, "código inválido")
+		return
+	}
+	s.limiter.Reset(key)
+
+	name := strings.ToLower(strings.TrimSpace(body.Username))
+	err := auth.AddUser(s.opts.Users.Path(), name, body.Password)
+	switch {
+	case errors.Is(err, auth.ErrInvalidUsername), errors.Is(err, auth.ErrShortPassword):
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	case errors.Is(err, auth.ErrUserExists):
+		writeError(w, http.StatusConflict, err.Error())
+		return
+	case err != nil:
+		s.log.Error("criando conta", "erro", err)
+		writeError(w, http.StatusInternalServerError, "não foi possível salvar a conta")
+		return
+	}
+
+	sess := s.sessions.Create(auth.User{}, "")
+	sess.LocalUser = name
+	s.setSessionCookie(w, r, sess)
+	s.log.Info("conta criada pela tela de login", "usuario", name, "origem", clientIP(r))
+	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
+}
+
+// signupCode aceita o código ou o link inteiro do terminal (…?token=código).
+func signupCode(v string) string {
+	v = strings.TrimSpace(v)
+	if u, err := url.Parse(v); err == nil && u.Query().Get("token") != "" {
+		return u.Query().Get("token")
+	}
+	return v
+}
+
 // clientIP é o endereço de quem fez a requisição (sem confiar em cabeçalhos
 // de proxy, que o cliente poderia forjar para fugir do limite de tentativas).
 func clientIP(r *http.Request) string {
@@ -239,6 +310,8 @@ type sessionResponse struct {
 	Authenticated bool         `json:"authenticated"`
 	// LoginMethods: "oidc", "link" (token no terminal), "password" ou "token".
 	LoginMethods []string `json:"loginMethods"`
+	// Signup indica que a tela de login pode criar contas (com o código do terminal).
+	Signup bool `json:"signup,omitempty"`
 	// OIDCName é o nome do provedor exibido no botão de login.
 	OIDCName string     `json:"oidcName,omitempty"`
 	User     *auth.User `json:"user,omitempty"`
@@ -255,7 +328,7 @@ type sessionResponse struct {
 func (s *Server) getSession(w http.ResponseWriter, r *http.Request) {
 	sess, ok := s.session(r)
 	if !ok {
-		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods(), OIDCName: s.oidcName()})
+		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods(), OIDCName: s.oidcName(), Signup: s.signupEnabled()})
 		return
 	}
 	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))

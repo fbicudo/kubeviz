@@ -117,6 +117,21 @@
         "oidc_unavailable": "O provedor de identidade está inacessível. Tente de novo em instantes.",
         "oidc_failed": "Não foi possível concluir o login. Tente de novo."
       }
+    },
+    "signup": {
+      "prompt": "Ainda não tem conta?",
+      "open": "Criar conta",
+      "title": "Criar conta",
+      "code": "Código do terminal",
+      "codeHelp": "Exibido no terminal em que o KubeViz foi iniciado (pode colar o link inteiro). Garante que só quem tem acesso à máquina cria contas.",
+      "usernameHelp": "Letras minúsculas, números, ponto, hífen ou sublinhado.",
+      "passwordHelp": "Pelo menos {{min}} caracteres.",
+      "repeat": "Repita a senha",
+      "mismatch": "As senhas não conferem.",
+      "submit": "Criar conta e entrar",
+      "back": "Voltar para o login",
+      "badCode": "Código inválido. Confira o código exibido no terminal.",
+      "exists": "Já existe uma conta com esse nome."
     }
   },
   "pods": {
@@ -437,5 +452,15 @@
     "objects": "Objetos",
     "empty": "Nada encontrado.",
     "loading": "Carregando…"
+  },
+  "pagination": {
+    "label": "Paginação",
+    "range": "{{first}}–{{last}} de {{total}}",
+    "perPage": "Por página",
+    "first": "Primeira página",
+    "previous": "Página anterior",
+    "next": "Próxima página",
+    "last": "Última página",
+    "page": "Página {{page}} de {{pages}}"
   }
 }

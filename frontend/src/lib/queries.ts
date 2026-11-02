@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getCluster, getContexts, getSession, login, logout, passwordLogin, setCurrentContext } from './api'
+import { getCluster, getContexts, getSession, login, logout, passwordLogin, setCurrentContext, signup } from './api'
 
 export const sessionKey = ['session'] as const
 
@@ -24,6 +24,15 @@ export function usePasswordLogin() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ username, password }: { username: string; password: string }) => passwordLogin(username, password),
+    onSuccess: (session) => qc.setQueryData(sessionKey, session),
+  })
+}
+
+/** Cria uma conta local (código do terminal) e já entra com ela. */
+export function useSignup() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ code, username, password }: { code: string; username: string; password: string }) => signup(code, username, password),
     onSuccess: (session) => qc.setQueryData(sessionKey, session),
   })
 }

@@ -108,3 +108,16 @@ func TestLoginLimiter(t *testing.T) {
 		t.Fatal("Reset não limpou as falhas")
 	}
 }
+
+func TestAddUserRefusesExisting(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "users")
+	if err := AddUser(path, "ana", "senha-de-teste-com-tamanho"); err != nil {
+		t.Fatal(err)
+	}
+	if err := AddUser(path, "ana", "outra-senha-de-teste-longa"); !errors.Is(err, ErrUserExists) {
+		t.Fatalf("conta repetida: %v", err)
+	}
+	if !NewUsers(path).Verify("ana", "senha-de-teste-com-tamanho") {
+		t.Error("a senha original foi trocada")
+	}
+}

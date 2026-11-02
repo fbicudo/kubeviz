@@ -90,6 +90,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/v1/auth/session", s.getSession)
 	mux.HandleFunc("POST /api/v1/auth/login", s.login)
 	mux.HandleFunc("POST /api/v1/auth/password", s.passwordLogin)
+	mux.HandleFunc("POST /api/v1/auth/signup", s.signup)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.logout)
 
 	// Exigem sessão.

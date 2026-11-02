@@ -119,3 +119,81 @@ describe('login corporativo (OIDC)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível concluir o login')
   })
 })
+
+describe('criar conta na tela de login', () => {
+  function signupApi() {
+    let loggedIn = false
+    const calls: { code: string; username: string; password: string }[] = []
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url === '/api/v1/auth/session') {
+        return json(
+          loggedIn
+            ? { mode: 'local', loginMethods: ['link'], signup: true, authenticated: true, localUser: 'bia', user: { username: 'kubernetes-admin' } }
+            : { mode: 'local', loginMethods: ['link'], signup: true, authenticated: false },
+        )
+      }
+      if (url === '/api/v1/auth/signup' && init?.method === 'POST') {
+        const body = JSON.parse(String(init.body)) as { code: string; username: string; password: string }
+        calls.push(body)
+        if (body.code !== 'codigo-do-terminal') return json({ error: 'código inválido' }, 401)
+        if (body.username === 'fabio') return json({ error: 'já existe uma conta com esse nome' }, 409)
+        loggedIn = true
+        return json({ mode: 'local', loginMethods: ['password'], signup: true, authenticated: true, localUser: body.username })
+      }
+      if (url === '/api/v1/cluster') return json({ mode: 'local', reachable: true, server: 'x', version: 'v1.37.0' })
+      if (url === '/api/v1/contexts') return json({ mode: 'local', contexts: [] })
+      return json({}, 404)
+    })
+    return { fetchMock, calls }
+  }
+
+  it('exige código, senha conferida e entra com a conta nova', async () => {
+    const user = userEvent.setup()
+    const api = signupApi()
+    vi.stubGlobal('fetch', api.fetchMock)
+    renderApp()
+    await user.click(await screen.findByRole('button', { name: 'Criar conta' }))
+    const submit = screen.getByRole('button', { name: 'Criar conta e entrar' })
+    expect(submit).toBeDisabled()
+
+    await user.type(screen.getByLabelText('Código do terminal'), 'codigo-errado')
+    await user.type(screen.getByLabelText('Usuário'), 'bia')
+    await user.type(screen.getByLabelText('Senha'), SENHA)
+    await user.type(screen.getByLabelText('Repita a senha'), 'outra')
+    expect(screen.getByText('As senhas não conferem.')).toBeInTheDocument()
+    expect(submit).toBeDisabled()
+    await user.clear(screen.getByLabelText('Repita a senha'))
+    await user.type(screen.getByLabelText('Repita a senha'), SENHA)
+
+    await user.click(submit)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Código inválido')
+    await user.clear(screen.getByLabelText('Código do terminal'))
+    await user.type(screen.getByLabelText('Código do terminal'), 'codigo-do-terminal')
+    await user.click(submit)
+    expect(await screen.findByRole('heading', { name: 'Visão geral' })).toBeInTheDocument()
+    expect(api.calls.at(-1)).toEqual({ code: 'codigo-do-terminal', username: 'bia', password: SENHA })
+  })
+
+  it('avisa quando o nome já existe e permite voltar ao login', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', signupApi().fetchMock)
+    renderApp()
+    await user.click(await screen.findByRole('button', { name: 'Criar conta' }))
+    await user.type(screen.getByLabelText('Código do terminal'), 'codigo-do-terminal')
+    await user.type(screen.getByLabelText('Usuário'), 'fabio')
+    await user.type(screen.getByLabelText('Senha'), SENHA)
+    await user.type(screen.getByLabelText('Repita a senha'), SENHA)
+    await user.click(screen.getByRole('button', { name: 'Criar conta e entrar' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Já existe uma conta com esse nome.')
+    await user.click(screen.getByRole('button', { name: 'Voltar para o login' }))
+    expect(screen.getByText(/Abra o link exibido no terminal/)).toBeInTheDocument()
+  })
+
+  it('não aparece no modo in-cluster', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ mode: 'in-cluster', loginMethods: ['token'], authenticated: false })))
+    renderApp()
+    await screen.findByLabelText('Token de acesso ao Kubernetes')
+    expect(screen.queryByRole('button', { name: 'Criar conta' })).not.toBeInTheDocument()
+  })
+})

@@ -73,11 +73,13 @@ func main() {
 		opts.LocalToken = auth.RandomToken()
 		url := browserURL(cfg.Listen, cfg.TLSCertFile != "")
 		if opts.Users.Enabled() {
-			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto em %s\n  Entre com usuário e senha (contas em %s).\n\n", url, cfg.UsersFile)
+			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto em %s\n  Entre com usuário e senha (contas em %s).\n"+
+				"  Para criar contas pela tela de login, use o código: %s\n\n", url, cfg.UsersFile, opts.LocalToken)
 		} else {
 			// Como no Jupyter: só quem vê o terminal recebe o link de acesso.
 			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n"+
-				"  Para entrar com usuário e senha em vez do link: kubeviz user add <nome>\n\n", url, opts.LocalToken)
+				"  Para entrar com usuário e senha, crie uma conta na tela de login (o código é o token\n"+
+				"  deste link) ou rode: kubeviz user add <nome>\n\n", url, opts.LocalToken)
 		}
 		if !opts.LoopbackOnly {
 			log.Warn("modo local exposto fora de localhost: quem tiver o link usará suas credenciais do kubeconfig", "listen", cfg.Listen)

@@ -5,9 +5,11 @@
 Interface web open source para gestão de clusters Kubernetes, com painéis de
 performance e uptime e assistentes (wizards) para configurar o ambiente.
 
-> **Status:** `v0.1.0`, fim da Fase 0 (fundação). Instala via Helm, serve
-> HTTPS, autentica usuários, respeita o RBAC de cada um e lista pods com status.
-> Ainda é uma versão inicial: veja o [roadmap](docs/05-roadmap.md) e o
+> **Status:** `v0.2.0`, fim da Fase 1 (navegação e operação). Lista e edita
+> qualquer recurso do cluster (inclusive CRDs) em tempo real, com YAML, logs,
+> terminal, ações, eventos, busca global (Ctrl+K) e login corporativo (OIDC),
+> respeitando o RBAC de cada usuário e aguentando milhares de pods. Painéis de
+> performance e uptime vêm na Fase 2: veja o [roadmap](docs/05-roadmap.md) e o
 > [progresso](docs/PROGRESSO.md).
 
 ![Visão geral do KubeViz num cluster kind](docs/img/visao-geral.png)
@@ -17,7 +19,7 @@ performance e uptime e assistentes (wizards) para configurar o ambiente.
 ## Instalação no cluster (Helm)
 
 ```bash
-helm install kubeviz oci://ghcr.io/fbicudo/charts/kubeviz --version 0.1.0 -n kubeviz --create-namespace
+helm install kubeviz oci://ghcr.io/fbicudo/charts/kubeviz --version 0.2.0 -n kubeviz --create-namespace
 kubectl -n kubeviz port-forward svc/kubeviz 8443:443
 ```
 

@@ -40,21 +40,50 @@ afterEach(() => {
 })
 
 describe('listas grandes', () => {
-  it('desenha só uma parte das linhas, informa o total e filtra entre todas', async () => {
+  beforeEach(() => localStorage.clear())
+
+  it('pagina de 100 em 100, navega entre páginas e volta à primeira ao filtrar', async () => {
     const user = userEvent.setup()
     render(<App history={createMemoryHistory({ initialEntries: ['/pods'] })} />)
     expect(await screen.findByText('1000 de 1000 pods')).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Paginação' })
+    expect(within(nav).getByText('1–100 de 1000')).toBeInTheDocument()
+    expect(within(nav).getByText('Página 1 de 10')).toBeInTheDocument()
+    expect(within(nav).getByRole('button', { name: 'Página anterior' })).toBeDisabled()
+    // Ordem natural: app-0, app-1, app-2… (não app-0, app-1, app-10).
+    expect(screen.getAllByRole('link', { name: /^app-/ })[2]).toHaveTextContent('app-2')
+
+    await user.click(within(nav).getByRole('button', { name: 'Próxima página' }))
+    expect(within(nav).getByText('101–200 de 1000')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'app-100' })).toBeInTheDocument()
+    await user.click(within(nav).getByRole('button', { name: 'Última página' }))
+    expect(within(nav).getByText('Página 10 de 10')).toBeInTheDocument()
+    expect(within(nav).getByRole('button', { name: 'Próxima página' })).toBeDisabled()
+
+    // O filtro vale para todos os pods, não só os da página, e volta à primeira.
+    await user.type(screen.getByRole('textbox', { name: /Filtrar/ }), 'app-99')
+    expect(await screen.findByText('11 de 1000 pods')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'app-999' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Paginação' })).not.toBeInTheDocument()
+  })
+
+  it('com 500 por página desenha só parte das linhas e lembra a escolha', async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App history={createMemoryHistory({ initialEntries: ['/pods'] })} />)
+    await screen.findByText('1000 de 1000 pods')
+    await user.selectOptions(screen.getByLabelText('Por página'), '500')
     const table = screen.getByRole('table')
-    expect(table).toHaveAttribute('aria-rowcount', '1001')
+    expect(table).toHaveAttribute('aria-rowcount', '501')
     const rendered = within(table)
       .getAllByRole('row')
       .filter((r) => Number(r.getAttribute('aria-rowindex')) > 1)
     expect(rendered.length).toBeGreaterThan(1)
     expect(rendered.length).toBeLessThan(100)
+    expect(screen.getByText('Página 1 de 2')).toBeInTheDocument()
+    unmount()
 
-    // O filtro vale para todos os pods, não só os desenhados.
-    await user.type(screen.getByRole('textbox', { name: /Filtrar/ }), 'app-999')
-    expect(await screen.findByText('1 de 1000 pods')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'app-999' })).toBeInTheDocument()
+    render(<App history={createMemoryHistory({ initialEntries: ['/pods'] })} />)
+    await screen.findByText('1000 de 1000 pods')
+    expect(screen.getByLabelText('Por página')).toHaveValue('500')
   })
 })

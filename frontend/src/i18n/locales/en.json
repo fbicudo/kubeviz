@@ -117,6 +117,21 @@
         "oidc_unavailable": "The identity provider is unreachable. Please try again shortly.",
         "oidc_failed": "Sign-in could not be completed. Please try again."
       }
+    },
+    "signup": {
+      "prompt": "Don't have an account?",
+      "open": "Create account",
+      "title": "Create account",
+      "code": "Terminal code",
+      "codeHelp": "Shown in the terminal where KubeViz was started (you can paste the whole link). Ensures only people with access to the machine create accounts.",
+      "usernameHelp": "Lowercase letters, digits, dot, hyphen or underscore.",
+      "passwordHelp": "At least {{min}} characters.",
+      "repeat": "Repeat the password",
+      "mismatch": "Passwords do not match.",
+      "submit": "Create account and sign in",
+      "back": "Back to sign in",
+      "badCode": "Invalid code. Check the code shown in the terminal.",
+      "exists": "An account with this name already exists."
     }
   },
   "pods": {
@@ -437,5 +452,15 @@
     "objects": "Objects",
     "empty": "Nothing found.",
     "loading": "Loading…"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "range": "{{first}}–{{last}} of {{total}}",
+    "perPage": "Per page",
+    "first": "First page",
+    "previous": "Previous page",
+    "next": "Next page",
+    "last": "Last page",
+    "page": "Page {{page}} of {{pages}}"
   }
 }

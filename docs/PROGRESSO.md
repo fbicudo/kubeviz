@@ -640,6 +640,44 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
     (esta não comporta o kind com 10 mil pods);
   - o cenário de carga foi removido do kind ao final.
 
+### 02/11/2026 — Paginação dos pods e criação de contas na tela de login (pedido do responsável)
+- **Paginação na página de Pods:**
+  - 50, 100, 250 ou 500 por página (padrão 100, lembrado no navegador);
+  - primeira, anterior, próxima e última página, com "301–324 de 324";
+  - volta à primeira página ao filtrar ou trocar de namespace;
+  - o filtro vale para todos os pods; com 250 ou 500 por página, a tabela
+    continua virtualizada.
+- **Criar conta na tela de login (modo local):**
+  - "Ainda não tem conta? Criar conta" abre um formulário com código do
+    terminal, usuário, senha e confirmação;
+  - **segurança:** no modo local, quem entra age com o kubeconfig da máquina
+    (no kind, administrador do cluster). Por isso a criação exige o código
+    exibido no terminal em que o KubeViz foi iniciado (o token do link; dá
+    para colar o link inteiro): só quem tem acesso à máquina cria contas,
+    como no `kubeviz user add`;
+  - códigos errados são limitados por IP (5 em 15 min);
+  - nomes já usados são recusados (`AddUser`), para ninguém trocar a senha
+    de outra pessoa;
+  - a conta já entra logada; o terminal mostra o código também quando já
+    existem contas;
+  - no modo in-cluster e com OIDC, as contas vêm do cluster ou do provedor;
+    não há criação pela tela.
+- **Verificado:**
+  - testes Go: código errado, link inteiro como código, nome inválido,
+    senha curta, nome repetido sem trocar a senha, bloqueio após 5 erros,
+    in-cluster sem criação;
+  - 175 testes Vitest: formulário, senhas que não conferem, erros, voltar,
+    paginação, tamanho de página lembrado;
+  - no navegador (Playwright), com 324 pods no kind:
+    - código errado recusado;
+    - conta criada e já logada;
+    - páginas 1–100, 101–200 e 301–324;
+    - 250 por página;
+    - sair e entrar com a conta nova;
+    - arquivo de contas com permissão 600;
+  - capturas: [img/criar-conta.png](img/criar-conta.png) e
+    [img/pods-paginacao.png](img/pods-paginacao.png).
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca

@@ -89,6 +89,8 @@ export interface SessionInfo {
   loginMethods: LoginMethod[]
   /** Nome do provedor OIDC exibido no botão de login. */
   oidcName?: string
+  /** A tela de login pode criar contas locais (com o código do terminal). */
+  signup?: boolean
   user?: User
   /** Conta local usada no login por usuário e senha. */
   localUser?: string
@@ -99,6 +101,9 @@ export interface SessionInfo {
 export const getSession = () => apiGet<SessionInfo>('/api/v1/auth/session')
 
 export const login = (token: string) => apiSend<SessionInfo>('POST', '/api/v1/auth/login', { token })
+
+export const signup = (code: string, username: string, password: string) =>
+  apiSend<SessionInfo>('POST', '/api/v1/auth/signup', { code, username, password })
 
 export const passwordLogin = (username: string, password: string) =>
   apiSend<SessionInfo>('POST', '/api/v1/auth/password', { username, password })
