@@ -753,6 +753,14 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   página, acessando por `https://10.11.12.103.nip.io:4466`. O login real com
   o Google ainda não foi testado.
 
+### 02/11/2026 — Publicação: v0.3.0
+- Versão com as contas e os provedores de login do modo local (Google,
+  Microsoft, GitHub e OIDC), o primeiro acesso sem código, a paginação dos
+  pods e a correção do chart da v0.2.1.
+- Verificada depois de publicar, como na v0.2.1: imagem amd64/arm64 no GHCR,
+  chart OCI e upgrade real no kind com `helm upgrade --reuse-values` vindo da
+  0.2.1.
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca
