@@ -1,12 +1,11 @@
-import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Combobox } from '@/components/ui/combobox'
 import { useClusterInfo, useContexts, useSwitchContext } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 
 /** Mostra o cluster conectado e, no modo local, permite trocar de contexto. */
 export function ClusterSelector() {
   const { t } = useTranslation()
-  const id = useId()
   const info = useClusterInfo()
   const contexts = useContexts()
   const switchContext = useSwitchContext()
@@ -24,32 +23,39 @@ export function ClusterSelector() {
   const name =
     info.data?.mode === 'in-cluster' ? t('cluster.inCluster') : (info.data?.context ?? t('header.noCluster'))
 
-  return (
-    <div className="flex items-center gap-2 rounded-md border px-2 py-1 text-xs" title={info.data?.error ?? info.data?.server}>
+  const statusLabel = (
+    <>
       <span className={cn('size-2 shrink-0 rounded-full', dot)} role="img" aria-label={status} />
-      <label htmlFor={id} className="text-subtle">
-        {t('header.cluster')}
-      </label>
+      <span className="text-subtle">{t('header.cluster')}</span>
+    </>
+  )
+  const version = info.data?.version && <span className="font-mono text-subtle">{info.data.version}</span>
+
+  return (
+    <div className="flex items-center gap-2 text-xs" title={info.data?.error ?? info.data?.server}>
       {canSwitch ? (
-        <select
-          id={id}
-          className="max-w-56 truncate bg-transparent text-foreground outline-none"
+        <Combobox
+          label={t('header.cluster')}
           value={info.data?.context ?? ''}
+          options={list.map((c) => ({ value: c.name, label: c.name, hint: c.namespace }))}
+          onChange={(name) => name !== info.data?.context && switchContext.mutate(name)}
           disabled={switchContext.isPending}
-          onChange={(e) => switchContext.mutate(e.target.value)}
+          searchPlaceholder={t('cluster.searchContext')}
+          className="h-7 max-w-80 gap-2 text-xs"
         >
-          {list.map((c) => (
-            <option key={c.name} value={c.name} className="bg-surface">
-              {c.name}
-            </option>
-          ))}
-        </select>
+          <span className="flex items-center gap-2">
+            {statusLabel}
+            <span className="truncate text-foreground">{name}</span>
+            {version}
+          </span>
+        </Combobox>
       ) : (
-        <span id={id} className="max-w-56 truncate text-foreground">
-          {name}
-        </span>
+        <div className="flex h-7 items-center gap-2 rounded-md border px-2">
+          {statusLabel}
+          <span className="max-w-56 truncate text-foreground">{name}</span>
+          {version}
+        </div>
       )}
-      {info.data?.version && <span className="font-mono text-subtle">{info.data.version}</span>}
       {switchContext.isError && (
         <span className="text-critical" role="alert">
           {t('cluster.switchFailed')}

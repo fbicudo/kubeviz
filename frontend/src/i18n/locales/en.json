@@ -74,7 +74,8 @@
     "mode": {
       "local": "Local mode · kubeconfig",
       "in-cluster": "In-cluster mode · ServiceAccount"
-    }
+    },
+    "searchContext": "Search contexts…"
   },
   "auth": {
     "title": "Sign in to KubeViz",
@@ -99,7 +100,7 @@
     "refresh": "Refresh",
     "namespace": "Namespace",
     "allNamespaces": "All namespaces",
-    "namespacePlaceholder": "e.g. default",
+    "namespacePlaceholder": "Search or type a namespace",
     "forbidden": "Not allowed to list pods in {{scope}}",
     "forbiddenHint": "Pick a namespace you have access to.",
     "loadError": "Could not load pods",
@@ -114,6 +115,12 @@
       "age": "Age",
       "node": "Node",
       "ip": "IP"
-    }
+    },
+    "namespaceTypeHint": "Type the namespace name."
+  },
+  "combobox": {
+    "search": "Search…",
+    "empty": "No results.",
+    "useCustom": "Use “{{value}}”"
   }
 }

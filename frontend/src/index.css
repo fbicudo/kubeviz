@@ -12,8 +12,9 @@
   --surface-raised: #171c26;
   --border: #232a36;
   --foreground: #d6dde6;
-  --muted: #8b95a5;
-  --subtle: #5c6675;
+  --muted: #9ba5b4;
+  /* subtle: menor contraste permitido para texto (≥ 4,5:1 em todos os fundos) */
+  --subtle: #7d8694;
   --accent: #2dd4bf;
   --accent-foreground: #042f2e;
   --ok: #3fb950;
@@ -30,12 +31,12 @@
   --surface-raised: #eef1f5;
   --border: #d9dee6;
   --foreground: #1b2230;
-  --muted: #5b6575;
-  --subtle: #8a93a2;
+  --muted: #4b5563;
+  --subtle: #646d7b;
   --accent: #0f766e;
   --accent-foreground: #ffffff;
-  --ok: #1a7f37;
-  --warn: #9a6700;
+  --ok: #177033;
+  --warn: #865a00;
   --critical: #cf222e;
   --info: #0969da;
   --ring: #0f766e;

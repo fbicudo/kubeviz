@@ -1,8 +1,9 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { RefreshCw, Search, ShieldAlert } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Combobox } from '@/components/ui/combobox'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ApiError } from '@/lib/api'
 import { age } from '@/lib/format'
@@ -61,56 +62,34 @@ export function Pods() {
   )
 }
 
+/**
+ * Seletor de namespace com busca. Sem permissão para listar namespaces, a
+ * lista fica vazia e o usuário digita o nome (opção "Usar …").
+ */
 function NamespacePicker({ value, onChange }: { value: string; onChange: (ns: string) => void }) {
   const { t } = useTranslation()
-  const id = useId()
   const namespaces = useNamespaces()
-  const [draft, setDraft] = useState(value)
-
-  // Sem permissão para listar namespaces: campo de texto livre.
-  if (namespaces.isError) {
-    return (
-      <form
-        className="flex items-center gap-2"
-        onSubmit={(e) => {
-          e.preventDefault()
-          onChange(draft.trim())
-        }}
-      >
-        <label htmlFor={id} className="text-xs text-muted">
-          {t('pods.namespace')}
-        </label>
-        <input
-          id={id}
-          className="h-8 w-44 rounded-md border bg-surface px-2 outline-none focus:border-accent"
-          placeholder={t('pods.namespacePlaceholder')}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-        />
-      </form>
-    )
-  }
-
   const names = namespaces.data?.items.map((n) => n.metadata.name).sort() ?? []
+  const options = [
+    ...(namespaces.isError ? [] : [{ value: '', label: t('pods.allNamespaces') }]),
+    ...names.map((n) => ({ value: n, label: n })),
+  ]
+
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor={id} className="text-xs text-muted">
-        {t('pods.namespace')}
-      </label>
-      <select
-        id={id}
-        className="h-8 rounded-md border bg-surface px-2 outline-none focus:border-accent"
+      <span className="text-xs text-muted">{t('pods.namespace')}</span>
+      <Combobox
+        label={t('pods.namespace')}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        options={options}
+        onChange={onChange}
+        allowCustom
+        searchPlaceholder={t('pods.namespacePlaceholder')}
+        emptyText={namespaces.isError ? t('pods.namespaceTypeHint') : undefined}
+        className="w-52"
       >
-        <option value="">{t('pods.allNamespaces')}</option>
-        {value && !names.includes(value) && <option value={value}>{value}</option>}
-        {names.map((n) => (
-          <option key={n} value={n}>
-            {n}
-          </option>
-        ))}
-      </select>
+        {value || (namespaces.isError ? <span className="text-subtle">{t('pods.namespacePlaceholder')}</span> : t('pods.allNamespaces'))}
+      </Combobox>
     </div>
   )
 }

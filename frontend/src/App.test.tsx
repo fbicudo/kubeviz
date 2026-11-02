@@ -7,6 +7,12 @@ import i18n from './i18n'
 import en from './i18n/locales/en.json'
 import ptBR from './i18n/locales/pt-BR.json'
 
+/** Abre um combobox pelo nome e escolhe uma opção, como um usuário faria. */
+async function pick(combobox: string, option: string) {
+  await userEvent.click(await screen.findByRole('combobox', { name: combobox }))
+  await userEvent.click(await screen.findByRole('option', { name: option }))
+}
+
 function renderAt(path: string) {
   return render(<App history={createMemoryHistory({ initialEntries: [path] })} />)
 }
@@ -131,9 +137,7 @@ describe('App autenticado', () => {
 
   it('troca de contexto pelo cabeçalho enviando JSON', async () => {
     renderAt('/')
-    const select = await screen.findByRole('combobox', { name: 'Cluster' })
-    await screen.findByRole('option', { name: 'prod' })
-    await userEvent.selectOptions(select, 'prod')
+    await pick('Cluster', 'prod')
 
     expect(await screen.findByText('v1.36.4 · linux/amd64')).toBeInTheDocument()
     const put = fake.api.mock.calls.find(([, init]) => init?.method === 'PUT')
@@ -199,8 +203,7 @@ describe('autenticação', () => {
 
     // A próxima ação recebe 401 do backend.
     fake.expireSession()
-    await screen.findByRole('option', { name: 'prod' })
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'prod')
+    await pick('Cluster', 'prod')
     expect(await screen.findByText(/link exibido no terminal/)).toBeInTheDocument()
   })
 })
@@ -234,9 +237,20 @@ describe('pods', () => {
     renderAt('/pods?ns=demo')
     expect(await screen.findByText('quebrado')).toBeInTheDocument()
     expect(screen.queryByText('coredns')).not.toBeInTheDocument()
-    await screen.findByRole('option', { name: 'kube-system' })
-    await userEvent.selectOptions(screen.getByLabelText('Namespace'), '')
+    await pick('Namespace', 'Todos os namespaces')
     expect(await screen.findByText('coredns')).toBeInTheDocument()
+  })
+
+  it('busca namespace pelo teclado', async () => {
+    renderAt('/pods')
+    await screen.findByText('coredns')
+    screen.getByRole('combobox', { name: 'Namespace' }).focus()
+    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('kube')
+    expect(screen.queryByRole('option', { name: 'demo' })).not.toBeInTheDocument()
+    await userEvent.keyboard('{Enter}')
+    expect(await screen.findByRole('combobox', { name: 'Namespace' })).toHaveTextContent('kube-system')
+    expect(screen.queryByText('web-1')).not.toBeInTheDocument()
   })
 
   it('usuário restrito: recusa clara e acesso ao namespace permitido', async () => {
@@ -245,8 +259,9 @@ describe('pods', () => {
     expect(await screen.findByText('Sem permissão para listar pods em todos os namespaces')).toBeInTheDocument()
     expect(screen.getByText(/system:serviceaccount:demo:dev/)).toBeInTheDocument()
 
-    const field = await screen.findByLabelText('Namespace')
-    await userEvent.type(field, 'demo{Enter}')
+    // Sem permissão para listar namespaces: digita o nome e confirma com Enter.
+    await userEvent.click(await screen.findByRole('combobox', { name: 'Namespace' }))
+    await userEvent.keyboard('demo{Enter}')
     expect(await screen.findByText('web-1')).toBeInTheDocument()
   })
 })
@@ -257,8 +272,7 @@ describe('troca de contexto', () => {
     renderAt('/pods')
     expect(await screen.findByText('3 de 3 pods')).toBeInTheDocument()
     fake.restrict()
-    await screen.findByRole('option', { name: 'prod' })
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cluster' }), 'prod')
+    await pick('Cluster', 'prod')
     expect(await screen.findByText('Sem permissão para listar pods em todos os namespaces')).toBeInTheDocument()
     expect(screen.queryByText(/de 3 pods/)).not.toBeInTheDocument()
     expect(screen.queryByText('coredns')).not.toBeInTheDocument()
