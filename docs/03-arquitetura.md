@@ -202,7 +202,9 @@ kubeviz/
 - E2E: Playwright contra clusters kind no CI, em 3 versões do Kubernetes.
 - Testes de RBAC: usuários com diferentes permissões verificam que nenhuma ação
   proibida é possível.
-- Testes de carga: cluster sintético com 10k pods (kwok), o dobro da meta de 5.000.
+- Testes de carga: cluster sintético com pods simulados pelo kwok (`make scale-up`)
+  e medição com Playwright (`pnpm perf`); feito com 5.000 pods na tarefa 1.10, e
+  10 mil (o dobro da meta) pendente de uma máquina maior. Ver [desempenho.md](desempenho.md).
 - OIDC: testes E2E com Keycloak e Dex.
 
 ## 3.9 Governança open source

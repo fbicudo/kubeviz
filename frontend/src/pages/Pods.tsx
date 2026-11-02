@@ -9,8 +9,12 @@ import { age } from '@/lib/format'
 import { summarizePod } from '@/lib/k8s/pods'
 import { usePods, usePodsLive } from '@/lib/k8s/queries'
 import { LiveIndicator } from '@/components/resources/LiveIndicator'
+import { VirtualTable } from '@/components/resources/VirtualTable'
 import { useNow } from '@/lib/use-now'
 import type { Pod } from '@/lib/k8s/types'
+
+/** Ordem natural (app-2 antes de app-10); um Collator compara bem mais rápido que localeCompare. */
+const byName = new Intl.Collator(undefined, { numeric: true })
 
 /** Lista de pods. Namespace vem de ?ns=; ausente = todos os namespaces. */
 export function Pods() {
@@ -28,7 +32,7 @@ export function Pods() {
     const term = filter.trim().toLowerCase()
     return (pods.data?.items ?? [])
       .filter((p) => !term || p.metadata.name.toLowerCase().includes(term) || p.metadata.namespace?.includes(term))
-      .sort((a, b) => (a.metadata.namespace ?? '').localeCompare(b.metadata.namespace ?? '') || a.metadata.name.localeCompare(b.metadata.name))
+      .sort((a, b) => byName.compare(a.metadata.namespace ?? '', b.metadata.namespace ?? '') || byName.compare(a.metadata.name, b.metadata.name))
   }, [pods.data, filter])
 
   return (
@@ -78,45 +82,43 @@ function PodTable({ pods, loading, showNamespace, now }: PodTableProps) {
   ]
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-surface">
-      <table className="w-full text-left">
-        <thead className="border-b text-xs text-muted">
-          <tr>
-            {headers.map((h) => (
-              <th key={h} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {pods.map((pod) => {
-            const s = summarizePod(pod)
-            return (
-              <tr key={pod.metadata.uid} className="hover:bg-surface-raised">
-                <td className="px-3 py-1.5 font-medium whitespace-nowrap">
-                  <ObjectLink kind={kinds.pods} name={pod.metadata.name} namespace={pod.metadata.namespace} />
-                </td>
-                {showNamespace && <td className="px-3 py-1.5 text-muted">{pod.metadata.namespace}</td>}
-                <td className="px-3 py-1.5">
-                  <StatusBadge severity={s.severity}>{s.status}</StatusBadge>
-                </td>
-                <td className="px-3 py-1.5 font-mono">
-                  {s.ready}/{s.total}
-                </td>
-                <td className={`px-3 py-1.5 font-mono ${s.restarts > 0 ? 'text-warn' : ''}`}>{s.restarts}</td>
-                <td className="px-3 py-1.5 font-mono text-muted" title={pod.metadata.creationTimestamp}>
-                  {age(pod.metadata.creationTimestamp, now)}
-                </td>
-                <td className="px-3 py-1.5 text-muted">{pod.spec.nodeName ?? '—'}</td>
-                <td className="px-3 py-1.5 font-mono text-muted">{pod.status.podIP ?? '—'}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-      {!loading && pods.length === 0 && <p className="p-6 text-center text-muted">{t('pods.empty')}</p>}
-      {loading && <p className="p-6 text-center text-muted">{t('pods.loading')}</p>}
-    </div>
+    <VirtualTable
+      rows={pods}
+      rowKey={(pod) => pod.metadata.uid}
+      header={headers.map((h) => (
+        <th key={h} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
+          {h}
+        </th>
+      ))}
+      cells={(pod) => {
+        const s = summarizePod(pod)
+        return (
+          <>
+            <td className="px-3 py-1.5 font-medium whitespace-nowrap">
+              <ObjectLink kind={kinds.pods} name={pod.metadata.name} namespace={pod.metadata.namespace} />
+            </td>
+            {showNamespace && <td className="px-3 py-1.5 text-muted">{pod.metadata.namespace}</td>}
+            <td className="px-3 py-1.5">
+              <StatusBadge severity={s.severity}>{s.status}</StatusBadge>
+            </td>
+            <td className="px-3 py-1.5 font-mono">
+              {s.ready}/{s.total}
+            </td>
+            <td className={`px-3 py-1.5 font-mono ${s.restarts > 0 ? 'text-warn' : ''}`}>{s.restarts}</td>
+            <td className="px-3 py-1.5 font-mono text-muted" title={pod.metadata.creationTimestamp}>
+              {age(pod.metadata.creationTimestamp, now)}
+            </td>
+            <td className="px-3 py-1.5 text-muted">{pod.spec.nodeName ?? '—'}</td>
+            <td className="px-3 py-1.5 font-mono text-muted">{pod.status.podIP ?? '—'}</td>
+          </>
+        )
+      }}
+      footer={
+        <>
+          {!loading && pods.length === 0 && <p className="p-6 text-center text-muted">{t('pods.empty')}</p>}
+          {loading && <p className="p-6 text-center text-muted">{t('pods.loading')}</p>}
+        </>
+      }
+    />
   )
 }

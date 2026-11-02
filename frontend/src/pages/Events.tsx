@@ -7,7 +7,7 @@ import { ObjectLink } from '@/components/resources/ObjectLink'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { age } from '@/lib/format'
 import { collectionPath, kindOfOwner, kinds } from '@/lib/k8s/catalog'
-import { useK8sList, useK8sListLive } from '@/lib/k8s/queries'
+import { useK8sListLive, useSlimK8sList } from '@/lib/k8s/queries'
 import { lastSeen } from '@/lib/k8s/events'
 import type { KubeEvent } from '@/lib/k8s/types'
 import { useNow } from '@/lib/use-now'
@@ -27,8 +27,8 @@ export function Events() {
   const [filter, setFilter] = useState('')
   const path = collectionPath(kinds.events, namespace)
   const key = ['k8s', 'events', namespace] as const
-  const list = useK8sList<KubeEvent>(key, path)
-  const live = useK8sListLive<KubeEvent>(key, path, list.isSuccess)
+  const list = useSlimK8sList<KubeEvent>(key, path)
+  const live = useK8sListLive<KubeEvent>(key, path, list.isSuccess, true)
 
   const all = useMemo(() => list.data?.items ?? [], [list.data])
   const warnings = all.filter((e) => e.type === 'Warning').length

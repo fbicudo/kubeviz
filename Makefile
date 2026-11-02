@@ -9,7 +9,7 @@ PKG     := github.com/fbicudo/kubeviz/backend/internal/version
 LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT) -X $(PKG).Date=$(DATE)
 WEBDIST := backend/internal/web/dist
 
-.PHONY: help deps dev-backend dev-frontend frontend build image helm-lint kind-install test test-integration test-envtest oidc-dex oidc-keycloak kind-up kind-down demo lint clean
+.PHONY: help deps dev-backend dev-frontend frontend build image helm-lint kind-install test test-integration test-envtest oidc-dex oidc-keycloak scale-up scale-down kind-up kind-down demo lint clean
 
 help: ## Mostra esta ajuda
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -66,6 +66,12 @@ oidc-dex: build ## Sobe um Dex local para testar o login OIDC (ver docs/oidc.md)
 
 oidc-keycloak: ## Sobe um Keycloak local para testar o login OIDC (ver docs/oidc.md)
 	hack/oidc/keycloak.sh up
+
+scale-up: ## Cenário de carga: 5.000 pods simulados (kwok) no kind; PODS=10000 para mais
+	hack/scale/kwok.sh up $(or $(PODS),5000)
+
+scale-down: ## Remove o cenário de carga
+	hack/scale/kwok.sh down
 
 kind-up: ## Cria o cluster de desenvolvimento kind-kubeviz-dev
 	kind create cluster --name kubeviz-dev --wait 120s

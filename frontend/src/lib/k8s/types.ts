@@ -9,6 +9,8 @@ export interface ObjectMeta {
   deletionTimestamp?: string
   resourceVersion?: string
   labels?: Record<string, string>
+  /** Removido nas listas grandes (ver slim em watch.ts). */
+  managedFields?: unknown[]
 }
 
 export interface List<T> {

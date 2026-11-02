@@ -592,14 +592,70 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   - a instância da rede continua com login por senha: o OIDC precisa de um
     provedor acessível pela sua máquina.
 
-## Próximas tarefas (Fase 1 — Navegação e operação)
+### 02/11/2026 — Tarefa 1.10: escala (5.000 pods) — Fase 1 concluída
+- **Cenário de carga:**
+  - `make scale-up` cria pods simulados pelo kwok no kind (5.000 por padrão,
+    em 47 nós falsos; `hack/scale/kwok.sh`);
+  - `make scale-down` remove o cenário;
+  - `pnpm perf` mede com o Playwright (ver [desempenho.md](desempenho.md)).
+- **Problemas encontrados na linha de base:**
+  - a lista de 5.110 pods levava 12,7 s, travando a página por 8,7 s;
+  - com uma rajada de 500 exclusões, a página **travou por mais de 10 min**:
+    cada evento do watch recalculava as 5.000 linhas e redesenhava a tabela
+    inteira.
+- **Correções:**
+  - tabelas virtualizadas a partir de 200 linhas (`VirtualTable`: cabeçalho
+    fixo, `aria-rowcount`, ~60 linhas no DOM em vez de 5.110);
+  - eventos do watch aplicados em lotes de 100 ms, com índice por objeto;
+  - listas sem o compartilhamento estrutural do TanStack Query;
+  - `managedFields` descartados nas listas de pods, nas tabelas e nos
+    eventos;
+  - busca global reaproveitando a lista de pods em cache;
+  - ordenação com `Intl.Collator`;
+  - resumo da Visão geral memoizado.
+- **Resultados com 5.110 pods** (intervalo de três rodadas, numa máquina com 4
+  núcleos e 3,3 GB, em swap):
+  - filtrar: 0,07–0,88 s (**RNF-05 ✔**);
+  - navegar para Pods com cache: 0,15–0,20 s (2,6 s na rodada com swap
+    pesado);
+  - rajadas do watch: a lista acompanha o cluster, com travamento máximo de
+    0,3–1,7 s;
+  - busca global: 0,66–0,79 s;
+  - backend: 19–26 MB de memória (**RNF-06 ✔**);
+  - primeira carga: 2,5–8,6 s nesta máquina. Com as respostas servidas da
+    memória, o navegador leva 0,9–1,2 s; o restante é o API server (~0,9 s
+    para montar a lista). A meta de 2 s (RNF-04) ainda não foi confirmada.
+- **Verificado:**
+  - 171 testes Vitest, entre eles:
+    - lote com 5.000 linhas e 1.500 eventos em menos de 200 ms;
+    - excluir e recriar no mesmo lote;
+    - `managedFields` descartados;
+    - lista de 1.000 pods desenhando menos de 100 linhas e filtrando entre
+      todas;
+    - busca usando o cache;
+  - medições reais no kind antes e depois de cada mudança;
+  - captura: [img/pods-5000.png](img/pods-5000.png).
+- **Pendências:**
+  - teste com 10 mil pods e confirmação da primeira carga numa máquina maior
+    (esta não comporta o kind com 10 mil pods);
+  - o cenário de carga foi removido do kind ao final.
 
-Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
-Dividido em tarefas pequenas, cada uma testada, commitada e com versão
-utilizável:
+### Resumo da Fase 1
+Navegação e operação completas: listas genéricas e CRDs, tempo real,
+detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca
+global, eventos, login OIDC e escala para 5.000 pods. Próximo passo: Fase 2
+(performance e uptime, [roadmap](05-roadmap.md)).
 
-1. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
-   (kwok); inclui medir a busca global com muitos objetos.
+## Próximos passos
+
+A Fase 1 está concluída. A Fase 2 (performance e uptime) é a próxima, com
+escopo no [roadmap](05-roadmap.md#fase-2--performance-e-uptime-68-semanas--v03);
+será dividida em tarefas pequenas quando começar.
+
+Pendências da Fase 1, que podem ser retomadas a qualquer momento:
+- teste com 10 mil pods e confirmação da primeira carga (< 2 s) numa máquina
+  maior;
+- logout também no provedor OIDC.
 
 ## Como publicar uma versão
 

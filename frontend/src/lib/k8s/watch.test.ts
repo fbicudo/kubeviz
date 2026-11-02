@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { List, Table } from './types'
-import { applyToList, applyToTable, readEvents, type WatchEvent } from './watch'
+import { applyListEvents, applyTableEvents, applyToList, applyToTable, readEvents, slim, type WatchEvent } from './watch'
 
 function streamOf(chunks: string[]) {
   const enc = new TextEncoder()
@@ -95,5 +95,48 @@ describe('applyToTable', () => {
     t = applyToTable(t, ev('DELETED', row('web', '2/2', '13')))
     expect(t.rows.map((r) => r.cells[0])).toEqual(['api'])
     expect(t.metadata.resourceVersion).toBe('13')
+  })
+})
+
+describe('lotes de eventos', () => {
+  it('aplica uma rajada em lote, rápido e na ordem certa', () => {
+    const n = 5000
+    const list: List<Obj> = { kind: 'List', metadata: { resourceVersion: '1' }, items: Array.from({ length: n }, (_, i) => obj(`p${i}`, '1')) }
+    const events: WatchEvent<Obj>[] = [
+      // 500 excluídos, 500 alterados e 500 novos (como ao escalar deployments)
+      ...Array.from({ length: 500 }, (_, i) => ({ type: 'DELETED' as const, object: obj(`p${i}`, '2') })),
+      ...Array.from({ length: 500 }, (_, i) => ({ type: 'MODIFIED' as const, object: obj(`p${1000 + i}`, '3', 1) })),
+      ...Array.from({ length: 500 }, (_, i) => ({ type: 'ADDED' as const, object: obj(`novo${i}`, '4') })),
+      { type: 'BOOKMARK', object: { metadata: { uid: '', name: '', resourceVersion: '9' } } },
+    ]
+    const t0 = performance.now()
+    const out = applyListEvents(list, events)
+    // Aplicar evento a evento custava linhas × eventos (segundos com 5.000 pods).
+    expect(performance.now() - t0).toBeLessThan(200)
+    expect(out.items).toHaveLength(n)
+    expect(out.items[0].metadata.uid).toBe('p500')
+    expect(out.items[500].v).toBe(1)
+    expect(out.items.at(-1)?.metadata.uid).toBe('novo499')
+    expect(out.metadata.resourceVersion).toBe('9')
+    // Excluir e recriar no mesmo lote: o objeto novo fica.
+    const again = applyListEvents(out, [
+      { type: 'DELETED', object: obj('p600', '10') },
+      { type: 'ADDED', object: obj('p600', '11', 2) },
+    ])
+    expect(again.items.filter((i) => i.metadata.uid === 'p600')).toEqual([obj('p600', '11', 2)])
+    // Lote vazio não cria uma lista nova.
+    expect(applyListEvents(out, []).items).toBe(out.items)
+  })
+
+  it('listas grandes descartam os managedFields', () => {
+    const pod = { metadata: { uid: 'a', name: 'a', managedFields: [{ manager: 'kubelet' }] } }
+    expect(slim(pod).metadata).toEqual({ uid: 'a', name: 'a' })
+    const list: List<Obj> = { kind: 'List', metadata: { resourceVersion: '1' }, items: [] }
+    const withManaged = { metadata: { uid: 'b', name: 'b', resourceVersion: '2', managedFields: [{}] } } as Obj
+    expect(applyListEvents(list, [{ type: 'ADDED', object: withManaged }], true).items[0].metadata).not.toHaveProperty('managedFields')
+    const table: Table = { kind: 'Table', metadata: { resourceVersion: '1' }, columnDefinitions: [], rows: [] }
+    const row = { cells: [], object: { metadata: { uid: 'c', name: 'c', creationTimestamp: '', managedFields: [{}] } } }
+    const ev: WatchEvent<Table> = { type: 'ADDED', object: { ...table, rows: [row] } }
+    expect(applyTableEvents(table, [ev]).rows[0].object.metadata).not.toHaveProperty('managedFields')
   })
 })

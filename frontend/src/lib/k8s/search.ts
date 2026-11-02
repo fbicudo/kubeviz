@@ -1,9 +1,11 @@
 // Índice da busca global (Ctrl+K): nomes dos objetos dos tipos mais comuns,
 // carregados só com os metadados (PartialObjectMetadataList) para pesar pouco.
 
-import { useQueries } from '@tanstack/react-query'
+import { useQueries, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { ApiError, apiGet } from '@/lib/api'
 import { collectionPath, kinds, type ResourceKind } from './catalog'
+import { k8sKeys } from './queries'
+import type { List, Pod } from './types'
 
 /** Tipos cujos objetos a busca encontra pelo nome. */
 export const SEARCH_KINDS: ResourceKind[] = [
@@ -72,12 +74,24 @@ export function matchObjects(hits: ObjectHit[], term: string, limit = 20): Objec
     .map(([, h]) => h)
 }
 
+/**
+ * Nomes dos objetos do tipo. Os pods de todos os namespaces podem já estar no
+ * cache (Visão geral, lista de pods): reaproveitá-los evita baixar de novo os
+ * metadados de milhares de pods.
+ */
+export function namesFor(k: ResourceKind, qc: QueryClient): Promise<ObjectHit[]> {
+  const pods = k.id === 'pods' ? qc.getQueryData<List<Pod>>(k8sKeys.pods('')) : undefined
+  if (pods) return Promise.resolve(pods.items.map((p) => ({ kind: k, name: p.metadata.name, namespace: p.metadata.namespace })))
+  return fetchNames(k)
+}
+
 /** Índice de nomes; só consulta o cluster enquanto `enabled` (paleta aberta). */
 export function useSearchIndex(enabled: boolean) {
+  const qc = useQueryClient()
   return useQueries({
     queries: SEARCH_KINDS.map((k) => ({
       queryKey: ['k8s', 'search-names', k.id],
-      queryFn: () => fetchNames(k),
+      queryFn: () => namesFor(k, qc),
       enabled,
       staleTime: 30_000,
     })),

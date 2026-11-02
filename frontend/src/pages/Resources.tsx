@@ -11,6 +11,7 @@ import { age } from '@/lib/format'
 import { resourcePages, type ResourceKind } from '@/lib/k8s/catalog'
 import { useResourceTable, useResourceTableLive } from '@/lib/k8s/queries'
 import { LiveIndicator } from '@/components/resources/LiveIndicator'
+import { VirtualTable } from '@/components/resources/VirtualTable'
 import { useNow } from '@/lib/use-now'
 import type { TableColumn, TableRow } from '@/lib/k8s/types'
 import { cn } from '@/lib/utils'
@@ -178,39 +179,35 @@ function DataTable({ kind, columns, rows, wide, showNamespace, loading, now }: D
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-surface">
-      <table className="w-full text-left">
-        <thead className="border-b text-xs text-muted">
-          <tr>
-            {visible.map((c, i) => (
-              <ColumnHeader key={c.name} column={c} extra={i === 0 && showNamespace ? t('resources.namespace') : undefined} />
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {rows.map((row) => (
-            <tr key={row.object.metadata.uid} className="hover:bg-surface-raised">
-              {visible.map((c, i) => (
-                <Fragment key={c.name}>
-                  <td className={cn('px-3 py-1.5 align-top', i === 0 ? 'font-medium whitespace-nowrap' : 'max-w-md break-words')}>
-                    {i === 0 ? (
-                      <ObjectLink kind={kind} name={row.object.metadata.name} namespace={row.object.metadata.namespace} />
-                    ) : (
-                      cell(c, row)
-                    )}
-                  </td>
-                  {i === 0 && showNamespace && (
-                    <td className="px-3 py-1.5 align-top whitespace-nowrap text-muted">{row.object.metadata.namespace}</td>
-                  )}
-                </Fragment>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!loading && rows.length === 0 && <p className="p-6 text-center text-muted">{t('resources.empty')}</p>}
-      {loading && <p className="p-6 text-center text-muted">{t('resources.loading')}</p>}
-    </div>
+    <VirtualTable
+      rows={rows}
+      rowKey={(row) => row.object.metadata.uid}
+      header={visible.map((c, i) => (
+        <ColumnHeader key={c.name} column={c} extra={i === 0 && showNamespace ? t('resources.namespace') : undefined} />
+      ))}
+      cells={(row) =>
+        visible.map((c, i) => (
+          <Fragment key={c.name}>
+            <td className={cn('px-3 py-1.5 align-top', i === 0 ? 'font-medium whitespace-nowrap' : 'max-w-md break-words')}>
+              {i === 0 ? (
+                <ObjectLink kind={kind} name={row.object.metadata.name} namespace={row.object.metadata.namespace} />
+              ) : (
+                cell(c, row)
+              )}
+            </td>
+            {i === 0 && showNamespace && (
+              <td className="px-3 py-1.5 align-top whitespace-nowrap text-muted">{row.object.metadata.namespace}</td>
+            )}
+          </Fragment>
+        ))
+      }
+      footer={
+        <>
+          {!loading && rows.length === 0 && <p className="p-6 text-center text-muted">{t('resources.empty')}</p>}
+          {loading && <p className="p-6 text-center text-muted">{t('resources.loading')}</p>}
+        </>
+      }
+    />
   )
 }
 

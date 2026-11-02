@@ -19,7 +19,7 @@ export interface WatchEvent<T = unknown> {
 }
 
 interface WithMeta {
-  metadata: { uid?: string; name?: string; namespace?: string; resourceVersion?: string }
+  metadata: { uid?: string; name?: string; namespace?: string; resourceVersion?: string; managedFields?: unknown }
 }
 
 /** Lê um stream NDJSON, tolerando eventos partidos entre pedaços. */
@@ -46,45 +46,94 @@ export async function* readEvents(body: ReadableStream<Uint8Array>): AsyncGenera
   }
 }
 
-const sameObject = (a: WithMeta['metadata'], b: WithMeta['metadata']) =>
-  a.uid && b.uid ? a.uid === b.uid : a.name === b.name && a.namespace === b.namespace
+interface Meta {
+  uid?: string
+  name?: string
+  namespace?: string
+  resourceVersion?: string
+  managedFields?: unknown
+}
 
-/** Aplica um evento a uma lista comum (ex.: PodList). */
-export function applyToList<T extends WithMeta>(list: List<T>, ev: WatchEvent<T>): List<T> {
-  const rv = ev.object.metadata.resourceVersion ?? list.metadata.resourceVersion
-  if (ev.type === 'BOOKMARK') return { ...list, metadata: { ...list.metadata, resourceVersion: rv } }
-  const others = list.items.filter((i) => !sameObject(i.metadata, ev.object.metadata))
-  const items =
-    ev.type === 'DELETED'
-      ? others
-      : list.items.some((i) => sameObject(i.metadata, ev.object.metadata))
-        ? list.items.map((i) => (sameObject(i.metadata, ev.object.metadata) ? ev.object : i))
-        : [...list.items, ev.object]
-  return { ...list, items, metadata: { ...list.metadata, resourceVersion: rv } }
+/** Identidade do objeto: uid, ou namespace/nome se faltar o uid. */
+const keyOf = (m: Meta) => m.uid || `${m.namespace ?? ''}/${m.name ?? ''}`
+
+/**
+ * Remove os managedFields, que são a maior parte do tamanho de cada objeto
+ * nas listas (cerca de 3/4 num pod). A página de detalhe busca o objeto
+ * completo.
+ */
+export function slim<T extends { metadata?: Meta }>(o: T): T {
+  if (o.metadata?.managedFields) delete o.metadata.managedFields
+  return o
 }
 
 /**
- * Aplica um evento a uma resposta Table. No watch em formato Table, cada
- * evento traz uma Table com a(s) linha(s) do objeto.
+ * Aplica mudanças a linhas mantendo a ordem: altera no lugar, acrescenta no
+ * fim, remove as excluídas. Custo proporcional a linhas + mudanças, com um
+ * índice por objeto (aplicar evento a evento custaria linhas × mudanças).
  */
-export function applyToTable(table: Table, ev: WatchEvent<Table | WithMeta>): Table {
-  if (ev.type === 'BOOKMARK') {
-    const rv = (ev.object as WithMeta).metadata?.resourceVersion
-    return rv ? { ...table, metadata: { ...table.metadata, resourceVersion: rv } } : table
+function mergeRows<R>(rows: R[], changes: { deleted: boolean; row: R }[], metaOf: (r: R) => Meta): R[] {
+  if (changes.length === 0) return rows
+  const out: (R | undefined)[] = rows.slice()
+  const index = new Map<string, number>()
+  rows.forEach((r, i) => index.set(keyOf(metaOf(r)), i))
+  for (const { deleted, row } of changes) {
+    const key = keyOf(metaOf(row))
+    const i = index.get(key)
+    if (deleted) {
+      if (i !== undefined) {
+        out[i] = undefined
+        index.delete(key)
+      }
+    } else if (i !== undefined) out[i] = row
+    else index.set(key, out.push(row) - 1)
   }
-  const incoming = (ev.object as Table).rows ?? []
-  let rows = table.rows
-  let rv = table.metadata.resourceVersion
-  for (const row of incoming) {
-    const meta = row.object.metadata
-    rv = meta.resourceVersion ?? rv
-    const exists = rows.some((r) => sameObject(r.object.metadata, meta))
-    if (ev.type === 'DELETED') rows = rows.filter((r) => !sameObject(r.object.metadata, meta))
-    else if (exists) rows = rows.map((r) => (sameObject(r.object.metadata, meta) ? row : r))
-    else rows = [...rows, row]
-  }
-  return { ...table, rows, metadata: { ...table.metadata, resourceVersion: rv } }
+  return out.filter((r): r is R => r !== undefined)
 }
+
+/** Último resourceVersion de um lote de eventos. */
+function lastVersion(events: WatchEvent<WithMeta>[], current?: string): string | undefined {
+  let rv = current
+  for (const ev of events) rv = ev.object.metadata?.resourceVersion ?? rv
+  return rv
+}
+
+/** Aplica um lote de eventos a uma lista comum (ex.: PodList). */
+export function applyListEvents<T extends WithMeta>(list: List<T>, events: WatchEvent<T>[], slimmed = false): List<T> {
+  const changes = events
+    .filter((ev) => ev.type === 'ADDED' || ev.type === 'MODIFIED' || ev.type === 'DELETED')
+    .map((ev) => ({ deleted: ev.type === 'DELETED', row: slimmed ? slim(ev.object) : ev.object }))
+  const items = mergeRows(list.items, changes, (i) => i.metadata)
+  const resourceVersion = lastVersion(events, list.metadata.resourceVersion)
+  return { ...list, items, metadata: { ...list.metadata, resourceVersion } }
+}
+
+/**
+ * Aplica um lote de eventos a uma resposta Table. No watch em formato Table,
+ * cada evento traz uma Table com a(s) linha(s) do objeto.
+ */
+export function applyTableEvents(table: Table, events: WatchEvent<Table | WithMeta>[]): Table {
+  const changes: { deleted: boolean; row: Table['rows'][number] }[] = []
+  let rv = table.metadata.resourceVersion
+  for (const ev of events) {
+    if (ev.type === 'BOOKMARK') {
+      rv = (ev.object as WithMeta).metadata?.resourceVersion ?? rv
+      continue
+    }
+    for (const row of (ev.object as Table).rows ?? []) {
+      slim(row.object)
+      rv = row.object.metadata.resourceVersion ?? rv
+      changes.push({ deleted: ev.type === 'DELETED', row })
+    }
+  }
+  return { ...table, rows: mergeRows(table.rows, changes, (r) => r.object.metadata), metadata: { ...table.metadata, resourceVersion: rv } }
+}
+
+/** Aplica um único evento (ver applyListEvents). */
+export const applyToList = <T extends WithMeta>(list: List<T>, ev: WatchEvent<T>) => applyListEvents(list, [ev])
+
+/** Aplica um único evento (ver applyTableEvents). */
+export const applyToTable = (table: Table, ev: WatchEvent<Table | WithMeta>) => applyTableEvents(table, [ev])
 
 export type LiveState = 'connecting' | 'live' | 'polling'
 
@@ -96,6 +145,12 @@ export const pollUnlessLive =
   (ms: number) =>
   (query: { queryHash: string }): number | false =>
     liveQueries.has(query.queryHash) ? false : ms
+
+/**
+ * Eventos que chegam juntos são aplicados de uma vez: uma rajada (500 pods
+ * criados, por exemplo) vira poucas atualizações da tela, não uma por evento.
+ */
+const BATCH_MS = 100
 
 const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
@@ -113,7 +168,8 @@ interface UseWatchOptions<T> {
   accept?: string
   /** Só inicia depois que a lista carregou (precisa do resourceVersion). */
   enabled: boolean
-  apply: (data: T, ev: WatchEvent) => T
+  /** Aplica um lote de eventos aos dados. */
+  apply: (data: T, events: WatchEvent[]) => T
   resourceVersion: (data: T) => string | undefined
 }
 
@@ -161,13 +217,29 @@ export function useWatch<T>({ queryKey, path, accept, enabled, apply, resourceVe
           if (!res.ok || !res.body) throw new Error(`watch: HTTP ${res.status}`)
           setState('live')
           backoff = 1000
-          for await (const ev of readEvents(res.body)) {
-            if (ev.type === 'ERROR') {
-              // 410 Gone: resourceVersion expirou; recarrega a lista e recomeça.
-              await qc.refetchQueries({ queryKey: qk, exact: true })
-              break
+          let pending: WatchEvent[] = []
+          let timer: ReturnType<typeof setTimeout> | undefined
+          const flush = () => {
+            clearTimeout(timer)
+            timer = undefined
+            if (pending.length === 0 || signal.aborted) return
+            const batch = pending
+            pending = []
+            qc.setQueryData<T>(qk, (old) => (old ? apply(old, batch) : old))
+          }
+          try {
+            for await (const ev of readEvents(res.body)) {
+              if (ev.type === 'ERROR') {
+                // 410 Gone: resourceVersion expirou; recarrega a lista e recomeça.
+                pending = []
+                await qc.refetchQueries({ queryKey: qk, exact: true })
+                break
+              }
+              pending.push(ev)
+              timer ??= setTimeout(flush, BATCH_MS)
             }
-            qc.setQueryData<T>(qk, (old) => (old ? apply(old, ev) : old))
+          } finally {
+            flush()
           }
           // Stream encerrado pelo servidor (timeout): reconecta em seguida.
         } catch {
@@ -191,5 +263,7 @@ export function useWatch<T>({ queryKey, path, accept, enabled, apply, resourceVe
 // Funções estáveis (fora dos componentes) para não reiniciar o watch a cada render.
 export const listResourceVersion = <T,>(l: List<T>) => l.metadata.resourceVersion
 export const tableResourceVersion = (t: Table) => t.metadata.resourceVersion
-export const applyListEvent = <T extends WithMeta>(l: List<T>, ev: WatchEvent) => applyToList(l, ev as WatchEvent<T>)
-export const applyTableEvent = (t: Table, ev: WatchEvent) => applyToTable(t, ev as WatchEvent<Table | WithMeta>)
+export const applyListEvent = <T extends WithMeta>(l: List<T>, events: WatchEvent[]) => applyListEvents(l, events as WatchEvent<T>[])
+/** Como applyListEvent, sem os managedFields (listas grandes, como a de pods). */
+export const applySlimListEvent = <T extends WithMeta>(l: List<T>, events: WatchEvent[]) => applyListEvents(l, events as WatchEvent<T>[], true)
+export const applyTableEvent = (t: Table, events: WatchEvent[]) => applyTableEvents(t, events as WatchEvent<Table | WithMeta>[])

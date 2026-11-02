@@ -77,6 +77,7 @@ Imagem: `ghcr.io/fbicudo/kubeviz` (amd64 e arm64). Licença: [Apache-2.0](LICENS
 | 5 | [Roadmap](docs/05-roadmap.md) | Fases, entregas e critérios de pronto |
 | 6 | [Decisões e perguntas em aberto](docs/06-perguntas-em-aberto.md) | Decisões de produto já tomadas e o que ainda falta decidir |
 | — | [Login corporativo (OIDC)](docs/oidc.md) | Configuração, modos impersonate e token, solução de problemas |
+| — | [Desempenho](docs/desempenho.md) | Como medir com milhares de pods (kwok) e os resultados |
 
 ## Resumo executivo
 

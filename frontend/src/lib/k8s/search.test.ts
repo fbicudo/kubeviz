@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { kinds, listHref } from './catalog'
 import { servedVersion } from './crds'
-import { fetchNames, matchObjects, normalize, type ObjectHit } from './search'
+import { QueryClient } from '@tanstack/react-query'
+import { fetchNames, matchObjects, namesFor, normalize, type ObjectHit } from './search'
+import { k8sKeys } from './queries'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -31,6 +33,15 @@ describe('busca global', () => {
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('/api/k8s/api/v1/pods')
     expect(new Headers(init.headers).get('Accept')).toContain('as=PartialObjectMetadataList')
+  })
+
+  it('reaproveita a lista de pods já em cache em vez de baixar de novo', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const qc = new QueryClient()
+    qc.setQueryData(k8sKeys.pods(''), { kind: 'PodList', metadata: {}, items: [{ metadata: { name: 'web-1', namespace: 'demo' } }] })
+    expect(await namesFor(kinds.pods, qc)).toEqual([{ kind: kinds.pods, name: 'web-1', namespace: 'demo' }])
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('erros que não são de permissão continuam sendo erros', async () => {

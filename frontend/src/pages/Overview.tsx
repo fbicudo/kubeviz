@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StatTile } from '@/components/ui/stat-tile'
 import { Link } from '@tanstack/react-router'
@@ -80,20 +81,25 @@ function PodsTile() {
   const { t } = useTranslation()
   const pods = usePods('')
   usePodsLive('', pods.isSuccess)
+  const { total, running, failing } = useMemo(() => {
+    const summaries = (pods.data?.items ?? []).map(summarizePod)
+    return {
+      total: summaries.length,
+      running: summaries.filter((s) => s.status === 'Running').length,
+      failing: summaries.filter((s) => s.severity === 'critical').length,
+    }
+  }, [pods.data])
   if (useClusterDown()) {
     return <StatTile label={t('overview.pods')} status="critical" value="—" hint={t('cluster.unreachable')} />
   }
   if (pods.isError) {
     return <StatTile label={t('overview.pods')} value="—" hint={errorHint(t, pods.error)} />
   }
-  const summaries = (pods.data?.items ?? []).map(summarizePod)
-  const running = summaries.filter((s) => s.status === 'Running').length
-  const failing = summaries.filter((s) => s.severity === 'critical').length
   return (
     <StatTile
       label={t('overview.pods')}
       status={!pods.data ? 'unknown' : failing > 0 ? 'critical' : 'ok'}
-      value={pods.data ? `${running}/${summaries.length}` : '…'}
+      value={pods.data ? `${running}/${total}` : '…'}
       hint={
         pods.data ? (
           <Link to="/pods" className="hover:text-foreground">

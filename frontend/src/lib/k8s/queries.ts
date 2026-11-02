@@ -4,9 +4,11 @@ import { collectionPath, type ResourceKind } from './catalog'
 import type { List, Namespace, Node, Pod, Table } from './types'
 import {
   applyListEvent,
+  applySlimListEvent,
   applyTableEvent,
   listResourceVersion,
   pollUnlessLive,
+  slim,
   tableResourceVersion,
   useWatch,
   type LiveState,
@@ -17,6 +19,13 @@ export const k8sGet = <T>(path: string) => apiGet<T>(`/api/k8s${path}`)
 
 /** Sem watch (ex.: sem permissão de watch), as listas são reconsultadas a cada 10 s. */
 const REFRESH_MS = 10_000
+
+/**
+ * Listas não usam o compartilhamento estrutural do TanStack Query: ele
+ * compararia em profundidade todos os objetos a cada lote do watch (segundos
+ * com 5.000 pods). O watch já preserva os objetos que não mudaram.
+ */
+const LIST_OPTIONS = { structuralSharing: false } as const
 
 /** Pede a resposta no formato Table; o cluster define as colunas. */
 const TABLE_ACCEPT = 'application/json;as=Table;v=v1;g=meta.k8s.io, application/json'
@@ -34,8 +43,13 @@ const podsPath = (namespace: string) =>
 /** Pods de um namespace; namespace vazio = todos os namespaces. */
 export function usePods(namespace: string) {
   return useQuery({
+    ...LIST_OPTIONS,
     queryKey: k8sKeys.pods(namespace),
-    queryFn: () => k8sGet<List<Pod>>(podsPath(namespace)),
+    queryFn: async () => {
+      const list = await k8sGet<List<Pod>>(podsPath(namespace))
+      list.items.forEach(slim)
+      return list
+    },
     refetchInterval: pollUnlessLive(REFRESH_MS),
   })
 }
@@ -46,7 +60,7 @@ export function usePodsLive(namespace: string, loaded: boolean): LiveState {
     queryKey: k8sKeys.pods(namespace),
     path: `/api/k8s${podsPath(namespace)}`,
     enabled: loaded,
-    apply: applyListEvent<Pod>,
+    apply: applySlimListEvent<Pod>,
     resourceVersion: listResourceVersion<Pod>,
   })
 }
@@ -80,8 +94,13 @@ export function useNodesLive(loaded: boolean): LiveState {
 /** Lista de qualquer tipo de recurso no formato Table. */
 export function useResourceTable(kind: ResourceKind, namespace: string) {
   return useQuery({
+    ...LIST_OPTIONS,
     queryKey: k8sKeys.table(kind.id, kind.namespaced ? namespace : ''),
-    queryFn: () => apiGet<Table>(`/api/k8s${collectionPath(kind, namespace)}`, { headers: { Accept: TABLE_ACCEPT } }),
+    queryFn: async () => {
+      const table = await apiGet<Table>(`/api/k8s${collectionPath(kind, namespace)}`, { headers: { Accept: TABLE_ACCEPT } })
+      table.rows.forEach((r) => slim(r.object))
+      return table
+    },
     refetchInterval: pollUnlessLive(REFRESH_MS),
   })
 }
@@ -101,6 +120,7 @@ export function useResourceTableLive(kind: ResourceKind, namespace: string, load
 /** Lista qualquer (caminho já completo, com ou sem query string). */
 export function useK8sList<T>(queryKey: readonly unknown[], path: string, enabled = true) {
   return useQuery({
+    ...LIST_OPTIONS,
     queryKey,
     queryFn: () => k8sGet<List<T>>(path),
     refetchInterval: pollUnlessLive(REFRESH_MS),
@@ -108,16 +128,31 @@ export function useK8sList<T>(queryKey: readonly unknown[], path: string, enable
   })
 }
 
+/** Como useK8sList, sem os managedFields: para listas grandes (eventos). */
+export function useSlimK8sList<T extends { metadata: { managedFields?: unknown } }>(queryKey: readonly unknown[], path: string) {
+  return useQuery({
+    ...LIST_OPTIONS,
+    queryKey,
+    queryFn: async () => {
+      const list = await k8sGet<List<T>>(path)
+      list.items.forEach(slim)
+      return list
+    },
+    refetchInterval: pollUnlessLive(REFRESH_MS),
+  })
+}
+
 export function useK8sListLive<T extends { metadata: { resourceVersion?: string } }>(
   queryKey: readonly unknown[],
   path: string,
   loaded: boolean,
+  slimmed = false,
 ): LiveState {
   return useWatch({
     queryKey,
     path: `/api/k8s${path}`,
     enabled: loaded,
-    apply: applyListEvent<T & { metadata: { uid?: string; name?: string } }>,
+    apply: slimmed ? applySlimListEvent<T & { metadata: { uid?: string; name?: string } }> : applyListEvent<T & { metadata: { uid?: string; name?: string } }>,
     resourceVersion: listResourceVersion<T>,
   })
 }
