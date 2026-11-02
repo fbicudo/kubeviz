@@ -88,3 +88,50 @@ export interface Table {
   rows: TableRow[]
   metadata: { resourceVersion?: string }
 }
+
+export interface OwnerReference {
+  apiVersion: string
+  kind: string
+  name: string
+  uid: string
+  controller?: boolean
+}
+
+/** Objeto qualquer da API, com os campos comuns tipados. */
+export interface K8sObject {
+  apiVersion?: string
+  kind?: string
+  metadata: ObjectMeta & {
+    annotations?: Record<string, string>
+    ownerReferences?: OwnerReference[]
+    managedFields?: unknown[]
+  }
+  spec?: Record<string, unknown>
+  status?: Record<string, unknown>
+  /** Secrets e ConfigMaps. */
+  data?: Record<string, string>
+  stringData?: Record<string, string>
+  type?: string
+}
+
+export interface Condition {
+  type: string
+  status: string
+  reason?: string
+  message?: string
+  lastTransitionTime?: string
+}
+
+export interface KubeEvent {
+  metadata: ObjectMeta
+  type?: string
+  reason?: string
+  message?: string
+  count?: number
+  firstTimestamp?: string
+  lastTimestamp?: string
+  eventTime?: string
+  series?: { count?: number; lastObservedTime?: string }
+  source?: { component?: string; host?: string }
+  reportingComponent?: string
+}

@@ -97,3 +97,27 @@ export function useResourceTableLive(kind: ResourceKind, namespace: string, load
     resourceVersion: tableResourceVersion,
   })
 }
+
+/** Lista qualquer (caminho já completo, com ou sem query string). */
+export function useK8sList<T>(queryKey: readonly unknown[], path: string, enabled = true) {
+  return useQuery({
+    queryKey,
+    queryFn: () => k8sGet<List<T>>(path),
+    refetchInterval: pollUnlessLive(REFRESH_MS),
+    enabled,
+  })
+}
+
+export function useK8sListLive<T extends { metadata: { resourceVersion?: string } }>(
+  queryKey: readonly unknown[],
+  path: string,
+  loaded: boolean,
+): LiveState {
+  return useWatch({
+    queryKey,
+    path: `/api/k8s${path}`,
+    enabled: loaded,
+    apply: applyListEvent<T & { metadata: { uid?: string; name?: string } }>,
+    resourceVersion: listResourceVersion<T>,
+  })
+}

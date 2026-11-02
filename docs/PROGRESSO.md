@@ -325,24 +325,48 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   vivo, logout e bloqueio após 5 erros. Captura:
   [img/login-senha.png](img/login-senha.png).
 
+### 02/11/2026 — Tarefa 1.3: detalhe de recurso
+- **Página de detalhe genérica** em `/view/<grupo>/<versão>/<recurso>/<nome>?ns=…`
+  (grupo core = `core`), para qualquer tipo; o nome de cada linha das listas
+  passa a ser um link para ela. O objeto é lido como lista filtrada pelo nome
+  (`fieldSelector=metadata.name=…`), então o watch da 1.2 o mantém atualizado.
+- **Abas:** Visão geral (metadados, labels, anotações, "pertence a" com link
+  para o dono, condições, containers com status e reinícios, nó e IP; dados de
+  ConfigMaps); YAML somente leitura (sem `managedFields` por padrão, copiar);
+  Eventos do objeto (`involvedObject.uid`), ao vivo.
+- **Secrets mascarados por padrão:** valores de `data`/`stringData` e a anotação
+  `last-applied-configuration` aparecem como `••••••`; "Mostrar valores" revela
+  e mostra os valores decodificados.
+- **Verificado:**
+  - 114 testes Vitest (detalhe de Deployment e Pod, links de dono e nó,
+    eventos, Secret oculto/revelado, YAML, objeto inexistente, navegação a
+    partir da lista; mascaramento; todo tipo do catálogo com tradução);
+  - varredura no kind: detalhe aberto a partir do primeiro item de 17 tipos,
+    com as abas YAML e Eventos, sem erros;
+  - corrigidos na conferência visual: link "voltar" com chave de tradução crua
+    (`kinds.pods`) e eventos desalinhados;
+  - capturas: [img/detalhe-pod.png](img/detalhe-pod.png) e
+    [img/detalhe-eventos.png](img/detalhe-eventos.png).
+- **Fica para depois:** CRDs (navegação por discovery) entram com a busca
+  global (1.8), que já precisa da lista de todos os tipos do cluster.
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.3 — Detalhe de recurso:** metadados, labels, condições, eventos do objeto
-   e YAML somente leitura; recursos personalizados (CRDs) via discovery.
-2. **1.4 — Edição:** editor YAML (Monaco) com validação, dry-run no servidor,
+1. **1.4 — Edição:** editor YAML (Monaco) com validação, dry-run no servidor,
    diff e server-side apply; aplicar YAML arbitrário.
-3. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
-4. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
+2. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
+3. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
    verificação de origem).
-5. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
+4. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
    confirmação; ações ocultas quando o RBAC não permite.
-6. **1.8 — Busca global** (Ctrl+K) e página de eventos com filtros.
-7. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
-8. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+5. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
+   personalizados (CRDs) via discovery.
+6. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
+7. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
     (kwok).
 
 ## Como publicar uma versão

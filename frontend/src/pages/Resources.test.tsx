@@ -68,6 +68,16 @@ beforeEach(async () => {
 })
 afterEach(() => vi.unstubAllGlobals())
 
+describe('catálogo', () => {
+  it('todo tipo tem nome traduzido nos dois idiomas', () => {
+    for (const lng of ['pt-BR', 'en']) {
+      for (const id of Object.keys(kinds)) {
+        expect(i18n.exists(`kinds.${id}`, { lng }), `kinds.${id} em ${lng}`).toBe(true)
+      }
+    }
+  })
+})
+
 describe('collectionPath', () => {
   it('monta caminhos do grupo core, de grupos e com namespace', () => {
     expect(collectionPath(kinds.pvcs, '')).toBe('/api/v1/persistentvolumeclaims')

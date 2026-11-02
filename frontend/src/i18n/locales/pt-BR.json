@@ -144,6 +144,7 @@
     "kinds": "Tipos de recurso"
   },
   "kinds": {
+    "pods": "Pods",
     "nodes": "Nodes",
     "namespaces": "Namespaces",
     "events": "Events",
@@ -178,5 +179,44 @@
     "connectingHint": "Abrindo a conexão de tempo real; tentando novamente se cair.",
     "polling": "A cada 10 s",
     "pollingHint": "Sem permissão de watch: a lista é consultada a cada 10 segundos."
+  },
+  "detail": {
+    "sections": "Seções",
+    "tab": {
+      "overview": "Visão geral",
+      "yaml": "YAML",
+      "events": "Eventos"
+    },
+    "notFound": "Objeto não encontrado",
+    "notFoundHint": "Ele pode ter sido excluído ou estar em outro namespace.",
+    "metadata": "Metadados",
+    "name": "Nome",
+    "created": "Criado",
+    "labels": "Labels",
+    "annotations": "Anotações",
+    "owners": "Pertence a",
+    "none": "Nenhum",
+    "conditions": "Condições",
+    "condType": "Tipo",
+    "condReason": "Motivo",
+    "condSince": "Desde",
+    "containers": "Containers",
+    "node": "Nó",
+    "restarts_one": "{{count}} reinício",
+    "restarts_other": "{{count}} reinícios",
+    "data": "Dados",
+    "secretHidden": "Os valores ficam ocultos. Para vê-los, use a aba YAML.",
+    "bytes_one": "{{count}} byte",
+    "bytes_other": "{{count}} bytes",
+    "showValues": "Mostrar valores",
+    "hideValues": "Ocultar valores",
+    "showManaged": "Mostrar managedFields",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "decoded": "Valores decodificados",
+    "binary": "(conteúdo binário)",
+    "noEvents": "Nenhum evento recente para este objeto.",
+    "times_one": "{{count}} vez",
+    "times_other": "{{count}} vezes"
   }
 }

@@ -3,6 +3,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { allNavItems } from '@/components/layout/nav'
 import { Overview } from '@/pages/Overview'
 import { Placeholder } from '@/pages/Placeholder'
+import { Detail, type DetailSearch } from '@/pages/Detail'
 import { Pods } from '@/pages/Pods'
 import { ResourcePage, type ResourceSearch } from '@/pages/Resources'
 import { resourcePages } from '@/lib/k8s/catalog'
@@ -47,7 +48,17 @@ const sectionRoutes = allNavItems
         }),
   )
 
-const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, ...sectionRoutes])
+const detailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/view/$group/$version/$resource/$name',
+  validateSearch: (search: Record<string, unknown>): DetailSearch => ({
+    ...(typeof search.ns === 'string' && search.ns ? { ns: search.ns } : {}),
+    ...(search.tab === 'yaml' || search.tab === 'events' ? { tab: search.tab } : {}),
+  }),
+  component: Detail,
+})
+
+const routeTree = rootRoute.addChildren([overviewRoute, podsRoute, detailRoute, ...sectionRoutes])
 
 export function makeRouter(history?: RouterHistory) {
   return createRouter({ routeTree, history })

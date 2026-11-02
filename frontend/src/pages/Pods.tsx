@@ -2,7 +2,9 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FilterInput, LoadError, NamespacePicker, RefreshButton } from '@/components/resources/common'
+import { ObjectLink } from '@/components/resources/ObjectLink'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { kinds } from '@/lib/k8s/catalog'
 import { age } from '@/lib/format'
 import { summarizePod } from '@/lib/k8s/pods'
 import { usePods, usePodsLive } from '@/lib/k8s/queries'
@@ -92,7 +94,9 @@ function PodTable({ pods, loading, showNamespace, now }: PodTableProps) {
             const s = summarizePod(pod)
             return (
               <tr key={pod.metadata.uid} className="hover:bg-surface-raised">
-                <td className="px-3 py-1.5 font-medium">{pod.metadata.name}</td>
+                <td className="px-3 py-1.5 font-medium whitespace-nowrap">
+                  <ObjectLink kind={kinds.pods} name={pod.metadata.name} namespace={pod.metadata.namespace} />
+                </td>
                 {showNamespace && <td className="px-3 py-1.5 text-muted">{pod.metadata.namespace}</td>}
                 <td className="px-3 py-1.5">
                   <StatusBadge severity={s.severity}>{s.status}</StatusBadge>

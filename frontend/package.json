@@ -26,7 +26,8 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-i18next": "^17.1.10",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

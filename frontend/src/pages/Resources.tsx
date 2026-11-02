@@ -3,6 +3,7 @@ import { Columns3 } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FilterInput, LoadError, NamespacePicker, RefreshButton } from '@/components/resources/common'
+import { ObjectLink } from '@/components/resources/ObjectLink'
 import { Button } from '@/components/ui/button'
 import type { Status } from '@/components/ui/stat-tile'
 import { StatusBadge } from '@/components/ui/status-badge'
@@ -112,6 +113,7 @@ function ResourceList({ kind, namespace, onNamespace }: ResourceListProps) {
         <LoadError error={table.error} what={what} namespace={namespace} namespaced={kind.namespaced} />
       ) : (
         <DataTable
+          kind={kind}
           columns={table.data?.columnDefinitions ?? []}
           rows={rows}
           wide={wide}
@@ -136,6 +138,7 @@ function severityOf(value: string): Status {
 const STATUS_COLUMNS = new Set(['Status', 'Phase'])
 
 interface DataTableProps {
+  kind: ResourceKind
   columns: TableColumn[]
   rows: TableRow[]
   wide: boolean
@@ -145,7 +148,7 @@ interface DataTableProps {
   now: number
 }
 
-function DataTable({ columns, rows, wide, showNamespace, loading, now }: DataTableProps) {
+function DataTable({ kind, columns, rows, wide, showNamespace, loading, now }: DataTableProps) {
   const { t } = useTranslation()
   const visible = columns.map((c, i) => ({ ...c, index: i })).filter((c) => wide || c.priority === 0)
 
@@ -190,7 +193,11 @@ function DataTable({ columns, rows, wide, showNamespace, loading, now }: DataTab
               {visible.map((c, i) => (
                 <Fragment key={c.name}>
                   <td className={cn('px-3 py-1.5 align-top', i === 0 ? 'font-medium whitespace-nowrap' : 'max-w-md break-words')}>
-                    {cell(c, row)}
+                    {i === 0 ? (
+                      <ObjectLink kind={kind} name={row.object.metadata.name} namespace={row.object.metadata.namespace} />
+                    ) : (
+                      cell(c, row)
+                    )}
                   </td>
                   {i === 0 && showNamespace && (
                     <td className="px-3 py-1.5 align-top whitespace-nowrap text-muted">{row.object.metadata.namespace}</td>

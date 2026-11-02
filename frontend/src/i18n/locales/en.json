@@ -144,6 +144,7 @@
     "kinds": "Resource types"
   },
   "kinds": {
+    "pods": "Pods",
     "nodes": "Nodes",
     "namespaces": "Namespaces",
     "events": "Events",
@@ -178,5 +179,44 @@
     "connectingHint": "Opening the real-time connection; retrying if it drops.",
     "polling": "Every 10 s",
     "pollingHint": "No watch permission: the list is fetched every 10 seconds."
+  },
+  "detail": {
+    "sections": "Sections",
+    "tab": {
+      "overview": "Overview",
+      "yaml": "YAML",
+      "events": "Events"
+    },
+    "notFound": "Object not found",
+    "notFoundHint": "It may have been deleted or live in another namespace.",
+    "metadata": "Metadata",
+    "name": "Name",
+    "created": "Created",
+    "labels": "Labels",
+    "annotations": "Annotations",
+    "owners": "Owned by",
+    "none": "None",
+    "conditions": "Conditions",
+    "condType": "Type",
+    "condReason": "Reason",
+    "condSince": "Since",
+    "containers": "Containers",
+    "node": "Node",
+    "restarts_one": "{{count}} restart",
+    "restarts_other": "{{count}} restarts",
+    "data": "Data",
+    "secretHidden": "Values are hidden. To see them, use the YAML tab.",
+    "bytes_one": "{{count}} byte",
+    "bytes_other": "{{count}} bytes",
+    "showValues": "Show values",
+    "hideValues": "Hide values",
+    "showManaged": "Show managedFields",
+    "copy": "Copy",
+    "copied": "Copied",
+    "decoded": "Decoded values",
+    "binary": "(binary content)",
+    "noEvents": "No recent events for this object.",
+    "times_one": "{{count}} time",
+    "times_other": "{{count}} times"
   }
 }
