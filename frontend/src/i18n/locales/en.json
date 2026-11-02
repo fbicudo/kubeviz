@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Kubora",
+    "tagline": "Kubernetes console"
+  },
+  "nav": {
+    "overview": "Overview",
+    "groups": {
+      "cluster": "Cluster",
+      "workloads": "Workloads",
+      "network": "Network",
+      "storage": "Storage",
+      "config": "Configuration",
+      "observability": "Observability",
+      "tools": "Tools"
+    },
+    "nodes": "Nodes",
+    "namespaces": "Namespaces",
+    "events": "Events",
+    "pods": "Pods",
+    "deployments": "Deployments",
+    "statefulsets": "StatefulSets",
+    "daemonsets": "DaemonSets",
+    "jobs": "Jobs & CronJobs",
+    "services": "Services",
+    "ingresses": "Ingress & Gateways",
+    "networkpolicies": "Network policies",
+    "pvcs": "Volumes",
+    "storageclasses": "StorageClasses",
+    "configmaps": "ConfigMaps",
+    "secrets": "Secrets",
+    "rbac": "Access control",
+    "metrics": "Metrics",
+    "uptime": "Uptime",
+    "wizards": "Wizards"
+  },
+  "header": {
+    "search": "Search resources…",
+    "cluster": "Cluster",
+    "noCluster": "No cluster connected",
+    "theme": "Toggle theme",
+    "language": "Language",
+    "toggleSidebar": "Collapse menu"
+  },
+  "overview": {
+    "title": "Overview",
+    "subtitle": "Cluster health and capacity",
+    "nodes": "Ready nodes",
+    "pods": "Running pods",
+    "cpu": "CPU usage",
+    "memory": "Memory usage",
+    "pending": "Available in Phase 1, once Kubora connects to the cluster.",
+    "backend": "Backend",
+    "backendOk": "Connected · {{version}}",
+    "backendDown": "Unavailable"
+  },
+  "placeholder": {
+    "title": "Under construction",
+    "body": "This area is part of the Kubora roadmap and has not been implemented yet."
+  }
+}

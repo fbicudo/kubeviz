@@ -1,0 +1,26 @@
+name: Relatar bug
+description: Algo não funciona como esperado
+labels: [bug]
+body:
+  - type: textarea
+    id: descricao
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o problema e o que você esperava.
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: Passos para reproduzir
+    validations:
+      required: true
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do Kubora
+  - type: input
+    id: cluster
+    attributes:
+      label: Distribuição e versão do Kubernetes
+      placeholder: ex. EKS 1.36, k3s 1.37

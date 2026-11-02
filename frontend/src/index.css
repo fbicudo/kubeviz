@@ -1,0 +1,87 @@
+@import 'tailwindcss';
+
+/* Tema "painel de observabilidade": escuro por padrão, alta densidade.
+   As cores são tokens semânticos; componentes nunca usam cores literais. */
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root,
+[data-theme='dark'] {
+  --background: #0b0e14;
+  --surface: #11151d;
+  --surface-raised: #171c26;
+  --border: #232a36;
+  --foreground: #d6dde6;
+  --muted: #8b95a5;
+  --subtle: #5c6675;
+  --accent: #2dd4bf;
+  --accent-foreground: #042f2e;
+  --ok: #3fb950;
+  --warn: #d29922;
+  --critical: #f85149;
+  --info: #58a6ff;
+  --ring: #2dd4bf;
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --background: #f5f7fa;
+  --surface: #ffffff;
+  --surface-raised: #eef1f5;
+  --border: #d9dee6;
+  --foreground: #1b2230;
+  --muted: #5b6575;
+  --subtle: #8a93a2;
+  --accent: #0f766e;
+  --accent-foreground: #ffffff;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --critical: #cf222e;
+  --info: #0969da;
+  --ring: #0f766e;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-critical: var(--critical);
+  --color-info: var(--info);
+  --color-ring: var(--ring);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}

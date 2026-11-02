@@ -1,0 +1,25 @@
+# Build
+/bin/
+/dist/
+backend/internal/web/dist/*
+!backend/internal/web/dist/.gitkeep
+
+# Node
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Go
+*.test
+coverage.out
+
+# Editores e SO
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local
+.env
+*.local
+kubeconfig*
