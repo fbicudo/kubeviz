@@ -230,3 +230,27 @@ func TestProxyStreamsWatchWithoutBuffering(t *testing.T) {
 		t.Fatalf("segundo evento = %q", line)
 	}
 }
+
+// Server-side apply usa application/apply-patch+yaml; precisa passar pelo
+// proxy com a credencial da sessão.
+func TestProxyAcceptsKubernetesPatchTypes(t *testing.T) {
+	var gotCT, gotMethod string
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotCT, gotMethod = r.Header.Get("Content-Type"), r.Method
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"kind":"Deployment"}`))
+	}))
+	defer api.Close()
+
+	fc := newFakeCluster()
+	fc.host = api.URL
+	s := newServer(fc, Options{})
+	h := s.Handler()
+	for _, ct := range []string{"application/apply-patch+yaml", "application/merge-patch+json", "application/strategic-merge-patch+json", "application/json-patch+json"} {
+		rec := do(t, h, "PATCH", "/api/k8s/apis/apps/v1/namespaces/demo/deployments/web?fieldManager=kubeviz", "kind: Deployment",
+			map[string]string{"Cookie": loggedIn(s, ""), "Content-Type": ct, "Sec-Fetch-Site": "same-origin"})
+		if rec.Code != 200 || gotCT != ct || gotMethod != "PATCH" {
+			t.Errorf("%s: status %d, repassado %q %q", ct, rec.Code, gotMethod, gotCT)
+		}
+	}
+}

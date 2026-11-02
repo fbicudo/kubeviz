@@ -61,7 +61,7 @@ contribuidores. Não compensa para uma aplicação limitada por I/O.
 | Roteamento / dados | **TanStack Router** + **TanStack Query** | Tipagem forte, cache e revalidação |
 | Tabelas | **TanStack Table** + virtualização (**TanStack Virtual**) | Milhares de linhas sem travar |
 | Gráficos | **Apache ECharts** (painéis) e **uPlot** (séries temporais densas) | ECharts: rico e acessível; uPlot: muito rápido para tempo real |
-| Editor YAML | **Monaco Editor** + validação por JSON Schema do OpenAPI do cluster | Autocompletar e validação de campos |
+| Editor YAML | **CodeMirror 6** + validação pelo próprio cluster (dry-run com `fieldValidation=Strict`) | Decisão da tarefa 1.4: ~10× menor que o Monaco, sem web workers nem CDN (funciona isolado da internet); o cluster valida com o esquema real, inclusive de CRDs |
 | Terminal | **xterm.js** | Padrão para `exec` |
 | Formulários (assistentes) | **React Hook Form** + **Zod** | Validação declarativa e passo a passo |
 | i18n | **i18next** | pt-BR e en desde o início |

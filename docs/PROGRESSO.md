@@ -350,14 +350,48 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
 - **Fica para depois:** CRDs (navegação por discovery) entram com a busca
   global (1.8), que já precisa da lista de todos os tipos do cluster.
 
+### 02/11/2026 — Tarefa 1.4a: edição de objetos em YAML
+- **Botão Editar** na aba YAML do detalhe: editor **CodeMirror 6** (realce com
+  os tokens do tema, busca, erros de sintaxe marcados na linha), carregado só
+  quando usado (pacote separado de 428 KB).
+- **Decisão: CodeMirror em vez de Monaco** (previsto na arquitetura): ~10× menor,
+  sem web workers nem CDN; e **validação pelo próprio cluster** em vez de
+  esquema no navegador: dry-run com `fieldValidation=Strict`, que recusa campos
+  desconhecidos com o esquema real (inclusive de CRDs).
+- **Fluxo:** Validar (server-side apply em dry-run) mostra o diff do que o
+  cluster aplicaria; Aplicar só fica disponível para o texto validado; o objeto
+  vai sem os campos mantidos pelo cluster (status, uid, managedFields…), com as
+  chaves em ordem canônica para o diff não acusar falsas mudanças.
+- **Server-side apply** com `fieldManager=kubeviz`. Conflitos de dono de campo
+  (409) são explicados e podem ser resolvidos com "Validar forçando", que avisa
+  que o gerenciador anterior pode desfazer a mudança. Campos desconhecidos viram
+  "Campo desconhecido: .spec.replcas (confira a grafia e a indentação)".
+- **Backend:** o filtro de CSRF passou a aceitar os tipos de patch do Kubernetes
+  (`application/apply-patch+yaml`, `merge-patch+json`, `strategic-merge-patch+json`,
+  `json-patch+json`); continua recusando os tipos "simples" do CORS (texto puro,
+  formulários), que permitiriam CSRF.
+- **Verificado:**
+  - testes Go (tipos de patch pelo proxy; recusa de text/plain e multipart);
+    124 testes Vitest (limpeza e ordem do objeto, erros de sintaxe com linha,
+    diff, URL e cabeçalhos do apply, conflito e campos desconhecidos; fluxo
+    validar → diff → aplicar, conflito → forçar, cancelar);
+  - no kind, editando pelo navegador: o cluster acusou que `.spec.replicas`
+    pertence ao `kubectl` (do `kubectl scale`); forçando, aplicou 3 réplicas e o
+    KubeViz passou a constar como gerenciador; `replcas` (erro de digitação) foi
+    recusado com a mensagem clara; YAML inválido desabilita Validar;
+  - corrigidos na conferência visual: cores do editor ilegíveis no tema escuro
+    e diff acusando `apiVersion` por ordem de chaves;
+  - captura: [img/editar-yaml.png](img/editar-yaml.png).
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.4 — Edição:** editor YAML (Monaco) com validação, dry-run no servidor,
-   diff e server-side apply; aplicar YAML arbitrário.
+1. **1.4b — Aplicar YAML novo:** colar ou importar YAML com vários documentos,
+   descoberta do tipo de cada um (discovery), validação e aplicação em lote.
+   (A edição de objetos existentes, 1.4a, está pronta.)
 2. **1.5 — Logs:** em tempo real, multi-container, anteriores, busca e download.
 3. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
    verificação de origem).

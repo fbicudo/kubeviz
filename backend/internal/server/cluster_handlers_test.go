@@ -191,6 +191,8 @@ func TestCSRFProtection(t *testing.T) {
 		{"formulário de outro site", map[string]string{"Content-Type": "text/plain", "Sec-Fetch-Site": "cross-site"}, 403},
 		{"fetch de outro site", map[string]string{"Content-Type": "application/json", "Origin": "https://evil.example"}, 403},
 		{"sem JSON", map[string]string{"Content-Type": "application/x-www-form-urlencoded"}, 415},
+		{"texto puro (tipo simples do CORS)", map[string]string{"Content-Type": "text/plain"}, 415},
+		{"multipart (tipo simples do CORS)", map[string]string{"Content-Type": "multipart/form-data; boundary=x"}, 415},
 		{"mesma origem", map[string]string{"Content-Type": "application/json", "Origin": "http://127.0.0.1:4466", "Sec-Fetch-Site": "same-origin"}, 200},
 		{"cliente sem navegador (curl)", map[string]string{"Content-Type": "application/json"}, 200},
 	}

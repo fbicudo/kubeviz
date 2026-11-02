@@ -1,9 +1,10 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ArrowLeft, Check, Copy, Eye, EyeOff, SearchX } from 'lucide-react'
+import { ArrowLeft, Check, Copy, Eye, EyeOff, Pencil, SearchX } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { stringify } from 'yaml'
 import { LiveIndicator } from '@/components/resources/LiveIndicator'
+import { EditObject } from '@/components/editor/EditObject'
 import { LoadError } from '@/components/resources/common'
 import { ObjectLink } from '@/components/resources/ObjectLink'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ import { age } from '@/lib/format'
 import {
   collectionPath,
   findKind,
+  objectPath,
   kindOfOwner,
   kinds,
   pageOfKind,
@@ -125,7 +127,7 @@ export function Detail() {
             ))}
           </div>
           {tab === 'overview' && <Overview obj={obj} kind={kind} />}
-          {tab === 'yaml' && <YamlView obj={obj} />}
+          {tab === 'yaml' && <YamlView obj={obj} path={objectPath(kind, namespace, name)} />}
           {tab === 'events' && <Events obj={obj} />}
         </>
       )}
@@ -368,8 +370,9 @@ function SecretKeys({ obj }: { obj: K8sObject }) {
   )
 }
 
-function YamlView({ obj }: { obj: K8sObject }) {
+function YamlView({ obj, path }: { obj: K8sObject; path: string }) {
   const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
   const [managed, setManaged] = useState(false)
   const [reveal, setReveal] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -392,6 +395,8 @@ function YamlView({ obj }: { obj: K8sObject }) {
     })
   }, [obj, reveal, isSecret, t])
 
+  if (editing) return <EditObject obj={obj} path={path} onClose={() => setEditing(false)} />
+
   const copy = async () => {
     await navigator.clipboard.writeText(text)
     setCopied(true)
@@ -411,7 +416,11 @@ function YamlView({ obj }: { obj: K8sObject }) {
           <input type="checkbox" checked={managed} onChange={(e) => setManaged(e.target.checked)} />
           {t('detail.showManaged')}
         </label>
-        <Button size="sm" className="ml-auto" onClick={() => void copy()}>
+        <Button size="sm" variant="primary" className="ml-auto" onClick={() => setEditing(true)}>
+          <Pencil />
+          {t('edit.edit')}
+        </Button>
+        <Button size="sm" onClick={() => void copy()}>
           {copied ? <Check /> : <Copy />}
           {copied ? t('detail.copied') : t('detail.copy')}
         </Button>

@@ -57,6 +57,17 @@ func loopbackHostOnly(next http.Handler) http.Handler {
 	})
 }
 
+// writeContentTypes são os tipos aceitos em requisições que alteram estado:
+// JSON e os formatos de patch do Kubernetes. Nenhum deles é um tipo "simples"
+// do CORS, então um site de outra origem não consegue enviá-los sem preflight.
+var writeContentTypes = map[string]bool{
+	"application/json":                       true,
+	"application/apply-patch+yaml":           true,
+	"application/merge-patch+json":           true,
+	"application/strategic-merge-patch+json": true,
+	"application/json-patch+json":            true,
+}
+
 // sameOriginWrites recusa requisições que alteram estado vindas de outro site
 // (CSRF). Exige JSON, o que força preflight CORS em requisições de outras
 // origens, e confere Sec-Fetch-Site e Origin quando presentes.
@@ -78,8 +89,8 @@ func sameOriginWrites(next http.Handler) http.Handler {
 				return
 			}
 		}
-		if ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type")); ct != "application/json" {
-			writeError(w, http.StatusUnsupportedMediaType, "Content-Type deve ser application/json")
+		if ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type")); !writeContentTypes[ct] {
+			writeError(w, http.StatusUnsupportedMediaType, "Content-Type deve ser application/json ou um tipo de patch do Kubernetes")
 			return
 		}
 		next.ServeHTTP(w, r)
