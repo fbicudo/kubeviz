@@ -169,7 +169,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - **Verificado no kind (modo in-cluster, HTTPS via port-forward):**
   - `kubectl auth can-i` confirma que a ServiceAccount do KubeViz não lista
     pods nem lê secrets;
-  - certificado com os nomes do Service e o IP 10.11.12.103; HSTS presente;
+  - certificado com os nomes do Service e o IP da máquina; HSTS presente;
   - sessão sem login → tela de token; link do modo local → 404; token inválido
     → 401; cookie `Secure`;
   - `dev`: 200 em pods de `demo`, 403 em todos os namespaces;
@@ -245,11 +245,11 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   Rodar com `./bin/kubeviz --kubeconfig ~/.kube/kubeviz-demo.yaml`.
 - Acesso pela rede, rodando em segundo plano nesta máquina (não sobrevive a
   reinícios):
-  - modo local (administrador do kind): `https://10.11.12.103:4466`, com o
+  - modo local (administrador do kind): `https://<ip-da-maquina>:4466`, com o
     certificado autoassinado em `~/.config/kubeviz/tls/` (fora do repositório);
     o link com token aparece no log de inicialização;
-  - modo in-cluster (Helm no namespace `kubeviz`): `https://10.11.12.103:8443`,
-    via `kubectl -n kubeviz port-forward --address 10.11.12.103 svc/kubeviz 8443:443`;
+  - modo in-cluster (Helm no namespace `kubeviz`): `https://<ip-da-maquina>:8443`,
+    via `kubectl -n kubeviz port-forward --address <ip-da-maquina> svc/kubeviz 8443:443`;
     login com `kubectl create token dev -n demo` ou `... leitor -n demo`.
 - Cluster: `kind-kubeviz-dev` (`make kind-up` / `make kind-down`). A máquina tem 3,3 GB de RAM, então
   manter apenas um cluster por vez.
