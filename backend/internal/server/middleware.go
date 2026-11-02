@@ -97,6 +97,24 @@ func sameOriginWrites(next http.Handler) http.Handler {
 	})
 }
 
+// sameOriginWebSockets recusa WebSockets abertos por páginas de outra origem
+// (Cross-Site WebSocket Hijacking). O cookie SameSite=Strict já impede outros
+// sites; esta verificação cobre também origens do mesmo site (subdomínios).
+func sameOriginWebSockets(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+			if origin := r.Header.Get("Origin"); origin != "" {
+				u, err := url.Parse(origin)
+				if err != nil || u.Host != r.Host {
+					writeError(w, http.StatusForbidden, "WebSocket de outra origem recusado")
+					return
+				}
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 type statusRecorder struct {
 	http.ResponseWriter
 	status int

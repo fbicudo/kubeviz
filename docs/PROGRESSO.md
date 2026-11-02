@@ -442,20 +442,41 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
     tinha descartado os logs anteriores e respondia só com a mensagem de erro);
   - captura: [img/logs-ao-vivo.png](img/logs-ao-vivo.png).
 
+### 02/11/2026 — Tarefa 1.6: terminal no navegador
+- **Aba Terminal no detalhe de pods** (`?tab=terminal`): xterm.js (carregado só
+  quando usado), container, shell (automático = bash se houver, sh ou bash),
+  redimensionamento, conexão só por clique em "Conectar"; mensagens para
+  processo encerrado (com código de saída), shell inexistente na imagem e
+  conexão recusada (sem `pods/exec`).
+- `lib/k8s/exec.ts`: protocolo de exec por WebSocket (`v5.channel.k8s.io`,
+  `v4.channel.k8s.io`): canais de entrada, saída, erro, status e tamanho.
+- **Backend:** o proxy já repassava upgrades (o Go usa HTTP/1.1 nesses
+  pedidos); novos: recusa de WebSocket de outra origem (proteção contra
+  Cross-Site WebSocket Hijacking, além do cookie SameSite=Strict) e **registro
+  de auditoria** de cada sessão de terminal (usuário, recurso, container,
+  comando, origem).
+- **Verificado:**
+  - testes Go: upgrade de ponta a ponta pelo proxy com eco nos dois sentidos e
+    credencial da sessão; origem estranha recusada sem chegar ao cluster; sem
+    sessão, 401; registro no log; 142 testes Vitest (protocolo, shell
+    inexistente);
+  - no kind, por `wss://` com a CSP real: comando executado no pod `web`
+    (`kubeviz-42`), `exit 3` informado, `bash` inexistente explicado, usuário
+    `dev-limitado` recusado; sessões registradas no log;
+  - captura: [img/terminal.png](img/terminal.png).
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.6 — Terminal:** exec no navegador (xterm.js + WebSocket pelo proxy, com
-   verificação de origem).
-2. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
+1. **1.7 — Ações:** escalar, reiniciar, pausar/retomar, rollback e excluir, com
    confirmação; ações ocultas quando o RBAC não permite.
-3. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
+2. **1.8 — Busca global** (Ctrl+K), página de eventos com filtros e recursos
    personalizados (CRDs) via discovery.
-4. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
-5. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+3. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
+4. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
     (kwok).
 
 ## Como publicar uma versão

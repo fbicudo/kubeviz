@@ -187,7 +187,8 @@
       "overview": "Visão geral",
       "yaml": "YAML",
       "events": "Eventos",
-      "logs": "Logs"
+      "logs": "Logs",
+      "terminal": "Terminal"
     },
     "notFound": "Objeto não encontrado",
     "notFoundHint": "Ele pode ter sido excluído ou estar em outro namespace.",
@@ -318,5 +319,27 @@
       "ended": "Fim dos logs",
       "error": "Erro"
     }
+  },
+  "terminal": {
+    "shell": "Shell",
+    "shellAuto": "automático (bash se houver)",
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "reconnect": "Conectar de novo",
+    "loading": "Carregando terminal…",
+    "region": "Terminal do container {{container}}",
+    "intro": "Abra um shell no container {{container}}.",
+    "audit": "Cada sessão de terminal fica registrada no log do KubeViz. O RBAC do cluster precisa permitir pods/exec.",
+    "notRunning": "O pod não está em execução; não é possível abrir um terminal.",
+    "exited": "processo encerrado (código {{code}})",
+    "failed": "o comando falhou",
+    "refused": "conexão recusada: verifique a permissão pods/exec e se o shell existe na imagem",
+    "closed": "conexão encerrada",
+    "state": {
+      "connecting": "Conectando…",
+      "open": "Conectado",
+      "closed": "Desconectado"
+    },
+    "noShell": "o shell {{shell}} não existe nesta imagem; tente sh ou automático"
   }
 }

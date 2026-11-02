@@ -7,6 +7,7 @@ import { LiveIndicator } from '@/components/resources/LiveIndicator'
 import { EditObject } from '@/components/editor/EditObject'
 import { LoadError } from '@/components/resources/common'
 import { LogsView } from '@/components/resources/LogsView'
+import { TerminalView } from '@/components/resources/TerminalView'
 import { ObjectLink } from '@/components/resources/ObjectLink'
 import { Button } from '@/components/ui/button'
 import type { Status } from '@/components/ui/stat-tile'
@@ -30,7 +31,7 @@ import { cn } from '@/lib/utils'
 
 export interface DetailSearch {
   ns?: string
-  tab?: 'overview' | 'yaml' | 'events' | 'logs'
+  tab?: 'overview' | 'yaml' | 'events' | 'logs' | 'terminal'
 }
 
 /** Detalhe de qualquer objeto: /view/<grupo>/<versão>/<recurso>/<nome>?ns=… */
@@ -107,7 +108,7 @@ export function Detail() {
       ) : (
         <>
           <div role="tablist" aria-label={t('detail.sections')} className="flex gap-1 border-b">
-            {(kind.kind === 'Pod' ? (['overview', 'logs', 'yaml', 'events'] as const) : (['overview', 'yaml', 'events'] as const)).map((id) => (
+            {(kind.kind === 'Pod' ? (['overview', 'logs', 'terminal', 'yaml', 'events'] as const) : (['overview', 'yaml', 'events'] as const)).map((id) => (
               <button
                 key={id}
                 type="button"
@@ -129,6 +130,7 @@ export function Detail() {
           {tab === 'yaml' && <YamlView obj={obj} path={objectPath(kind, namespace, name)} />}
           {tab === 'events' && <Events obj={obj} />}
           {tab === 'logs' && kind.kind === 'Pod' && <LogsView pod={obj} />}
+          {tab === 'terminal' && kind.kind === 'Pod' && <TerminalView pod={obj} />}
         </>
       )}
     </div>

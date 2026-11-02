@@ -109,7 +109,7 @@ func (s *Server) Handler() http.Handler {
 		ui.ServeHTTP(w, r)
 	})
 
-	var h http.Handler = sameOriginWrites(mux)
+	var h http.Handler = sameOriginWebSockets(sameOriginWrites(mux))
 	if s.opts.LoopbackOnly {
 		h = loopbackHostOnly(h)
 	}

@@ -55,7 +55,9 @@ export default function YamlEditor({ value, onChange, label }: YamlEditorProps) 
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
+  useEffect(() => {
+    onChangeRef.current = onChange
+  })
 
   useEffect(() => {
     const v = new EditorView({

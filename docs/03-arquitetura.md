@@ -157,6 +157,10 @@ GitOps).
   - *Proxy `/api/k8s/*`:* repassa qualquer chamada à API do Kubernetes com a
     credencial da sessão e descarta `Authorization`, `Cookie` e `Impersonate-*`
     vindos do navegador. Watches e logs são repassados sem buffer.
+  - *Terminal (exec):* WebSocket repassado pelo proxy com a credencial da
+    sessão; WebSockets de outra origem são recusados (além do cookie
+    SameSite=Strict); cada sessão de terminal é registrada no log (usuário,
+    pod, container, comando, origem); conexão só por clique explícito.
 - Autorização: delegada ao RBAC do cluster; a UI consulta
   `SelfSubjectAccessReview`/`SelfSubjectRulesReview` para ocultar ou desabilitar
   ações não permitidas.
