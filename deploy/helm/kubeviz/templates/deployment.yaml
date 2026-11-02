@@ -41,6 +41,43 @@ spec:
               value: {{ .Values.logLevel | quote }}
             - name: KUBEVIZ_LOG_FORMAT
               value: {{ .Values.logFormat | quote }}
+            {{- with .Values.oidc }}
+            {{- if .enabled }}
+            - name: KUBEVIZ_OIDC_ISSUER_URL
+              value: {{ required "oidc.issuerURL é obrigatório com oidc.enabled" .issuerURL | quote }}
+            - name: KUBEVIZ_OIDC_CLIENT_ID
+              value: {{ .clientID | quote }}
+            {{- if .clientSecret.existingSecret }}
+            - name: KUBEVIZ_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .clientSecret.existingSecret }}
+                  key: {{ .clientSecret.key }}
+            {{- end }}
+            - name: KUBEVIZ_OIDC_REDIRECT_URL
+              value: {{ include "kubeviz.oidcRedirectURL" $ | quote }}
+            - name: KUBEVIZ_OIDC_SCOPES
+              value: {{ join "," .scopes | quote }}
+            - name: KUBEVIZ_OIDC_USERNAME_CLAIM
+              value: {{ .usernameClaim | quote }}
+            - name: KUBEVIZ_OIDC_GROUPS_CLAIM
+              value: {{ .groupsClaim | quote }}
+            - name: KUBEVIZ_OIDC_MODE
+              value: {{ .mode | quote }}
+            - name: KUBEVIZ_OIDC_USERNAME_PREFIX
+              value: {{ .usernamePrefix | default "-" | quote }}
+            - name: KUBEVIZ_OIDC_GROUPS_PREFIX
+              value: {{ .groupsPrefix | default "-" | quote }}
+            {{- with .displayName }}
+            - name: KUBEVIZ_OIDC_DISPLAY_NAME
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if .caConfigMap }}
+            - name: KUBEVIZ_OIDC_CA_FILE
+              value: /etc/kubeviz/oidc-ca/ca.crt
+            {{- end }}
+            {{- end }}
+            {{- end }}
             {{- if .Values.tls.enabled }}
             - name: KUBEVIZ_TLS_CERT_FILE
               value: /etc/kubeviz/tls/tls.crt
@@ -65,17 +102,32 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.tls.enabled }}
+          {{- $oidcCA := and .Values.oidc.enabled .Values.oidc.caConfigMap }}
+          {{- if or .Values.tls.enabled $oidcCA }}
           volumeMounts:
+            {{- if .Values.tls.enabled }}
             - name: tls
               mountPath: /etc/kubeviz/tls
               readOnly: true
+            {{- end }}
+            {{- if $oidcCA }}
+            - name: oidc-ca
+              mountPath: /etc/kubeviz/oidc-ca
+              readOnly: true
+            {{- end }}
           {{- end }}
-      {{- if .Values.tls.enabled }}
+      {{- if or .Values.tls.enabled $oidcCA }}
       volumes:
+        {{- if .Values.tls.enabled }}
         - name: tls
           secret:
             secretName: {{ include "kubeviz.tlsSecretName" . }}
+        {{- end }}
+        {{- if $oidcCA }}
+        - name: oidc-ca
+          configMap:
+            name: {{ .Values.oidc.caConfigMap }}
+        {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

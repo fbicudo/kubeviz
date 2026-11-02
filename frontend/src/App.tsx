@@ -42,7 +42,7 @@ function AuthGate({ history }: { history?: RouterHistory }) {
   if (!session.data.authenticated) {
     // Backends anteriores não informam loginMethods: deduz pelo modo.
     const methods = session.data.loginMethods ?? [session.data.mode === 'in-cluster' ? 'token' : 'link']
-    return <Login methods={methods} />
+    return <Login methods={methods} oidcName={session.data.oidcName} />
   }
   return <RouterProvider router={router} />
 }

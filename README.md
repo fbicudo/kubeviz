@@ -28,6 +28,9 @@ permite; a ServiceAccount do KubeViz não tem permissão nenhuma. Sem
 `tls.secretName`, o chart gera um certificado autoassinado, adequado só para
 testes. Opções em [values.yaml](deploy/helm/kubeviz/values.yaml).
 
+Para login corporativo (Keycloak, Dex, Entra ID, Okta…), veja
+[Login corporativo (OIDC)](docs/oidc.md).
+
 ## Desenvolvimento
 
 Requisitos: Go 1.27+, Node.js LTS, pnpm. Detalhes em [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -73,6 +76,7 @@ Imagem: `ghcr.io/fbicudo/kubeviz` (amd64 e arm64). Licença: [Apache-2.0](LICENS
 | 4 | [Requisitos](docs/04-requisitos.md) | Requisitos funcionais e não funcionais |
 | 5 | [Roadmap](docs/05-roadmap.md) | Fases, entregas e critérios de pronto |
 | 6 | [Decisões e perguntas em aberto](docs/06-perguntas-em-aberto.md) | Decisões de produto já tomadas e o que ainda falta decidir |
+| — | [Login corporativo (OIDC)](docs/oidc.md) | Configuração, modos impersonate e token, solução de problemas |
 
 ## Resumo executivo
 

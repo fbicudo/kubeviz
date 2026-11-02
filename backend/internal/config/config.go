@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -38,7 +40,29 @@ type Config struct {
 	TLSKeyFile  string
 	// ShowVersion: imprime a versão e sai.
 	ShowVersion bool
+	// OIDC é o login corporativo; desativado se IssuerURL estiver vazio.
+	OIDC OIDC
 }
+
+// OIDC são as opções do login corporativo (ver auth.OIDCConfig).
+type OIDC struct {
+	IssuerURL        string
+	ClientID         string
+	ClientSecret     string
+	ClientSecretFile string
+	RedirectURL      string
+	Scopes           []string
+	UsernameClaim    string
+	GroupsClaim      string
+	UsernamePrefix   string
+	GroupsPrefix     string
+	Mode             string
+	CAFile           string
+	DisplayName      string
+}
+
+// Enabled indica se o login OIDC foi configurado.
+func (o OIDC) Enabled() bool { return o.IssuerURL != "" }
 
 // Load interpreta args (sem o nome do programa) usando getenv para ler o
 // ambiente. Recebe getenv como parâmetro para facilitar os testes.
@@ -65,6 +89,23 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	fs.StringVar(&c.TLSKeyFile, "tls-key-file", env("TLS_KEY_FILE", ""), "chave privada TLS em PEM (env KUBEVIZ_TLS_KEY_FILE)")
 	fs.BoolVar(&c.ShowVersion, "version", false, "imprime a versão e sai")
 
+	o := &c.OIDC
+	var scopes string
+	fs.StringVar(&o.IssuerURL, "oidc-issuer-url", env("OIDC_ISSUER_URL", ""), "provedor OIDC; ativa o login corporativo (env KUBEVIZ_OIDC_ISSUER_URL)")
+	fs.StringVar(&o.ClientID, "oidc-client-id", env("OIDC_CLIENT_ID", ""), "client ID no provedor OIDC (env KUBEVIZ_OIDC_CLIENT_ID)")
+	// O segredo só por variável de ambiente ou arquivo: flags aparecem na lista de processos.
+	o.ClientSecret = getenv(envPrefix + "OIDC_CLIENT_SECRET")
+	fs.StringVar(&o.ClientSecretFile, "oidc-client-secret-file", env("OIDC_CLIENT_SECRET_FILE", ""), "arquivo com o client secret; ou use a env KUBEVIZ_OIDC_CLIENT_SECRET")
+	fs.StringVar(&o.RedirectURL, "oidc-redirect-url", env("OIDC_REDIRECT_URL", ""), "endereço público de /auth/oidc/callback, ex.: https://kubeviz.exemplo.com/auth/oidc/callback (env KUBEVIZ_OIDC_REDIRECT_URL)")
+	fs.StringVar(&scopes, "oidc-scopes", env("OIDC_SCOPES", "openid,profile,email"), "escopos pedidos, separados por vírgula; acrescente groups e offline_access no Dex (env KUBEVIZ_OIDC_SCOPES)")
+	fs.StringVar(&o.UsernameClaim, "oidc-username-claim", env("OIDC_USERNAME_CLAIM", "email"), "campo do ID token com o nome do usuário (env KUBEVIZ_OIDC_USERNAME_CLAIM)")
+	fs.StringVar(&o.GroupsClaim, "oidc-groups-claim", env("OIDC_GROUPS_CLAIM", "groups"), "campo do ID token com os grupos (env KUBEVIZ_OIDC_GROUPS_CLAIM)")
+	fs.StringVar(&o.UsernamePrefix, "oidc-username-prefix", env("OIDC_USERNAME_PREFIX", "oidc:"), "prefixo do usuário no cluster (modo impersonate); \"-\" = nenhum (env KUBEVIZ_OIDC_USERNAME_PREFIX)")
+	fs.StringVar(&o.GroupsPrefix, "oidc-groups-prefix", env("OIDC_GROUPS_PREFIX", "oidc:"), "prefixo dos grupos no cluster (modo impersonate); \"-\" = nenhum (env KUBEVIZ_OIDC_GROUPS_PREFIX)")
+	fs.StringVar(&o.Mode, "oidc-mode", env("OIDC_MODE", "impersonate"), "impersonate|token: como a identidade chega ao cluster (env KUBEVIZ_OIDC_MODE)")
+	fs.StringVar(&o.CAFile, "oidc-ca-file", env("OIDC_CA_FILE", ""), "CA do provedor OIDC em PEM, se não for pública (env KUBEVIZ_OIDC_CA_FILE)")
+	fs.StringVar(&o.DisplayName, "oidc-display-name", env("OIDC_DISPLAY_NAME", ""), "nome do provedor no botão de login, ex.: Keycloak (env KUBEVIZ_OIDC_DISPLAY_NAME)")
+
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
 	}
@@ -88,7 +129,69 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	if _, _, err := net.SplitHostPort(c.Listen); err != nil {
 		return Config{}, fmt.Errorf("listen inválido %q: %w", c.Listen, err)
 	}
+	for _, s := range strings.Split(scopes, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			o.Scopes = append(o.Scopes, s)
+		}
+	}
+	if err := o.validate(); err != nil {
+		return Config{}, err
+	}
 	return c, nil
+}
+
+func (o *OIDC) validate() error {
+	if !o.Enabled() {
+		return nil
+	}
+	if err := checkURL("oidc-issuer-url", o.IssuerURL); err != nil {
+		return err
+	}
+	if err := checkURL("oidc-redirect-url", o.RedirectURL); err != nil {
+		return err
+	}
+	if o.ClientID == "" {
+		return errors.New("informe --oidc-client-id")
+	}
+	if o.ClientSecretFile != "" {
+		b, err := os.ReadFile(o.ClientSecretFile)
+		if err != nil {
+			return fmt.Errorf("lendo oidc-client-secret-file: %w", err)
+		}
+		o.ClientSecret = strings.TrimSpace(string(b))
+	}
+	if o.Mode != "impersonate" && o.Mode != "token" {
+		return fmt.Errorf("oidc-mode inválido %q (use impersonate ou token)", o.Mode)
+	}
+	if !slices.Contains(o.Scopes, "openid") {
+		return errors.New("oidc-scopes precisa incluir openid")
+	}
+	if o.UsernamePrefix == "-" {
+		o.UsernamePrefix = ""
+	}
+	if o.GroupsPrefix == "-" {
+		o.GroupsPrefix = ""
+	}
+	return nil
+}
+
+// checkURL exige HTTPS, exceto em localhost (ambiente de desenvolvimento).
+func checkURL(name, raw string) error {
+	if raw == "" {
+		return fmt.Errorf("informe --%s", name)
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return fmt.Errorf("%s inválido %q", name, raw)
+	}
+	if u.Scheme == "https" {
+		return nil
+	}
+	host := u.Hostname()
+	if ip := net.ParseIP(host); u.Scheme == "http" && (host == "localhost" || (ip != nil && ip.IsLoopback())) {
+		return nil
+	}
+	return fmt.Errorf("%s precisa usar https (http só em localhost): %q", name, raw)
 }
 
 // DefaultUsersFile é ~/.config/kubeviz/users (ou o equivalente do sistema).

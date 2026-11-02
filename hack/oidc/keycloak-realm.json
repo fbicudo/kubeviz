@@ -1,0 +1,49 @@
+{
+  "realm": "kubeviz",
+  "enabled": true,
+  "accessTokenLifespan": 120,
+  "groups": [{ "name": "dev" }],
+  "users": [
+    {
+      "username": "bia",
+      "email": "bia@kubeviz.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Bia",
+      "lastName": "Teste",
+      "credentials": [{ "type": "password", "value": "@PASSWORD@", "temporary": false }],
+      "groups": ["/dev"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "kubeviz",
+      "name": "KubeViz",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "@SECRET@",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:4466/auth/oidc/callback",
+        "http://localhost:4466/auth/oidc/callback",
+        "http://127.0.0.1:4477/auth/oidc/callback"
+      ],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -44,6 +44,39 @@ logLevel: info
 logFormat: json
 sessionTTL: ""
 
+# Login corporativo (OIDC), testado com Keycloak e Dex. O login por token do
+# Kubernetes continua disponível.
+oidc:
+  enabled: false
+  # Endereço do provedor, ex.: https://keycloak.exemplo.com/realms/empresa
+  issuerURL: ""
+  clientID: kubeviz
+  # Secret já existente com o client secret (não guarde segredos nos values).
+  clientSecret:
+    existingSecret: ""
+    key: client-secret
+  # Endereço público de /auth/oidc/callback, registrado no provedor. Vazio =
+  # https://<ingress.host>/auth/oidc/callback.
+  redirectURL: ""
+  # Dex: acrescente groups e offline_access (renovação do login).
+  scopes: [openid, profile, email]
+  usernameClaim: email
+  groupsClaim: groups
+  # Como a identidade chega ao cluster:
+  #   impersonate: o KubeViz age pelo usuário (cabeçalhos Impersonate-*). Não
+  #     exige configurar o API server; o chart dá à ServiceAccount a permissão
+  #     "impersonate". Os prefixos evitam que alguém do provedor se passe por
+  #     usuários ou grupos do cluster; use-os nos RoleBindings (ex.: oidc:dev).
+  #   token: repassa o ID token; o API server precisa confiar no provedor
+  #     (--oidc-issuer-url ou AuthenticationConfiguration). Prefixos ignorados.
+  mode: impersonate
+  usernamePrefix: "oidc:"
+  groupsPrefix: "oidc:"
+  # Nome do provedor no botão de login, ex.: Keycloak.
+  displayName: ""
+  # ConfigMap com a CA do provedor (chave ca.crt), se não for uma CA pública.
+  caConfigMap: ""
+
 serviceAccount:
   # Nome da ServiceAccount; vazio = nome do release.
   name: ""

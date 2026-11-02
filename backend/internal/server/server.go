@@ -36,6 +36,8 @@ type Options struct {
 	// Users, no modo local, habilita o login por usuário e senha quando o
 	// arquivo de contas tem ao menos uma conta. Nil = desabilitado.
 	Users *auth.Users
+	// OIDC habilita o login corporativo. Nil = desabilitado.
+	OIDC *auth.OIDC
 	// WhoAmI identifica o dono de uma credencial; nil = auth.WhoAmI.
 	// Substituível nos testes.
 	WhoAmI func(context.Context, *rest.Config) (auth.User, error)
@@ -83,6 +85,8 @@ func (s *Server) Handler() http.Handler {
 	})
 	// Autenticação (públicas).
 	mux.HandleFunc("GET /auth/local", s.localLogin)
+	mux.HandleFunc("GET /auth/oidc/login", s.oidcLogin)
+	mux.HandleFunc("GET /auth/oidc/callback", s.oidcCallback)
 	mux.HandleFunc("GET /api/v1/auth/session", s.getSession)
 	mux.HandleFunc("POST /api/v1/auth/login", s.login)
 	mux.HandleFunc("POST /api/v1/auth/password", s.passwordLogin)

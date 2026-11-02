@@ -82,3 +82,40 @@ describe('login por usuário e senha', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Muitas tentativas')
   })
 })
+
+describe('login corporativo (OIDC)', () => {
+  const oidcApi = (methods: string[]) =>
+    vi.fn(async (input: RequestInfo | URL) =>
+      String(input) === '/api/v1/auth/session'
+        ? json({ mode: 'in-cluster', loginMethods: methods, oidcName: 'Keycloak', authenticated: false })
+        : json({}, 404),
+    )
+  afterEach(() => window.history.replaceState(null, '', '/'))
+
+  it('mostra o botão do provedor, com volta para a página atual, e o login por token como alternativa', async () => {
+    vi.stubGlobal('fetch', oidcApi(['oidc', 'token']))
+    window.history.replaceState(null, '', '/pods?ns=demo')
+    renderApp()
+    const link = await screen.findByRole('link', { name: 'Entrar com Keycloak' })
+    expect(link).toHaveAttribute('href', '/auth/oidc/login?return=%2Fpods%3Fns%3Ddemo')
+    expect(screen.getByText('ou')).toBeInTheDocument()
+    expect(screen.getByLabelText('Token de acesso ao Kubernetes')).toBeInTheDocument()
+  })
+
+  it('explica por que o login falhou e limpa o motivo da barra de endereços', async () => {
+    vi.stubGlobal('fetch', oidcApi(['oidc']))
+    window.history.replaceState(null, '', '/?loginError=oidc_impersonate')
+    renderApp()
+    expect(await screen.findByRole('alert')).toHaveTextContent('não tem permissão para agir em nome dos usuários')
+    expect(window.location.search).toBe('')
+    expect(screen.getByRole('link', { name: 'Entrar com Keycloak' })).toHaveAttribute('href', '/auth/oidc/login')
+    expect(screen.queryByText('ou')).not.toBeInTheDocument()
+  })
+
+  it('motivo desconhecido vira uma mensagem genérica', async () => {
+    vi.stubGlobal('fetch', oidcApi(['oidc']))
+    window.history.replaceState(null, '', '/?loginError=<script>')
+    renderApp()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível concluir o login')
+  })
+})

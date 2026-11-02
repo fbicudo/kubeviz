@@ -54,6 +54,20 @@ func main() {
 		TLSCertFile:  cfg.TLSCertFile,
 		TLSKeyFile:   cfg.TLSKeyFile,
 	}
+	if o := cfg.OIDC; o.Enabled() {
+		opts.OIDC, err = auth.NewOIDC(auth.OIDCConfig{
+			IssuerURL: o.IssuerURL, ClientID: o.ClientID, ClientSecret: o.ClientSecret,
+			RedirectURL: o.RedirectURL, Scopes: o.Scopes,
+			UsernameClaim: o.UsernameClaim, GroupsClaim: o.GroupsClaim,
+			UsernamePrefix: o.UsernamePrefix, GroupsPrefix: o.GroupsPrefix,
+			Mode: auth.OIDCMode(o.Mode), CAFile: o.CAFile, DisplayName: o.DisplayName,
+		})
+		if err != nil {
+			log.Error("configuração OIDC inválida", "erro", err)
+			os.Exit(1)
+		}
+		log.Info("login OIDC habilitado", "provedor", o.IssuerURL, "modo", o.Mode, "retorno", o.RedirectURL)
+	}
 	if cl.Mode() == cluster.ModeLocal {
 		opts.Users = auth.NewUsers(cfg.UsersFile)
 		opts.LocalToken = auth.RandomToken()

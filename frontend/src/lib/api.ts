@@ -80,13 +80,15 @@ export interface User {
   groups?: string[]
 }
 
-/** Como entrar: link com token (modo local), usuário e senha, ou token do Kubernetes. */
-export type LoginMethod = 'link' | 'password' | 'token'
+/** Como entrar: login corporativo (OIDC), link com token (modo local), usuário e senha, ou token do Kubernetes. */
+export type LoginMethod = 'oidc' | 'link' | 'password' | 'token'
 
 export interface SessionInfo {
   mode: ClusterMode
   authenticated: boolean
   loginMethods: LoginMethod[]
+  /** Nome do provedor OIDC exibido no botão de login. */
+  oidcName?: string
   user?: User
   /** Conta local usada no login por usuário e senha. */
   localUser?: string

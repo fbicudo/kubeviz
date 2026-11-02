@@ -40,6 +40,8 @@ type Session struct {
 	Expires time.Time
 	// LocalUser é a conta local (usuário e senha) que abriu a sessão, se houver.
 	LocalUser string
+	// OIDC guarda os tokens do provedor nas sessões abertas por login OIDC.
+	OIDC *OIDCTokens
 }
 
 // Store guarda sessões em memória. Reiniciar o KubeViz encerra todas as
@@ -59,7 +61,15 @@ func NewStore(ttl time.Duration) *Store {
 
 // Create abre uma sessão nova com ID aleatório.
 func (s *Store) Create(user User, token string) *Session {
+	return s.CreateFunc(user, token, nil)
+}
+
+// CreateFunc é Create com ajustes feitos antes de a sessão ficar visível.
+func (s *Store) CreateFunc(user User, token string, init func(*Session)) *Session {
 	sess := &Session{ID: RandomToken(), User: user, Token: token, Expires: s.now().Add(s.ttl)}
+	if init != nil {
+		init(sess)
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.purgeLocked()

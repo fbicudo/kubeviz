@@ -102,6 +102,21 @@
       "invalid": "Usuário ou senha inválidos.",
       "tooMany": "Muitas tentativas. Tente de novo em {{minutes}} min.",
       "hint": "Contas criadas com o comando kubeviz user add."
+    },
+    "oidc": {
+      "submit": "Entrar com login corporativo",
+      "submitNamed": "Entrar com {{name}}",
+      "hint": "Você será levado ao provedor de identidade da sua organização e voltará para cá.",
+      "or": "ou",
+      "errors": {
+        "oidc_denied": "O login foi cancelado ou recusado pelo provedor de identidade.",
+        "oidc_state": "O login expirou ou foi iniciado em outra aba. Tente de novo.",
+        "oidc_claims": "O provedor de identidade não informou um usuário válido (e-mail verificado ou o campo configurado). Fale com o administrador.",
+        "oidc_cluster": "O cluster não aceitou o seu login: o API server não confia neste provedor de identidade. Fale com o administrador.",
+        "oidc_impersonate": "O KubeViz não tem permissão para agir em nome dos usuários (impersonate) neste cluster. Fale com o administrador.",
+        "oidc_unavailable": "O provedor de identidade está inacessível. Tente de novo em instantes.",
+        "oidc_failed": "Não foi possível concluir o login. Tente de novo."
+      }
     }
   },
   "pods": {

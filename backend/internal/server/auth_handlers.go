@@ -25,13 +25,26 @@ func sessionFrom(ctx context.Context) *auth.Session {
 	return sess
 }
 
-// session devolve a sessão do cookie, se válida.
+// session devolve a sessão do cookie, se válida. Sessões OIDC têm o login
+// renovado no provedor quando perto de vencer; se a renovação falhar (acesso
+// revogado, por exemplo), a sessão acaba.
 func (s *Server) session(r *http.Request) (*auth.Session, bool) {
 	c, err := r.Cookie(sessionCookie)
 	if err != nil {
 		return nil, false
 	}
-	return s.sessions.Get(c.Value)
+	sess, ok := s.sessions.Get(c.Value)
+	if ok && sess.OIDC != nil {
+		if s.opts.OIDC == nil {
+			return nil, false
+		}
+		if _, err := s.opts.OIDC.Fresh(r.Context(), sess.OIDC); err != nil {
+			s.log.Info("sessão OIDC encerrada", "usuario", sess.User.Username, "motivo", err)
+			s.sessions.Delete(sess.ID)
+			return nil, false
+		}
+	}
+	return sess, ok
 }
 
 // requireAuth recusa com 401 requisições sem sessão válida.
@@ -49,6 +62,9 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 // userConfig devolve as credenciais com que a sessão fala com a API: o
 // kubeconfig no modo local; o token da própria pessoa no modo in-cluster.
 func (s *Server) userConfig(sess *auth.Session) *rest.Config {
+	if sess.OIDC != nil {
+		return s.oidcRESTConfig(sess.User, sess.OIDC.Token())
+	}
 	if s.cluster.Mode() == cluster.ModeLocal {
 		return s.cluster.RESTConfig()
 	}
@@ -113,6 +129,13 @@ func (s *Server) passwordEnabled() bool {
 
 // loginMethods informa à tela de login como entrar.
 func (s *Server) loginMethods() []string {
+	if s.opts.OIDC != nil {
+		return append([]string{"oidc"}, s.baseLoginMethods()...)
+	}
+	return s.baseLoginMethods()
+}
+
+func (s *Server) baseLoginMethods() []string {
 	switch {
 	case s.cluster.Mode() == cluster.ModeInCluster:
 		return []string{"token"}
@@ -214,9 +237,11 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 type sessionResponse struct {
 	Mode          cluster.Mode `json:"mode"`
 	Authenticated bool         `json:"authenticated"`
-	// LoginMethods: "link" (token no terminal), "password" ou "token".
-	LoginMethods []string   `json:"loginMethods"`
-	User         *auth.User `json:"user,omitempty"`
+	// LoginMethods: "oidc", "link" (token no terminal), "password" ou "token".
+	LoginMethods []string `json:"loginMethods"`
+	// OIDCName é o nome do provedor exibido no botão de login.
+	OIDCName string     `json:"oidcName,omitempty"`
+	User     *auth.User `json:"user,omitempty"`
 	// LocalUser é a conta local da sessão (login por usuário e senha).
 	LocalUser string     `json:"localUser,omitempty"`
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
@@ -230,7 +255,7 @@ type sessionResponse struct {
 func (s *Server) getSession(w http.ResponseWriter, r *http.Request) {
 	sess, ok := s.session(r)
 	if !ok {
-		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods()})
+		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods(), OIDCName: s.oidcName()})
 		return
 	}
 	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
@@ -241,11 +266,12 @@ func (s *Server) sessionInfo(r *http.Request, sess *auth.Session) sessionRespons
 		Mode:          s.cluster.Mode(),
 		Authenticated: true,
 		LoginMethods:  s.loginMethods(),
+		OIDCName:      s.oidcName(),
 		LocalUser:     sess.LocalUser,
 		ExpiresAt:     &sess.Expires,
 	}
 
-	if s.cluster.Mode() == cluster.ModeInCluster {
+	if s.cluster.Mode() == cluster.ModeInCluster || sess.OIDC != nil {
 		resp.User = &sess.User
 	} else if user, err := s.whoAmI(r.Context(), s.userConfig(sess)); err == nil {
 		// No modo local a identidade muda com o contexto; é consultada na hora.
@@ -254,4 +280,11 @@ func (s *Server) sessionInfo(r *http.Request, sess *auth.Session) sessionRespons
 		resp.UserError = err.Error()
 	}
 	return resp
+}
+
+func (s *Server) oidcName() string {
+	if s.opts.OIDC == nil {
+		return ""
+	}
+	return s.opts.OIDC.Config().DisplayName
 }

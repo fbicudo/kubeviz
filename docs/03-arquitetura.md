@@ -150,6 +150,12 @@ GitOps).
     API **com o próprio token do usuário** (repasse), sem nenhuma credencial da
     ServiceAccount do KubeViz. A impersonation fica reservada para o OIDC, quando
     o API server não confia no provedor de identidade.
+  - *OIDC (tarefa 1.9):* fluxo de código com PKCE, `state` e `nonce`; ID
+    token validado; tokens guardados só no servidor e renovados pelo refresh
+    token (falha na renovação encerra a sessão). Dois modos: `impersonate`
+    (padrão; a ServiceAccount recebe só a permissão `impersonate`; nomes com
+    prefixo `oidc:`; `system:*` recusado) e `token` (ID token repassado a um
+    API server que confia no provedor). Detalhes em [oidc.md](oidc.md).
   - *Sessões:* ID aleatório de 256 bits em cookie `HttpOnly`, `SameSite=Strict`
     e `Secure` atrás de HTTPS; duração de 12 h; guardadas em memória (reiniciar
     encerra as sessões; várias réplicas exigirão armazenamento compartilhado). O
@@ -166,9 +172,9 @@ GitOps).
   ações não permitidas.
 - A ServiceAccount da própria console **não tem nenhuma permissão** no login por
   token (tarefa 0.5): o token montado no pod só informa endereço e CA do
-  cluster. Permissões serão acrescentadas apenas quando necessárias e de forma
-  explícita no chart (impersonation para o OIDC; leitura para métricas e uptime
-  em segundo plano, nas Fases 1 e 2).
+  cluster. Permissões são acrescentadas apenas quando necessárias e de forma
+  explícita no chart: `impersonate` só com OIDC no modo impersonate (tarefa
+  1.9); leitura para métricas e uptime em segundo plano virá na Fase 2.
 - HTTPS servido pelo próprio KubeViz (TLS 1.2+, HSTS, recarga automática do
   certificado); Ingress opcional.
 - Cookies `HttpOnly`/`Secure`/`SameSite`, proteção CSRF, cabeçalhos CSP.

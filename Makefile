@@ -9,7 +9,7 @@ PKG     := github.com/fbicudo/kubeviz/backend/internal/version
 LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT) -X $(PKG).Date=$(DATE)
 WEBDIST := backend/internal/web/dist
 
-.PHONY: help deps dev-backend dev-frontend frontend build image helm-lint kind-install test test-integration test-envtest kind-up kind-down demo lint clean
+.PHONY: help deps dev-backend dev-frontend frontend build image helm-lint kind-install test test-integration test-envtest oidc-dex oidc-keycloak kind-up kind-down demo lint clean
 
 help: ## Mostra esta ajuda
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -56,10 +56,16 @@ test-integration: ## Testa contra o cluster do kubeconfig atual (ex.: kind)
 
 ENVTEST_K8S ?= 1.37.x
 
-test-envtest: ## Testes de RBAC contra um API server real (envtest, sem Docker)
+test-envtest: ## Testes de RBAC e OIDC contra um API server real (envtest, sem Docker)
 	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.25
 	cd backend && KUBEBUILDER_ASSETS="$$($$(go env GOPATH)/bin/setup-envtest use $(ENVTEST_K8S) -p path)" \
-		go test -tags envtest -count=1 -v ./internal/server/ -run RBAC
+		go test -tags envtest -count=1 -v ./internal/server/ -run RealAPIServer
+
+oidc-dex: build ## Sobe um Dex local para testar o login OIDC (ver docs/oidc.md)
+	hack/oidc/dex.sh up
+
+oidc-keycloak: ## Sobe um Keycloak local para testar o login OIDC (ver docs/oidc.md)
+	hack/oidc/keycloak.sh up
 
 kind-up: ## Cria o cluster de desenvolvimento kind-kubeviz-dev
 	kind create cluster --name kubeviz-dev --wait 120s

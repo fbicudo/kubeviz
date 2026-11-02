@@ -102,6 +102,21 @@
       "invalid": "Invalid username or password.",
       "tooMany": "Too many attempts. Try again in {{minutes}} min.",
       "hint": "Accounts are created with the kubeviz user add command."
+    },
+    "oidc": {
+      "submit": "Sign in with SSO",
+      "submitNamed": "Sign in with {{name}}",
+      "hint": "You will be taken to your organization's identity provider and brought back here.",
+      "or": "or",
+      "errors": {
+        "oidc_denied": "Sign-in was cancelled or denied by the identity provider.",
+        "oidc_state": "Sign-in expired or was started in another tab. Please try again.",
+        "oidc_claims": "The identity provider did not return a valid user (a verified email or the configured claim). Contact your administrator.",
+        "oidc_cluster": "The cluster rejected your sign-in: the API server does not trust this identity provider. Contact your administrator.",
+        "oidc_impersonate": "KubeViz is not allowed to act on behalf of users (impersonate) in this cluster. Contact your administrator.",
+        "oidc_unavailable": "The identity provider is unreachable. Please try again shortly.",
+        "oidc_failed": "Sign-in could not be completed. Please try again."
+      }
     }
   },
   "pods": {

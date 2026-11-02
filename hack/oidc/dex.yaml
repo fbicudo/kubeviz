@@ -1,0 +1,34 @@
+# Dex para testar o login OIDC do KubeViz localmente (não use em produção).
+# Gerado por hack/oidc/dex.sh, que preenche @HASH@ e @SECRET@ com valores
+# aleatórios guardados fora do repositório.
+issuer: http://127.0.0.1:5556/dex
+storage:
+  type: memory
+web:
+  http: 127.0.0.1:5556
+oauth2:
+  skipApprovalScreen: true
+expiry:
+  # Curto de propósito: exercita a renovação do login pelo refresh token.
+  idTokens: 10m
+staticClients:
+  - id: kubeviz
+    name: KubeViz
+    secret: "@SECRET@"
+    redirectURIs:
+      - http://127.0.0.1:4466/auth/oidc/callback
+      - http://localhost:4466/auth/oidc/callback
+      - http://127.0.0.1:4477/auth/oidc/callback
+# Usuária com senha (sem grupos: o Dex não tem grupos em senhas estáticas).
+enablePasswordDB: true
+staticPasswords:
+  - email: ana@kubeviz.test
+    username: ana
+    userID: 7f1c2a52-5e0f-4b3c-9d2e-1a6b0c3d4e5f
+    hash: "@HASH@"
+connectors:
+  # Login sem senha que devolve o usuário kilgore@kilgore.trout no grupo
+  # "authors": mostra o uso de grupos.
+  - type: mockCallback
+    id: mock
+    name: Exemplo com grupos

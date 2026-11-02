@@ -527,14 +527,78 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
     [img/eventos-avisos.png](img/eventos-avisos.png) e
     [img/crd-widgets.png](img/crd-widgets.png).
 
+### 02/11/2026 — Tarefa 1.9: login corporativo (OIDC)
+- **Login OIDC genérico:**
+  - botão "Entrar com <provedor>" na tela de login; o login por token (ou o
+    link/senha no modo local) continua como alternativa;
+  - fluxo de código com PKCE, `state` (uso único, 10 min, ligado ao navegador
+    por cookie `SameSite=Lax`) e `nonce`; ID token validado;
+  - após o login, volta para a página em que a pessoa estava, só para caminhos
+    locais (nunca para outro site).
+- **Dois modos:**
+  - `impersonate` (padrão): o KubeViz age pelo usuário com os cabeçalhos
+    `Impersonate-*`, sem configurar o API server;
+    - nomes com prefixo `oidc:`; usuários e grupos `system:*` recusados;
+      e-mail precisa estar verificado;
+    - o chart cria um ClusterRole só com `impersonate` em users/groups, a
+      **única** permissão da ServiceAccount, e só nesse modo;
+  - `token`: o ID token é repassado a um API server que confia no provedor.
+- **Renovação:**
+  - tokens só no servidor, renovados pelo refresh token antes de vencer (o
+    `sub` não pode mudar);
+  - se a renovação falhar, a sessão acaba; sem refresh token, a sessão dura o
+    mesmo que o ID token.
+- **Erros explicados na tela de login:** provedor recusou, state inválido,
+  usuário sem e-mail verificado, cluster não confia no provedor, KubeViz sem
+  permissão de impersonation, provedor fora do ar. Cada login e falha fica no
+  log.
+- **Configuração:**
+  - flags e variáveis `--oidc-*` / `KUBEVIZ_OIDC_*`; o client secret só por
+    variável de ambiente ou arquivo;
+  - HTTPS obrigatório fora de localhost;
+  - no chart, `oidc.*`, com o segredo vindo de um Secret existente e CA
+    opcional;
+  - guia em [oidc.md](oidc.md).
+- **Ambientes de teste:** `hack/oidc/dex.sh` e `hack/oidc/keycloak.sh`
+  (`make oidc-dex` / `make oidc-keycloak`), com senhas aleatórias fora do
+  repositório e RoleBindings de exemplo no kind.
+- **Verificado:**
+  - testes Go com um provedor OIDC falso (`internal/auth/oidctest`): PKCE,
+    state trocado ou reutilizado, código inventado, nonce, prefixos e
+    `system:*`, e-mail não verificado, renovação, troca de `sub`, revogação,
+    redirecionamento aberto, cabeçalhos no API server;
+  - **envtest (API server real):**
+    - impersonation recusada sem a permissão do chart e, com ela, valendo o
+      RBAC do usuário;
+    - modo token com o kube-apiserver configurado por
+      `AuthenticationConfiguration` para confiar no provedor de teste;
+  - 167 testes Vitest (botão, retorno à página, mensagens de erro);
+  - **Dex** pelo navegador (Playwright), conferido com `kubectl`:
+    - ana (só leitura) vê os pods de `demo`, não vê `kube-system` e não tem
+      botões de ação;
+    - kilgore, pelo grupo `authors`, escala o deployment para 3 (auditoria
+      com `usuario=oidc:kilgore@kilgore.trout`);
+    - sem permissão de impersonation, a tela mostra o motivo;
+  - **Keycloak** pelo navegador: bia, com o grupo `dev`, entra, e a sessão
+    continua depois de o ID token de 2 min vencer (renovação real);
+  - capturas: [img/login-oidc.png](img/login-oidc.png),
+    [img/oidc-grupo-edicao.png](img/oidc-grupo-edicao.png) e
+    [img/login-oidc-erro.png](img/login-oidc-erro.png).
+- **Fora desta tarefa:**
+  - "Sair" encerra a sessão do KubeViz, mas não a do provedor (logout no
+    provedor fica para depois);
+  - os grupos são lidos no login; mudanças de grupo no provedor valem no
+    próximo login;
+  - a instância da rede continua com login por senha: o OIDC precisa de um
+    provedor acessível pela sua máquina.
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).
 Dividido em tarefas pequenas, cada uma testada, commitada e com versão
 utilizável:
 
-1. **1.9 — OIDC:** login corporativo (Keycloak, Dex), com impersonation.
-2. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
+1. **1.10 — Escala:** virtualização das listas e teste de carga com 5.000 pods
    (kwok); inclui medir a busca global com muitos objetos.
 
 ## Como publicar uma versão

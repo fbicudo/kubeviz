@@ -29,3 +29,14 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- define "kubeviz.servicePort" -}}
 {{- if .Values.service.port -}}{{ .Values.service.port }}{{- else if .Values.tls.enabled -}}443{{- else -}}80{{- end -}}
 {{- end -}}
+
+{{/* Endereço de retorno do login OIDC. */}}
+{{- define "kubeviz.oidcRedirectURL" -}}
+{{- if .Values.oidc.redirectURL -}}
+{{- .Values.oidc.redirectURL -}}
+{{- else if .Values.ingress.enabled -}}
+{{- printf "https://%s/auth/oidc/callback" .Values.ingress.host -}}
+{{- else -}}
+{{- fail "defina oidc.redirectURL (endereço público de /auth/oidc/callback) ou habilite o ingress" -}}
+{{- end -}}
+{{- end }}
