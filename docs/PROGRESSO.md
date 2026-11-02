@@ -3,7 +3,7 @@
 Ponto de partida de cada sessão de trabalho: o que foi feito, o que vem a seguir
 e o que está bloqueado. Atualize ao fim de cada tarefa.
 
-**Fase atual:** 0 — Fundação ([roadmap](05-roadmap.md#fase-0--fundação-45-semanas--v01))
+**Fase atual:** 0 concluída em 02/11/2026 (`v0.1.0`); próxima: 1 — Navegação e operação ([roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02))
 
 ## Concluído
 
@@ -214,13 +214,57 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   [img/pods-claro.png](img/pods-claro.png) e
   [img/cluster-inacessivel.png](img/cluster-inacessivel.png).
 
-## Próximas tarefas (Fase 0)
+### 02/11/2026 — Tarefa 0.7: publicação — Fase 0 concluída
+- **Repositório público:** https://github.com/fbicudo/kubeviz (criado vazio pelo
+  responsável; código enviado com o histórico completo). Relato privado de
+  vulnerabilidades ativado; descrição e tópicos configurados.
+- **Antes de publicar:**
+  - varredura de segredos em todo o histórico (tokens JWT e do GitHub, chaves
+    privadas, links com token, credenciais de kubeconfig): nada encontrado;
+    imagens conferidas, inclusive a versão da tela de login no commit `6f2eca5`;
+  - o IP da rede local saiu da documentação atual (continua em commits
+    antigos; endereço privado, sem risco relevante);
+  - **módulo Go trocado para `github.com/fbicudo/kubeviz/backend`**, porque o
+    domínio `kubeviz.dev` não foi registrado; feito antes da publicação para
+    não quebrar usuários depois.
+- **Workflow de release** (`.github/workflows/release.yml`): uma tag `vX.Y.Z`
+  publica a imagem `ghcr.io/fbicudo/kubeviz` (amd64 e arm64, SBOM e
+  proveniência), o chart `oci://ghcr.io/fbicudo/charts/kubeviz` e a release no
+  GitHub, usando só o token temporário do Actions.
+- **Verificado:**
+  - primeiro CI no GitHub verde em 5,5 min (lint, testes, envtest, chart, imagem
+    multi-arquitetura);
+  - release `v0.1.0` publicada; imagem e chart **públicos** e baixáveis sem login;
+  - instalação no kind só com o que foi publicado (`helm install ... oci://ghcr.io/fbicudo/charts/kubeviz --version 0.1.0`):
+    pod com a imagem do GHCR, versão `v0.1.0`, RBAC preservado (dev: 200 em
+    `demo`, 403 em todos os namespaces).
+- **Ajuste posterior:** a data de build da `v0.1.0` saiu como `unknown`; o
+  workflow passa a enviar a data do commit a partir da próxima versão.
 
-1. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
-   publicar a imagem no GHCR e o chart (OCI), ativar o relato privado de
-   vulnerabilidades. Conta definida: `fbicudo` (repositório
-   `github.com/fbicudo/kubeviz`); chart e documentação já apontam para ela.
-   Falta autenticar o `gh` e a autorização para publicar.
+### Resumo da Fase 0
+Critério de pronto ("instala via Helm em kind e lista pods com o RBAC do
+usuário") cumprido com a versão publicada. Entregue: binário único (API + UI),
+modos local e in-cluster, login com sessões seguras, proxy autenticado,
+lista de pods, HTTPS, imagem de 47 MB, Helm chart sem permissões para a
+ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
+(unidade, envtest de RBAC, integração com kind) e 86 no frontend.
+
+## Próximas tarefas (Fase 1 — Navegação e operação)
+
+Detalhar em tarefas pequenas no início da fase. Escopo do
+[roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02):
+listas e detalhes de todos os recursos (genérico via discovery + telas dos
+principais), tempo real com watch, editor YAML com validação e diff, logs,
+exec, eventos, ações (escalar, reiniciar, rollback, excluir) e OIDC.
+
+## Como publicar uma versão
+
+```bash
+git tag -a vX.Y.Z -m "KubeViz vX.Y.Z" && git push origin vX.Y.Z
+```
+
+O workflow de release faz o resto. Conferir depois em
+https://github.com/fbicudo/kubeviz/releases.
 
 ## Bloqueios e pendências do responsável
 
