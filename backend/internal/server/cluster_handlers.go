@@ -8,7 +8,7 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"kubeviz.dev/kubeviz/internal/cluster"
+	"github.com/fbicudo/kubeviz/backend/internal/cluster"
 )
 
 // Cluster é o que o servidor precisa da conexão com o Kubernetes.

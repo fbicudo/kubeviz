@@ -10,12 +10,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"kubeviz.dev/kubeviz/internal/auth"
-	"kubeviz.dev/kubeviz/internal/cluster"
-	"kubeviz.dev/kubeviz/internal/config"
-	"kubeviz.dev/kubeviz/internal/server"
-	"kubeviz.dev/kubeviz/internal/version"
-	"kubeviz.dev/kubeviz/internal/web"
+	"github.com/fbicudo/kubeviz/backend/internal/auth"
+	"github.com/fbicudo/kubeviz/backend/internal/cluster"
+	"github.com/fbicudo/kubeviz/backend/internal/config"
+	"github.com/fbicudo/kubeviz/backend/internal/server"
+	"github.com/fbicudo/kubeviz/backend/internal/version"
+	"github.com/fbicudo/kubeviz/backend/internal/web"
 )
 
 func main() {

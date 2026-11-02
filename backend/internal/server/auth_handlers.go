@@ -9,8 +9,8 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"kubeviz.dev/kubeviz/internal/auth"
-	"kubeviz.dev/kubeviz/internal/cluster"
+	"github.com/fbicudo/kubeviz/backend/internal/auth"
+	"github.com/fbicudo/kubeviz/backend/internal/cluster"
 )
 
 const sessionCookie = "kubeviz_session"

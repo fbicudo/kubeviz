@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"kubeviz.dev/kubeviz/internal/cluster"
+	"github.com/fbicudo/kubeviz/backend/internal/cluster"
 )
 
 func sessionOf(t *testing.T, h http.Handler, cookie string) sessionResponse {

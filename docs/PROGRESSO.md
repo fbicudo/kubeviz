@@ -11,7 +11,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - Repositório git, licença Apache-2.0, `CONTRIBUTING`, `CODE_OF_CONDUCT`
   (Contributor Covenant 2.1), `SECURITY`, `GOVERNANCE`, `MAINTAINERS`, modelos de
   issue e PR, `.editorconfig`, `Makefile`, CI do GitHub Actions.
-- **Backend Go** (`backend/`, módulo `kubeviz.dev/kubeviz`): configuração por
+- **Backend Go** (`backend/`, módulo `github.com/fbicudo/kubeviz/backend`): configuração por
   flags/ambiente (`KUBEVIZ_*`), servidor HTTP com encerramento gracioso, logs
   estruturados (slog), `/healthz`, `/readyz`, `/api/v1/version`, 404 em JSON para
   rotas de API, cabeçalhos de segurança (CSP etc.), UI embutida com `go:embed` e
@@ -139,7 +139,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 
 ### 02/11/2026 — Projeto renomeado para KubeViz
 - Nome anterior: Kubora. Trocados nome exibido, binário (`kubeviz`), módulo Go
-  (`kubeviz.dev/kubeviz`), variáveis de ambiente (`KUBEVIZ_*`), cookie de sessão
+  (`github.com/fbicudo/kubeviz/backend`), variáveis de ambiente (`KUBEVIZ_*`), cookie de sessão
   (`kubeviz_session`), chaves do `localStorage` e documentação. Verificação do
   nome em [06 §6.2](06-perguntas-em-aberto.md#62-verificação-do-nome-kubeviz-02112026).
 - Cluster kind recriado como `kubeviz-dev`. O cenário de demonstração passou a
@@ -226,7 +226,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 
 | Item | Por quê | Como resolver |
 |------|---------|---------------|
-| Domínio `kubeviz.dev` | O módulo Go usa `kubeviz.dev/kubeviz` | Definir antes da tarefa 0.7; se não for registrado, trocar o caminho do módulo (substituição simples nos imports) |
+| Domínio `kubeviz.dev` (opcional) | Endereço estável para documentação e chart; hoje tudo aponta para o GitHub | Registrar quando quiser; o módulo Go já não depende dele |
 
 ## Ambiente de desenvolvimento desta máquina
 

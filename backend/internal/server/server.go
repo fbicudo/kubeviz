@@ -14,9 +14,9 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"kubeviz.dev/kubeviz/internal/auth"
-	"kubeviz.dev/kubeviz/internal/version"
-	"kubeviz.dev/kubeviz/internal/web"
+	"github.com/fbicudo/kubeviz/backend/internal/auth"
+	"github.com/fbicudo/kubeviz/backend/internal/version"
+	"github.com/fbicudo/kubeviz/backend/internal/web"
 )
 
 // Options ajusta o comportamento do servidor.

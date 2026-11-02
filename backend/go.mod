@@ -1,4 +1,4 @@
-module kubeviz.dev/kubeviz
+module github.com/fbicudo/kubeviz/backend
 
 go 1.27.3
 

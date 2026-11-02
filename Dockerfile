@@ -22,9 +22,9 @@ COPY backend/ ./
 COPY --from=ui /src/frontend/dist/ ./internal/web/dist/
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath \
       -ldflags "-s -w \
-        -X kubeviz.dev/kubeviz/internal/version.Version=${VERSION} \
-        -X kubeviz.dev/kubeviz/internal/version.Commit=${COMMIT} \
-        -X kubeviz.dev/kubeviz/internal/version.Date=${DATE}" \
+        -X github.com/fbicudo/kubeviz/backend/internal/version.Version=${VERSION} \
+        -X github.com/fbicudo/kubeviz/backend/internal/version.Commit=${COMMIT} \
+        -X github.com/fbicudo/kubeviz/backend/internal/version.Date=${DATE}" \
       -o /out/kubeviz ./cmd/kubeviz
 
 # 3) Execução: sem shell, sem gerenciador de pacotes, usuário não-root

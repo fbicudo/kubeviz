@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	"kubeviz.dev/kubeviz/internal/cluster"
+	"github.com/fbicudo/kubeviz/backend/internal/cluster"
 )
 
 const devUser = "system:serviceaccount:time-a:dev"
