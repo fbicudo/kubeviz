@@ -32,7 +32,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   (hook `useTheme` separado em `lib/theme-context.ts`).
 - Interface conferida em Chromium headless: tema escuro e claro, pt-BR e inglês,
   navegação pelo menu, sem erros no console nem bloqueios da CSP. Capturas em
-  [img/overview-dark.png](img/overview-dark.png) e [img/pods-light.png](img/pods-light.png).
+  [img/visao-geral.png](img/visao-geral.png) e [img/pods-claro.png](img/pods-claro.png).
 - Contato do Código de Conduta definido: fbicudo@gmail.com.
 - Cluster de desenvolvimento `kind-kubeviz-dev` (Kubernetes 1.37, 1 nó) criado e
   definido como contexto atual do kubectl.
@@ -61,7 +61,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   - `make test-integration` contra o kind: conectado ao Kubernetes v1.37.0;
   - binário de ponta a ponta com um segundo contexto inválido: troca, estado de
     erro, retorno, recusa de CSRF e de Host falso, kubeconfig intacto;
-  - capturas: [img/cluster-conectado.png](img/cluster-conectado.png) e
+  - capturas: [img/visao-geral.png](img/visao-geral.png) e
     [img/cluster-inacessivel.png](img/cluster-inacessivel.png).
 - **Mudança de plano:** os testes com `envtest` (API server real em memória)
   ficam para a 0.3, onde serão necessários para testar RBAC. Na 0.2 bastou um
@@ -97,7 +97,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
     link correto redireciona para `/` com cookie `HttpOnly`; proxy lista os 8
     pods de `kube-system`; logout encerra o acesso;
   - capturas: [img/login-local.png](img/login-local.png) e
-    [img/autenticado.png](img/autenticado.png).
+    [img/visao-geral.png](img/visao-geral.png).
 - **CI:** passo de testes envtest adicionado.
 - **Não verificado:** tela de token no modo in-cluster com o binário real (só
   nos testes; o binário in-cluster depende do Helm chart, tarefa 0.5).
@@ -130,7 +130,7 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
     inexistente) e a ServiceAccount `demo/dev`, que só lê pods de `demo`:
     administrador vê os 13 pods; o usuário limitado recebe a recusa ao listar
     todos os namespaces e vê os 4 pods ao escolher `demo`;
-  - capturas: [img/overview-pods.png](img/overview-pods.png),
+  - capturas: [img/visao-geral.png](img/visao-geral.png),
     [img/pods-admin.png](img/pods-admin.png),
     [img/pods-sem-permissao.png](img/pods-sem-permissao.png) e
     [img/pods-limitado-demo.png](img/pods-limitado-demo.png).
@@ -188,14 +188,38 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   instalado; só validado por `helm template`); build arm64 (só no CI); CI no
   GitHub como um todo (repositório não publicado).
 
+### 02/11/2026 — Tarefa 0.6: revisão visual
+- **Identidade visual escolhida:** logo "lente sobre nós" (lupa sobre um grafo
+  de três nós, `frontend/public/favicon.svg`, cópia em `docs/img/logo.svg`) e
+  **azul** como cor de destaque (`#60a5fa` no tema escuro, `#1d4ed8` no claro).
+  A cor de informação passou a ciano, para não se confundir com o destaque.
+- **Acessibilidade de cor:** a auditoria encontrou o texto `subtle` (legendas,
+  dicas, rótulos do menu) entre 2,7 e 3,3:1, abaixo do mínimo WCAG AA de 4,5:1.
+  Ajustados `subtle`, `muted` e, no tema claro, `ok` e `warn`. Novo teste
+  automático verifica as 50 combinações de texto e fundo dos dois temas (e o
+  texto do botão primário); conferido falhando com a cor antiga.
+- **Seletores com busca:** contexto (cabeçalho) e namespace (Pods) usam um
+  combobox acessível pelo teclado (Radix Popover + cmdk). Sem permissão para
+  listar namespaces, digita-se o nome e escolhe-se "Usar …".
+- **Cluster fora do ar:** os indicadores de nós e pods passaram a dizer
+  "Cluster inacessível" em vez de ficar em "carregando".
+- **Capturas automatizadas:** `pnpm screenshots` (`frontend/scripts/screenshots.mjs`,
+  Playwright) gera as 11 imagens de `docs/img` a partir das instâncias local e
+  in-cluster com o cenário de demonstração; falha se houver erro na página. As
+  capturas antigas com o nome "Kubora" foram substituídas ou removidas. O
+  cenário ganhou o contexto `inacessivel` para a captura do estado de erro.
+- **Verificado:** 86 testes Vitest; capturas revisadas uma a uma —
+  [img/visao-geral.png](img/visao-geral.png),
+  [img/seletor-namespace.png](img/seletor-namespace.png),
+  [img/pods-claro.png](img/pods-claro.png) e
+  [img/cluster-inacessivel.png](img/cluster-inacessivel.png).
+
 ## Próximas tarefas (Fase 0)
 
-1. **0.6 — Revisão visual:** ajustar tokens de cor e densidade, definir logo e
-   paleta finais; trocar os `<select>` nativos por componentes com busca; refazer
-   as capturas antigas que ainda mostram "Kubora".
-2. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
+1. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
    publicar a imagem no GHCR e o chart (OCI), ativar o relato privado de
-   vulnerabilidades. Ajustar `image.repository` no chart.
+   vulnerabilidades. Ajustar `image.repository` no chart. Depende do usuário do
+   GitHub (pendência abaixo).
 
 ## Bloqueios e pendências do responsável
 
@@ -211,6 +235,9 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - Pelo apt: Docker 29.1, make 4.4, dependências do Chromium.
 - O usuário foi adicionado ao grupo `docker`; até o próximo login, use
   `sg docker -c "<comando>"` ou abra uma nova sessão.
+- Capturas de tela: com as duas instâncias no ar, rodar em `frontend/`:
+  `KUBEVIZ_LOCAL_URL=... KUBEVIZ_LOCAL_TOKEN=... KUBEVIZ_INCLUSTER_URL=...
+  KUBEVIZ_TOKEN_DEV=... KUBEVIZ_TOKEN_LEITOR=... pnpm screenshots`.
 - Cenário de demonstração: `make demo` aplica `hack/demo/demo.yaml` (namespace
   `demo` com pods de exemplo e a ServiceAccount `demo/dev`, que só lê pods de
   `demo`) e gera `~/.kube/kubeviz-demo.yaml` (fora do repositório) com os

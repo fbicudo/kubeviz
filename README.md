@@ -1,3 +1,5 @@
+<img src="docs/img/logo.svg" alt="" width="56" align="left">
+
 # KubeViz
 
 Interface web open source para gestão de clusters Kubernetes, com painéis de
@@ -7,7 +9,9 @@ performance e uptime e assistentes (wizards) para configurar o ambiente.
 > autentica usuários, respeita o RBAC de cada um e lista pods com status.
 > Acompanhe em [docs/PROGRESSO.md](docs/PROGRESSO.md).
 
-![Lista de pods do KubeViz num cluster kind](docs/img/pods-admin.png)
+![Visão geral do KubeViz num cluster kind](docs/img/visao-geral.png)
+
+![Lista de pods com busca por namespace](docs/img/seletor-namespace.png)
 
 ## Instalação no cluster (Helm)
 

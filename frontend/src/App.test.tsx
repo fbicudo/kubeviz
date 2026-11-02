@@ -22,6 +22,8 @@ interface FakeOptions {
   authenticated?: boolean
   /** Usuário que só pode ler pods do namespace "demo". */
   restricted?: boolean
+  /** API server fora do ar: /cluster informa reachable=false e o proxy dá 502. */
+  down?: boolean
 }
 
 const created = new Date(Date.now() - 3 * 3600_000).toISOString()
@@ -47,7 +49,7 @@ const forbidden = (what: string) => ({
  * API falsa: dois contextos locais; o PUT troca o contexto atual. No modo
  * in-cluster, o login aceita apenas "token-ana".
  */
-function fakeApi({ mode = 'local', authenticated = true, restricted: startRestricted = false }: FakeOptions = {}) {
+function fakeApi({ mode = 'local', authenticated = true, restricted: startRestricted = false, down = false }: FakeOptions = {}) {
   let restricted = startRestricted
   let current = 'kind-dev'
   let loggedIn = authenticated
@@ -81,7 +83,8 @@ function fakeApi({ mode = 'local', authenticated = true, restricted: startRestri
       return new Response(null, { status: 204 })
     }
     if (!loggedIn) return json({ error: 'sessão ausente ou expirada' }, 401)
-    if (url === '/api/v1/cluster') return json(info())
+    if (url === '/api/v1/cluster') return json(down ? { ...info(), reachable: false, version: undefined, error: 'connection refused' } : info())
+    if (down && url.startsWith('/api/k8s/')) return json({ error: 'cluster inacessível' }, 502)
     if (url === '/api/v1/contexts') {
       return json({
         mode,
@@ -263,6 +266,16 @@ describe('pods', () => {
     await userEvent.click(await screen.findByRole('combobox', { name: 'Namespace' }))
     await userEvent.keyboard('demo{Enter}')
     expect(await screen.findByText('web-1')).toBeInTheDocument()
+  })
+})
+
+describe('cluster fora do ar', () => {
+  it('os indicadores dizem que o cluster está inacessível', async () => {
+    useFake({ down: true })
+    renderAt('/')
+    expect(await screen.findByText('connection refused')).toBeInTheDocument()
+    // Cartão do cluster + indicadores de nós e pods.
+    expect(await screen.findAllByText('Cluster inacessível')).toHaveLength(3)
   })
 })
 

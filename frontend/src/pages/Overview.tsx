@@ -48,9 +48,18 @@ function errorHint(t: (k: string) => string, error: Error) {
   return error instanceof ApiError && error.status === 403 ? t('overview.forbidden') : error.message
 }
 
+/** Com o cluster fora do ar, os indicadores dizem isso em vez de "carregando". */
+function useClusterDown() {
+  const { data } = useClusterInfo()
+  return data !== undefined && !data.reachable
+}
+
 function NodesTile() {
   const { t } = useTranslation()
   const nodes = useNodes()
+  if (useClusterDown()) {
+    return <StatTile label={t('overview.nodes')} status="critical" value="—" hint={t('cluster.unreachable')} />
+  }
   if (nodes.isError) {
     return <StatTile label={t('overview.nodes')} value="—" hint={errorHint(t, nodes.error)} />
   }
@@ -69,6 +78,9 @@ function NodesTile() {
 function PodsTile() {
   const { t } = useTranslation()
   const pods = usePods('')
+  if (useClusterDown()) {
+    return <StatTile label={t('overview.pods')} status="critical" value="—" hint={t('cluster.unreachable')} />
+  }
   if (pods.isError) {
     return <StatTile label={t('overview.pods')} value="—" hint={errorHint(t, pods.error)} />
   }

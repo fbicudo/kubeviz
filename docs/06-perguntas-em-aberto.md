@@ -23,6 +23,7 @@
 | P17 | Nome | **KubeViz** (binário, imagem e Helm chart: `kubeviz`). Renomeado em 02/11/2026; o nome provisório anterior era "Kubora" | Toda a documentação |
 | P18 | Dedicação | **Variável**, conforme a disponibilidade de tokens. Esforço medido em semanas de trabalho, não em datas | [Viabilidade §2.5](02-viabilidade.md#25-estimativa-de-esforço), [Roadmap](05-roadmap.md) |
 | P19 | CNCF | **Talvez, decidir depois da 1.0.** Seguir desde já as práticas exigidas (governança, DCO, SECURITY.md) | [Arquitetura §3.9](03-arquitetura.md#39-governança-open-source) |
+| P20 | Logo e cor | **Lente sobre nós** e **azul** como cor de destaque (escolhidos em 02/11/2026) | [Progresso, tarefa 0.6](PROGRESSO.md) |
 
 ## 6.2 Verificação do nome "KubeViz" (02/11/2026)
 
@@ -41,6 +42,5 @@ como endereço estável da documentação e do Helm chart.
 
 Podem ser resolvidas durante a Fase 0:
 
-- **Logo e paleta de cores** do KubeViz, dentro do estilo painel de observabilidade.
 - **Registro do domínio** (ver 6.2).
 - **Criação do repositório** no GitHub.
