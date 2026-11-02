@@ -141,6 +141,10 @@ GitOps).
     terminal um link `/auth/local?token=...`, como o Jupyter. Só quem vê o
     terminal entra; outros usuários da mesma máquina não usam o kubeconfig de
     quem executou o KubeViz. O token é trocado por uma sessão e sai da URL.
+  - *Contas locais (modo local):* `kubeviz user add` cria contas com senha
+    (bcrypt) em `~/.config/kubeviz/users`; com contas, o login é por usuário e
+    senha e o link deixa de valer. Tentativas erradas são limitadas por IP e
+    por usuário.
   - *Modo in-cluster:* login com token do Kubernetes (ServiceAccount ou
     usuário), validado com `SelfSubjectReview`. As requisições seguem para a
     API **com o próprio token do usuário** (repasse), sem nenhuma credencial da

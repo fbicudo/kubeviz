@@ -19,6 +19,9 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "user" {
+		os.Exit(runUser(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
+	}
 	cfg := config.MustLoad()
 	v := version.Get()
 	if cfg.ShowVersion {
@@ -52,9 +55,16 @@ func main() {
 		TLSKeyFile:   cfg.TLSKeyFile,
 	}
 	if cl.Mode() == cluster.ModeLocal {
+		opts.Users = auth.NewUsers(cfg.UsersFile)
 		opts.LocalToken = auth.RandomToken()
-		// Como no Jupyter: só quem vê o terminal recebe o link de acesso.
-		fmt.Fprintf(os.Stderr, "\n  KubeViz pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n", browserURL(cfg.Listen, cfg.TLSCertFile != ""), opts.LocalToken)
+		url := browserURL(cfg.Listen, cfg.TLSCertFile != "")
+		if opts.Users.Enabled() {
+			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto em %s\n  Entre com usuário e senha (contas em %s).\n\n", url, cfg.UsersFile)
+		} else {
+			// Como no Jupyter: só quem vê o terminal recebe o link de acesso.
+			fmt.Fprintf(os.Stderr, "\n  KubeViz pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n"+
+				"  Para entrar com usuário e senha em vez do link: kubeviz user add <nome>\n\n", url, opts.LocalToken)
+		}
 		if !opts.LoopbackOnly {
 			log.Warn("modo local exposto fora de localhost: quem tiver o link usará suas credenciais do kubeconfig", "listen", cfg.Listen)
 			if cfg.TLSCertFile == "" {

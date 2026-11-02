@@ -62,10 +62,11 @@ function fakeApi({ mode = 'local', authenticated = true, restricted: startRestri
     platform: 'linux/amd64',
   })
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
+  const loginMethods = [mode === 'local' ? 'link' : 'token']
   const session = () =>
     loggedIn
-      ? { mode, authenticated: true, user: { username: mode === 'local' ? 'kubernetes-admin' : 'ana' } }
-      : { mode, authenticated: false }
+      ? { mode, loginMethods, authenticated: true, user: { username: mode === 'local' ? 'kubernetes-admin' : 'ana' } }
+      : { mode, loginMethods, authenticated: false }
 
   const api = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)

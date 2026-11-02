@@ -8,14 +8,16 @@ export function UserMenu() {
   const { data } = useSession()
   const logoutMutation = useLogout()
 
-  const name = data?.user?.username ?? t('auth.unknownUser')
+  const name = data?.localUser ?? data?.user?.username ?? t('auth.unknownUser')
   const groups = data?.user?.groups?.join(', ')
+  // Com conta local, o nome exibido é a conta; a identidade no cluster vai na dica.
+  const kubeIdentity = data?.localUser && data.user ? `${t('auth.kubeIdentity')}: ${data.user.username}\n` : ''
 
   return (
     <div className="flex items-center gap-1">
       <span
         className="flex max-w-48 items-center gap-1.5 truncate px-1 text-xs text-muted"
-        title={groups ? `${name}\n${t('auth.groups')}: ${groups}` : (data?.userError ?? name)}
+        title={groups ? `${name}\n${kubeIdentity}${t('auth.groups')}: ${groups}` : (data?.userError ?? name)}
       >
         <UserRound className="size-4 shrink-0" aria-hidden />
         <span className="truncate">{name}</span>

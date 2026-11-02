@@ -91,6 +91,15 @@
       "help": "Use um token de ServiceAccount ou de usuário. Para gerar um:",
       "submit": "Entrar",
       "invalid": "Token inválido ou expirado."
+    },
+    "kubeIdentity": "No Kubernetes",
+    "password": {
+      "username": "Usuário",
+      "password": "Senha",
+      "submit": "Entrar",
+      "invalid": "Usuário ou senha inválidos.",
+      "tooMany": "Muitas tentativas. Tente de novo em {{minutes}} min.",
+      "hint": "Contas criadas com o comando kubeviz user add."
     }
   },
   "pods": {

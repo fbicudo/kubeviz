@@ -33,6 +33,9 @@ type Options struct {
 	// são relidos quando mudam (renovação de certificado).
 	TLSCertFile string
 	TLSKeyFile  string
+	// Users, no modo local, habilita o login por usuário e senha quando o
+	// arquivo de contas tem ao menos uma conta. Nil = desabilitado.
+	Users *auth.Users
 	// WhoAmI identifica o dono de uma credencial; nil = auth.WhoAmI.
 	// Substituível nos testes.
 	WhoAmI func(context.Context, *rest.Config) (auth.User, error)
@@ -46,6 +49,7 @@ type Server struct {
 	opts     Options
 	sessions *auth.Store
 	whoAmI   func(context.Context, *rest.Config) (auth.User, error)
+	limiter  *auth.LoginLimiter
 }
 
 // New cria um servidor que serve a UI a partir de assets e consulta o
@@ -54,7 +58,13 @@ func New(log *slog.Logger, assets fs.FS, cl Cluster, opts Options) *Server {
 	if opts.SessionTTL == 0 {
 		opts.SessionTTL = 12 * time.Hour
 	}
-	s := &Server{log: log, assets: assets, cluster: cl, opts: opts, sessions: auth.NewStore(opts.SessionTTL), whoAmI: opts.WhoAmI}
+	s := &Server{
+		log: log, assets: assets, cluster: cl, opts: opts,
+		sessions: auth.NewStore(opts.SessionTTL),
+		whoAmI:   opts.WhoAmI,
+		// 5 senhas erradas em 15 min bloqueiam o IP e o usuário até a janela passar.
+		limiter: auth.NewLoginLimiter(5, 15*time.Minute),
+	}
 	if s.whoAmI == nil {
 		s.whoAmI = auth.WhoAmI
 	}
@@ -75,6 +85,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /auth/local", s.localLogin)
 	mux.HandleFunc("GET /api/v1/auth/session", s.getSession)
 	mux.HandleFunc("POST /api/v1/auth/login", s.login)
+	mux.HandleFunc("POST /api/v1/auth/password", s.passwordLogin)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.logout)
 
 	// Exigem sessão.

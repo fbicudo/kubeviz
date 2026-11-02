@@ -49,9 +49,17 @@ Executando:
 ./bin/kubeviz --listen 0.0.0.0:4466 --tls-cert-file tls.crt --tls-key-file tls.key   # acesso pela rede
 ```
 
-O KubeViz imprime no terminal um link com um token de acesso gerado a cada
-execução (`http://127.0.0.1:4466/auth/local?token=...`). Só quem tem o link
-entra, o que impede outras pessoas na mesma máquina de usar o seu kubeconfig.
+Para entrar com usuário e senha, crie uma conta (a senha é pedida sem
+aparecer na tela; vale na hora, sem reiniciar):
+
+```bash
+./bin/kubeviz user add <nome>
+```
+
+Sem contas, o KubeViz imprime no terminal um link com um token de acesso gerado
+a cada execução (`http://127.0.0.1:4466/auth/local?token=...`). Nos dois casos,
+só quem tem a senha ou o link entra, o que impede outras pessoas de usar o seu
+kubeconfig.
 
 Imagem: `ghcr.io/fbicudo/kubeviz` (amd64 e arm64). Licença: [Apache-2.0](LICENSE).
 

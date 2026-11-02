@@ -80,10 +80,16 @@ export interface User {
   groups?: string[]
 }
 
+/** Como entrar: link com token (modo local), usuário e senha, ou token do Kubernetes. */
+export type LoginMethod = 'link' | 'password' | 'token'
+
 export interface SessionInfo {
   mode: ClusterMode
   authenticated: boolean
+  loginMethods: LoginMethod[]
   user?: User
+  /** Conta local usada no login por usuário e senha. */
+  localUser?: string
   expiresAt?: string
   userError?: string
 }
@@ -91,5 +97,8 @@ export interface SessionInfo {
 export const getSession = () => apiGet<SessionInfo>('/api/v1/auth/session')
 
 export const login = (token: string) => apiSend<SessionInfo>('POST', '/api/v1/auth/login', { token })
+
+export const passwordLogin = (username: string, password: string) =>
+  apiSend<SessionInfo>('POST', '/api/v1/auth/password', { username, password })
 
 export const logout = () => apiSend<void>('POST', '/api/v1/auth/logout', {})

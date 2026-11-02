@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"k8s.io/client-go/rest"
@@ -81,7 +84,8 @@ func isHTTPS(r *http.Request) bool {
 // sessão. Impede que outros usuários da mesma máquina usem o kubeconfig de
 // quem executou o KubeViz.
 func (s *Server) localLogin(w http.ResponseWriter, r *http.Request) {
-	if s.cluster.Mode() != cluster.ModeLocal || s.opts.LocalToken == "" {
+	// Com contas locais criadas, o link com token deixa de valer.
+	if s.cluster.Mode() != cluster.ModeLocal || s.opts.LocalToken == "" || s.passwordEnabled() {
 		http.NotFound(w, r)
 		return
 	}
@@ -96,6 +100,71 @@ func (s *Server) localLogin(w http.ResponseWriter, r *http.Request) {
 	s.log.Info("sessão local iniciada")
 	// Redireciona para tirar o token da barra de endereços e do histórico.
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (s *Server) passwordEnabled() bool {
+	return s.cluster.Mode() == cluster.ModeLocal && s.opts.Users != nil && s.opts.Users.Enabled()
+}
+
+// loginMethods informa à tela de login como entrar.
+func (s *Server) loginMethods() []string {
+	switch {
+	case s.cluster.Mode() == cluster.ModeInCluster:
+		return []string{"token"}
+	case s.passwordEnabled():
+		return []string{"password"}
+	default:
+		return []string{"link"}
+	}
+}
+
+// passwordLogin autentica uma conta local (modo local). Erros não revelam se
+// o usuário existe; tentativas erradas são limitadas por IP e por usuário.
+func (s *Server) passwordLogin(w http.ResponseWriter, r *http.Request) {
+	if !s.passwordEnabled() {
+		writeError(w, http.StatusNotFound, "login por usuário e senha não está habilitado")
+		return
+	}
+	var body struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Username == "" || body.Password == "" {
+		writeError(w, http.StatusBadRequest, `corpo inválido: esperado {"username": "...", "password": "..."}`)
+		return
+	}
+	name := strings.ToLower(strings.TrimSpace(body.Username))
+	keys := []string{"ip:" + clientIP(r), "user:" + name}
+
+	if blocked, wait := s.limiter.Blocked(keys...); blocked {
+		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+		writeError(w, http.StatusTooManyRequests, "muitas tentativas; tente novamente mais tarde")
+		return
+	}
+	if !s.opts.Users.Verify(name, body.Password) {
+		s.limiter.Fail(keys...)
+		s.log.Warn("login por senha recusado", "usuario", name, "origem", clientIP(r))
+		writeError(w, http.StatusUnauthorized, "usuário ou senha inválidos")
+		return
+	}
+	s.limiter.Reset(keys...)
+
+	sess := s.sessions.Create(auth.User{}, "")
+	sess.LocalUser = name
+	s.setSessionCookie(w, r, sess)
+	s.log.Info("login por senha", "usuario", name)
+	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
+}
+
+// clientIP é o endereço de quem fez a requisição (sem confiar em cabeçalhos
+// de proxy, que o cliente poderia forjar para fugir do limite de tentativas).
+func clientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
 }
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
@@ -126,7 +195,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	sess := s.sessions.Create(user, body.Token)
 	s.setSessionCookie(w, r, sess)
 	s.log.Info("login", "usuario", user.Username)
-	writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), Authenticated: true, User: &user, ExpiresAt: &sess.Expires})
+	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
 }
 
 func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
@@ -140,8 +209,12 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 type sessionResponse struct {
 	Mode          cluster.Mode `json:"mode"`
 	Authenticated bool         `json:"authenticated"`
-	User          *auth.User   `json:"user,omitempty"`
-	ExpiresAt     *time.Time   `json:"expiresAt,omitempty"`
+	// LoginMethods: "link" (token no terminal), "password" ou "token".
+	LoginMethods []string   `json:"loginMethods"`
+	User         *auth.User `json:"user,omitempty"`
+	// LocalUser é a conta local da sessão (login por usuário e senha).
+	LocalUser string     `json:"localUser,omitempty"`
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 	// UserError explica por que a identidade não pôde ser obtida (modo local
 	// com cluster inacessível, por exemplo).
 	UserError string `json:"userError,omitempty"`
@@ -150,14 +223,22 @@ type sessionResponse struct {
 // getSession é público: a UI o usa para decidir entre a tela de login e a
 // aplicação.
 func (s *Server) getSession(w http.ResponseWriter, r *http.Request) {
-	resp := sessionResponse{Mode: s.cluster.Mode()}
 	sess, ok := s.session(r)
 	if !ok {
-		writeJSON(w, http.StatusOK, resp)
+		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods()})
 		return
 	}
-	resp.Authenticated = true
-	resp.ExpiresAt = &sess.Expires
+	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))
+}
+
+func (s *Server) sessionInfo(r *http.Request, sess *auth.Session) sessionResponse {
+	resp := sessionResponse{
+		Mode:          s.cluster.Mode(),
+		Authenticated: true,
+		LoginMethods:  s.loginMethods(),
+		LocalUser:     sess.LocalUser,
+		ExpiresAt:     &sess.Expires,
+	}
 
 	if s.cluster.Mode() == cluster.ModeInCluster {
 		resp.User = &sess.User
@@ -167,5 +248,5 @@ func (s *Server) getSession(w http.ResponseWriter, r *http.Request) {
 	} else {
 		resp.UserError = err.Error()
 	}
-	writeJSON(w, http.StatusOK, resp)
+	return resp
 }

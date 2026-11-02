@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -30,6 +31,8 @@ type Config struct {
 	LogLevel slog.Level
 	// LogFormat: text ou json.
 	LogFormat string
+	// UsersFile é o arquivo de contas locais (usuário e senha) do modo local.
+	UsersFile string
 	// TLSCertFile e TLSKeyFile ativam HTTPS (os dois ou nenhum).
 	TLSCertFile string
 	TLSKeyFile  string
@@ -57,6 +60,7 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	fs.StringVar(&c.Mode, "mode", env("MODE", "auto"), "auto|local|in-cluster (env KUBEVIZ_MODE)")
 	fs.StringVar(&level, "log-level", env("LOG_LEVEL", "info"), "debug|info|warn|error (env KUBEVIZ_LOG_LEVEL)")
 	fs.StringVar(&c.LogFormat, "log-format", env("LOG_FORMAT", "text"), "text|json (env KUBEVIZ_LOG_FORMAT)")
+	fs.StringVar(&c.UsersFile, "users-file", env("USERS_FILE", DefaultUsersFile()), "contas de login do modo local; gerencie com 'kubeviz user' (env KUBEVIZ_USERS_FILE)")
 	fs.StringVar(&c.TLSCertFile, "tls-cert-file", env("TLS_CERT_FILE", ""), "certificado TLS em PEM; ativa HTTPS (env KUBEVIZ_TLS_CERT_FILE)")
 	fs.StringVar(&c.TLSKeyFile, "tls-key-file", env("TLS_KEY_FILE", ""), "chave privada TLS em PEM (env KUBEVIZ_TLS_KEY_FILE)")
 	fs.BoolVar(&c.ShowVersion, "version", false, "imprime a versão e sai")
@@ -85,6 +89,15 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 		return Config{}, fmt.Errorf("listen inválido %q: %w", c.Listen, err)
 	}
 	return c, nil
+}
+
+// DefaultUsersFile é ~/.config/kubeviz/users (ou o equivalente do sistema).
+func DefaultUsersFile() string {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "kubeviz-users"
+	}
+	return filepath.Join(dir, "kubeviz", "users")
 }
 
 // ListenIsLoopback indica se o servidor escuta apenas em localhost. Nesse

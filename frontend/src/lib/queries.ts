@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getCluster, getContexts, getSession, login, logout, setCurrentContext } from './api'
+import { getCluster, getContexts, getSession, login, logout, passwordLogin, setCurrentContext } from './api'
 
 export const sessionKey = ['session'] as const
 
@@ -16,6 +16,14 @@ export function useLogin() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: login,
+    onSuccess: (session) => qc.setQueryData(sessionKey, session),
+  })
+}
+
+export function usePasswordLogin() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ username, password }: { username: string; password: string }) => passwordLogin(username, password),
     onSuccess: (session) => qc.setQueryData(sessionKey, session),
   })
 }

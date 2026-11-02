@@ -91,6 +91,15 @@
       "help": "Use a ServiceAccount or user token. To create one:",
       "submit": "Sign in",
       "invalid": "Invalid or expired token."
+    },
+    "kubeIdentity": "In Kubernetes",
+    "password": {
+      "username": "Username",
+      "password": "Password",
+      "submit": "Sign in",
+      "invalid": "Invalid username or password.",
+      "tooMany": "Too many attempts. Try again in {{minutes}} min.",
+      "hint": "Accounts are created with the kubeviz user add command."
     }
   },
   "pods": {

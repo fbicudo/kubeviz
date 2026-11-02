@@ -302,6 +302,29 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
 - **Problema evitado:** sem `resourceVersion` (respostas incompletas), o hook
   entrava em laço de recarga; agora recua para consulta periódica.
 
+### 02/11/2026 — Login por usuário e senha (pedido do responsável)
+- **Contas locais para o modo local:** `kubeviz user add|remove|list` grava em
+  `~/.config/kubeviz/users` (formato htpasswd com bcrypt custo 12, permissão
+  0600, escrita atômica); a senha é pedida duas vezes sem eco (ou lida da
+  entrada padrão em scripts). Mínimo de 12 caracteres.
+- Com ao menos uma conta, a tela de login pede usuário e senha e o **link com
+  token deixa de valer**; sem contas, nada muda. O arquivo é relido quando
+  muda: criar ou remover contas vale **sem reiniciar**.
+- **Proteções:** 5 senhas erradas em 15 min bloqueiam o IP e o usuário (429 com
+  `Retry-After`); usuário inexistente custa o mesmo tempo que senha errada
+  (não revela quais contas existem); mensagens genéricas; recusas no log.
+- A sessão guarda a conta local; o cabeçalho mostra a conta e a dica mostra a
+  identidade no Kubernetes (a do kubeconfig). `GET /api/v1/auth/session` passa
+  a informar `loginMethods` (`link`, `password` ou `token`).
+- **Escopo:** só o modo local. No modo in-cluster continua o login por token
+  (contas locais exigiriam impersonation; o login corporativo é a tarefa 1.9).
+- **Verificado:** testes Go (contas, limite de tentativas, endpoint, comando
+  `kubeviz user`), 104 testes Vitest (formulário, erro, bloqueio) e ponta a
+  ponta com o binário numa instância de teste em localhost: troca de link para
+  senha sem reiniciar, link antigo 404, arquivo 0600 sem a senha, login, pods ao
+  vivo, logout e bloqueio após 5 erros. Captura:
+  [img/login-senha.png](img/login-senha.png).
+
 ## Próximas tarefas (Fase 1 — Navegação e operação)
 
 Escopo no [roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02).

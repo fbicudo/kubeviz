@@ -1,11 +1,14 @@
-import { KeyRound, Terminal } from 'lucide-react'
+import { KeyRound, LogIn, Terminal } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { ApiError, type ClusterMode } from '@/lib/api'
-import { useLogin } from '@/lib/queries'
+import { ApiError, type LoginMethod } from '@/lib/api'
+import { useLogin, usePasswordLogin } from '@/lib/queries'
 
-export function Login({ mode }: { mode: ClusterMode }) {
+const fieldClass =
+  'h-9 w-full rounded-md border bg-background px-2 focus:border-accent focus:outline-none'
+
+export function Login({ methods }: { methods: LoginMethod[] }) {
   const { t } = useTranslation()
   return (
     <div className="flex min-h-full items-center justify-center p-4">
@@ -17,7 +20,7 @@ export function Login({ mode }: { mode: ClusterMode }) {
             <p className="text-muted">{t('app.tagline')}</p>
           </div>
         </div>
-        {mode === 'local' ? <LocalHelp /> : <TokenForm />}
+        {methods.includes('password') ? <PasswordForm /> : methods.includes('token') ? <TokenForm /> : <LocalHelp />}
       </div>
     </div>
   )
@@ -80,6 +83,75 @@ function TokenForm() {
         <KeyRound />
         {t('auth.token.submit')}
       </Button>
+    </form>
+  )
+}
+
+function PasswordForm() {
+  const { t } = useTranslation()
+  const userId = useId()
+  const passId = useId()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const loginMutation = usePasswordLogin()
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    if (username.trim() && password) loginMutation.mutate({ username: username.trim(), password })
+  }
+
+  const error = loginMutation.error
+  let errorText = error?.message
+  if (error instanceof ApiError && error.status === 401) errorText = t('auth.password.invalid')
+  if (error instanceof ApiError && error.status === 429) errorText = t('auth.password.tooMany', { minutes: 15 })
+
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <div className="space-y-1">
+        <label htmlFor={userId} className="block font-medium">
+          {t('auth.password.username')}
+        </label>
+        <input
+          id={userId}
+          name="username"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          autoFocus
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className={fieldClass}
+        />
+      </div>
+      <div className="space-y-1">
+        <label htmlFor={passId} className="block font-medium">
+          {t('auth.password.password')}
+        </label>
+        <input
+          id={passId}
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={fieldClass}
+        />
+      </div>
+      {errorText && (
+        <p role="alert" className="text-critical">
+          {errorText}
+        </p>
+      )}
+      <Button
+        type="submit"
+        variant="primary"
+        className="w-full"
+        disabled={!username.trim() || !password || loginMutation.isPending}
+      >
+        <LogIn />
+        {t('auth.password.submit')}
+      </Button>
+      <p className="text-xs text-muted">{t('auth.password.hint')}</p>
     </form>
   )
 }

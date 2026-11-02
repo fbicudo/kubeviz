@@ -38,6 +38,8 @@ type Session struct {
 	User    User
 	Token   string
 	Expires time.Time
+	// LocalUser é a conta local (usuário e senha) que abriu a sessão, se houver.
+	LocalUser string
 }
 
 // Store guarda sessões em memória. Reiniciar o KubeViz encerra todas as
