@@ -2,4 +2,4 @@
 
 | Nome | GitHub | Área |
 |------|--------|------|
-| fbicudo | *a definir* | Projeto (fundador) |
+| Fabio Bicudo | [fbicudo](https://github.com/fbicudo) | Projeto (fundador) |

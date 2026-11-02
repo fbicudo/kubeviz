@@ -4,6 +4,11 @@ description: Console web para gestão de clusters Kubernetes, com indicadores de
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-home: https://kubeviz.dev
+home: https://github.com/fbicudo/kubeviz
+sources:
+  - https://github.com/fbicudo/kubeviz
+maintainers:
+  - name: Fabio Bicudo
+    url: https://github.com/fbicudo
 license: Apache-2.0
 keywords: [kubernetes, dashboard, console, observability]

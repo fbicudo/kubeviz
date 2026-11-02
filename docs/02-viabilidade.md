@@ -72,7 +72,7 @@ consolidadas no ecossistema.
 
 Atende ao requisito de "fácil deployment":
 
-- **No cluster:** `helm install kubeviz oci://ghcr.io/<usuario>/charts/kubeviz` → 1 Deployment,
+- **No cluster:** `helm install kubeviz oci://ghcr.io/fbicudo/charts/kubeviz` → 1 Deployment,
   1 Service, ServiceAccount com permissões mínimas, Ingress opcional.
 - **Local:** `kubeviz` (binário) ou `docker run` usando o kubeconfig do usuário,
   abrindo `http://localhost:4466`.

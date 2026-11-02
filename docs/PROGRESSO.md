@@ -218,14 +218,14 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 
 1. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
    publicar a imagem no GHCR e o chart (OCI), ativar o relato privado de
-   vulnerabilidades. Ajustar `image.repository` no chart. Depende do usuário do
-   GitHub (pendência abaixo).
+   vulnerabilidades. Conta definida: `fbicudo` (repositório
+   `github.com/fbicudo/kubeviz`); chart e documentação já apontam para ela.
+   Falta autenticar o `gh` e a autorização para publicar.
 
 ## Bloqueios e pendências do responsável
 
 | Item | Por quê | Como resolver |
 |------|---------|---------------|
-| Usuário do GitHub | `MAINTAINERS.md` e caminhos do chart | Definir antes da tarefa 0.7 (publicação); não bloqueia 0.2 a 0.6 |
 | Domínio `kubeviz.dev` | O módulo Go usa `kubeviz.dev/kubeviz` | Definir antes da tarefa 0.7; se não for registrado, trocar o caminho do módulo (substituição simples nos imports) |
 
 ## Ambiente de desenvolvimento desta máquina

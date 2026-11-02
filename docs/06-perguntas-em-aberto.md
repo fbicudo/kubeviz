@@ -19,7 +19,7 @@
 | P13 | Estilo visual | **Painel de observabilidade** (referência Grafana/Datadog): denso em informação, tema escuro como padrão | [Visão §1.3](01-visao-e-escopo.md#13-princípios-do-produto), [Arquitetura §3.2](03-arquitetura.md#frontend-typescript--react) |
 | P14 | Idiomas | **pt-BR e inglês**, estrutura pronta para traduções da comunidade | RF-52 |
 | P15 | Licença | **Apache-2.0** | ADR-007 |
-| P16 | Repositório | **GitHub, conta pessoal**, com possibilidade de migrar para uma organização depois | [Arquitetura §3.9](03-arquitetura.md#39-governança-open-source) |
+| P16 | Repositório | **GitHub, conta pessoal `fbicudo`** (`github.com/fbicudo/kubeviz`; imagem e chart em `ghcr.io/fbicudo`), com possibilidade de migrar para uma organização depois | [Arquitetura §3.9](03-arquitetura.md#39-governança-open-source) |
 | P17 | Nome | **KubeViz** (binário, imagem e Helm chart: `kubeviz`). Renomeado em 02/11/2026; o nome provisório anterior era "Kubora" | Toda a documentação |
 | P18 | Dedicação | **Variável**, conforme a disponibilidade de tokens. Esforço medido em semanas de trabalho, não em datas | [Viabilidade §2.5](02-viabilidade.md#25-estimativa-de-esforço), [Roadmap](05-roadmap.md) |
 | P19 | CNCF | **Talvez, decidir depois da 1.0.** Seguir desde já as práticas exigidas (governança, DCO, SECURITY.md) | [Arquitetura §3.9](03-arquitetura.md#39-governança-open-source) |

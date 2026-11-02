@@ -1,8 +1,7 @@
 # Valores padrão do chart do KubeViz.
 
 image:
-  # Ajustar quando o repositório for publicado (tarefa 0.7).
-  repository: ghcr.io/kubeviz/kubeviz
+  repository: ghcr.io/fbicudo/kubeviz
   # Vazio = appVersion do chart.
   tag: ""
   pullPolicy: IfNotPresent
