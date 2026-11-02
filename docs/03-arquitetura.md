@@ -105,8 +105,12 @@ contribuidores. Não compensa para uma aplicação limitada por I/O.
 2. Detecta Prometheus (endereço configurado ou descoberta por Service) → consultas
    PromQL predefinidas para histórico (requer kube-state-metrics, node-exporter e
    cAdvisor, já incluídos no kube-prometheus-stack).
-3. Sem Prometheus → coletor embutido amostra o metrics-server a cada 30–60 s e
-   guarda N dias no SQLite.
+3. Sem Prometheus → coletor embutido amostra o metrics-server a cada 30 s e
+   guarda o histórico no SQLite (Go puro, `modernc.org/sqlite`), por cluster,
+   nó, namespace e workload: 30 s por 24 h, médias de 5 min por 7 dias e de
+   1 h por 30 dias. Nós e pods são acompanhados por informers, guardando só os
+   campos usados. Cada consulta é conferida com o RBAC de quem pergunta
+   (tarefa 2.2, [metricas.md](metricas.md)).
 
 ### Uptime / disponibilidade (decisão P6: estado do Kubernetes + sondas)
 - **Workload:** disponível quando `readyReplicas >= minimo configurado` (padrão:

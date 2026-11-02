@@ -280,3 +280,14 @@ func serverVersion(ctx context.Context, cfg *rest.Config) (*version.Info, error)
 	}
 	return &v, nil
 }
+
+// Name identifica o cluster atual no histórico de métricas: o contexto do
+// kubeconfig no modo local, "in-cluster" dentro do cluster.
+func (m *Manager) Name() string {
+	if m.mode == ModeInCluster {
+		return "in-cluster"
+	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.current
+}

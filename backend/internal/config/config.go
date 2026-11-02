@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 )
 
 const envPrefix = "KUBEVIZ_"
@@ -42,6 +43,14 @@ type Config struct {
 	ShowVersion bool
 	// OIDC é o login corporativo; desativado se IssuerURL estiver vazio.
 	OIDC OIDC
+	// DataDir guarda o banco (histórico de métricas). Vazio = padrão do modo.
+	DataDir string
+	// MetricsCollector liga o coletor embutido de métricas.
+	MetricsCollector bool
+	// MetricsInterval é o intervalo entre amostras.
+	MetricsInterval time.Duration
+	// MetricsRetention é por quanto tempo o histórico é guardado.
+	MetricsRetention time.Duration
 }
 
 // OIDC são as opções do login corporativo (ver auth.OIDCConfig).
@@ -89,6 +98,13 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	fs.StringVar(&c.TLSKeyFile, "tls-key-file", env("TLS_KEY_FILE", ""), "chave privada TLS em PEM (env KUBEVIZ_TLS_KEY_FILE)")
 	fs.BoolVar(&c.ShowVersion, "version", false, "imprime a versão e sai")
 
+	fs.StringVar(&c.DataDir, "data-dir", env("DATA_DIR", ""), "diretório do banco (histórico); padrão: ~/.config/kubeviz/data ou /var/lib/kubeviz no cluster (env KUBEVIZ_DATA_DIR)")
+	fs.BoolVar(&c.MetricsCollector, "metrics-collector", env("METRICS_COLLECTOR", "true") != "false", "coletor embutido de métricas (env KUBEVIZ_METRICS_COLLECTOR=false desliga)")
+	interval, _ := time.ParseDuration(env("METRICS_INTERVAL", "30s"))
+	fs.DurationVar(&c.MetricsInterval, "metrics-interval", interval, "intervalo entre amostras do coletor (env KUBEVIZ_METRICS_INTERVAL)")
+	retention, _ := time.ParseDuration(env("METRICS_RETENTION", "720h"))
+	fs.DurationVar(&c.MetricsRetention, "metrics-retention", retention, "por quanto tempo guardar o histórico, mínimo 168h (env KUBEVIZ_METRICS_RETENTION)")
+
 	o := &c.OIDC
 	var scopes string
 	fs.StringVar(&o.IssuerURL, "oidc-issuer-url", env("OIDC_ISSUER_URL", ""), "provedor OIDC; ativa o login corporativo (env KUBEVIZ_OIDC_ISSUER_URL)")
@@ -128,6 +144,12 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	}
 	if _, _, err := net.SplitHostPort(c.Listen); err != nil {
 		return Config{}, fmt.Errorf("listen inválido %q: %w", c.Listen, err)
+	}
+	if c.MetricsInterval < 10*time.Second {
+		return Config{}, fmt.Errorf("metrics-interval mínimo é 10s (recebido %s)", c.MetricsInterval)
+	}
+	if c.MetricsRetention < 7*24*time.Hour {
+		return Config{}, fmt.Errorf("metrics-retention mínimo é 168h (7 dias); recebido %s", c.MetricsRetention)
 	}
 	for _, s := range strings.Split(scopes, ",") {
 		if s = strings.TrimSpace(s); s != "" {

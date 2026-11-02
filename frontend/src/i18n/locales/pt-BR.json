@@ -585,7 +585,7 @@
     }
   },
   "metrics": {
-    "subtitle": "O que está consumindo CPU e memória agora (metrics-server). O histórico chega na próxima etapa.",
+    "subtitle": "O que está consumindo CPU e memória: agora (metrics-server) e ao longo do tempo (coletor embutido).",
     "updated": "atualizado às {{time}}",
     "cpuUsed": "CPU em uso",
     "cpuRequested": "CPU reservada (requests)",
@@ -626,6 +626,31 @@
         "title": "Métricas indisponíveis",
         "body": "O metrics-server não respondeu. Ele pode estar iniciando; a página tenta de novo sozinha."
       }
+    }
+  },
+  "history": {
+    "title": "Histórico",
+    "scope": "Escopo do histórico",
+    "searchScope": "Cluster, nó, namespace ou workload…",
+    "range": "Período",
+    "cluster": "Cluster inteiro",
+    "node": "nó",
+    "namespace": "namespace",
+    "show": "Ver o histórico de {{name}}",
+    "used": "Uso",
+    "requests": "Requests",
+    "limits": "Limits",
+    "capacity": "Capacidade",
+    "cpuTitle": "Uso de CPU ao longo do tempo",
+    "memoryTitle": "Uso de memória ao longo do tempo",
+    "summary": "Média {{avg}}, máximo {{max}}, último {{last}}.",
+    "empty": "Ainda não há amostras neste período. O coletor amostra a cada {{interval}}.",
+    "forbidden": "Você não tem permissão para ver o histórico deste escopo.",
+    "state": {
+      "missing": "Sem histórico: o cluster não tem o metrics-server.",
+      "forbidden": "Sem histórico: o KubeViz não tem permissão para ler nós, pods ou métricas. {{error}}",
+      "error": "O coletor de métricas está com erro: {{error}}",
+      "disabled": "O histórico de métricas está desativado nesta instalação."
     }
   }
 }

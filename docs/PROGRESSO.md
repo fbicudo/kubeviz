@@ -846,6 +846,82 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   - capturas: [img/metricas.png](img/metricas.png) e
     [img/visao-geral.png](img/visao-geral.png).
 
+### 02/11/2026 — Tarefa 2.2: coletor embutido e histórico
+- **Coletor:**
+  - amostra o cluster a cada 30 s;
+  - nós e pods acompanhados por informers (watch, sem listar tudo a cada
+    amostra), com os objetos enxugados ao que o coletor usa;
+  - o uso vem do metrics-server;
+  - guarda uso, requests, limits e capacidade do cluster, de cada nó,
+    namespace e workload. Pods individuais ficam de fora: com 5.000 pods,
+    seriam ~14 milhões de linhas por dia;
+  - no modo local, acompanha a troca de contexto do kubeconfig, e o histórico
+    fica separado por cluster.
+- **Banco:**
+  - SQLite em Go puro (`modernc.org/sqlite` v1.60.1), com WAL e migrações
+    versionadas;
+  - três resoluções: 30 s por 24 h, médias de 5 min por 7 dias, médias de 1 h
+    pelo período de retenção (padrão 30 dias);
+  - médias calculadas só para intervalos completos e sem duplicar; dados
+    vencidos e séries vazias removidos a cada 5 min;
+  - cada consulta usa a resolução mais fina que cobre o período (no máximo
+    ~2.900 pontos).
+- **API:**
+  - `GET /api/v1/metrics/history` (cluster, nó, namespace ou workload; 15 min
+    a 30 dias) e `/api/v1/metrics/status`;
+  - cada consulta é conferida com uma `SelfSubjectAccessReview` feita com a
+    credencial de quem pergunta, com cache de 60 s: nós e cluster exigem
+    listar nós; namespace e workload exigem listar pods no namespace.
+- **Interface:**
+  - painel Histórico na página Métricas, com gráficos de CPU e memória
+    (uPlot 1.6.32);
+  - seletor de período (15 min a 30 d) e de escopo (busca entre cluster, nós,
+    namespaces e workloads), além de um botão "ver histórico" em cada linha
+    das tabelas;
+  - lacunas onde o coletor parou;
+  - legenda com valores ao passar o mouse;
+  - resumo acessível (média, máximo, último);
+  - cores do tema;
+  - mensagens claras sem metrics-server, sem permissão ou com o coletor
+    desligado.
+- **Configuração:**
+  - `--metrics-collector`, `--metrics-interval`, `--metrics-retention`,
+    `--data-dir` (e as variáveis `KUBEVIZ_*`);
+  - **chart:**
+    - `metrics.collector.*`;
+    - um ClusterRole só de leitura (nós, pods, metrics.k8s.io) para a
+      ServiceAccount — a única ampliação de permissões, prevista na
+      arquitetura;
+    - volume do banco (`emptyDir` ou `persistence.enabled` com PVC);
+    - acessos tolerantes a valores antigos (`helm-lint` cobre `metrics=null`
+      e `persistence=null`).
+- **Tamanho:** o SQLite acrescenta 3,6 MB ao binário. A imagem tem 15,4 MB
+  comprimida (era 12,0) e cerca de 47 MB descomprimida, dentro dos 60 MB do
+  RNF-02. O "67,7 MB" do `docker images` soma as duas formas.
+- **Verificado:**
+  - testes Go:
+    - armazenamento (resoluções, médias, prazos, reabertura);
+    - agregação (Deployment pelo hash, pods estáticos, pods terminados);
+    - coletor (estados, troca de contexto);
+    - API (RBAC, cache da permissão, validação);
+  - 201 testes Vitest;
+  - **no kind:**
+    - coletor no modo local (21 séries);
+    - **instalado no cluster pelo chart**, com a ServiceAccount e o
+      ClusterRole novos e upgrade com `--reuse-values`;
+    - com a ServiceAccount limitada `demo/dev`: 403 para cluster, nós e
+      `kube-system`, 200 para `demo` e os workloads dele, igual ao
+      `kubectl auth can-i`;
+  - **no navegador:** um pod de carga mostrou a CPU subindo e parando em 500m,
+    exatamente no limit dele.
+  - **Encontrado no teste real e corrigido:** no tema claro as linhas de grade
+    saíam pretas, porque o gráfico lia as cores antes de o tema ser aplicado;
+    agora o gráfico é criado no quadro seguinte.
+  - capturas: [img/metricas.png](img/metricas.png),
+    [img/historico-workload.png](img/historico-workload.png) e
+    [img/historico-claro.png](img/historico-claro.png).
+- **Guia:** [metricas.md](metricas.md).
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca

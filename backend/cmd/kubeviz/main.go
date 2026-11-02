@@ -8,13 +8,18 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
+
+	"k8s.io/client-go/rest"
 
 	"github.com/fbicudo/kubeviz/backend/internal/auth"
 	"github.com/fbicudo/kubeviz/backend/internal/cluster"
 	"github.com/fbicudo/kubeviz/backend/internal/config"
+	"github.com/fbicudo/kubeviz/backend/internal/metrics"
 	"github.com/fbicudo/kubeviz/backend/internal/server"
+	"github.com/fbicudo/kubeviz/backend/internal/store"
 	"github.com/fbicudo/kubeviz/backend/internal/version"
 	"github.com/fbicudo/kubeviz/backend/internal/web"
 )
@@ -97,6 +102,13 @@ func main() {
 		}
 	}
 
+	if cfg.MetricsCollector {
+		if history, closeDB := startCollector(ctx, log, cfg, cl); history != nil {
+			opts.History = history
+			defer closeDB()
+		}
+	}
+
 	if err := server.New(log, web.Assets(), cl, opts).Run(ctx, cfg.Listen); err != nil {
 		log.Error("servidor encerrado com erro", "erro", err)
 		os.Exit(1)
@@ -125,4 +137,37 @@ func newLogger(cfg config.Config) *slog.Logger {
 		return slog.New(slog.NewJSONHandler(os.Stderr, opts))
 	}
 	return slog.New(slog.NewTextHandler(os.Stderr, opts))
+}
+
+// startCollector abre o banco e inicia o coletor embutido de métricas. Se o
+// banco não puder ser aberto (disco somente leitura, por exemplo), o
+// KubeViz segue sem histórico.
+func startCollector(ctx context.Context, log *slog.Logger, cfg config.Config, cl *cluster.Manager) (*metrics.Collector, func()) {
+	dir := cfg.DataDir
+	if dir == "" {
+		dir = defaultDataDir(cl.Mode())
+	}
+	db, err := store.Open(filepath.Join(dir, "kubeviz.db"))
+	if err != nil {
+		log.Warn("histórico de métricas desativado: não foi possível abrir o banco", "erro", err)
+		return nil, nil
+	}
+	c := metrics.NewCollector(log, db, metrics.Options{
+		Interval:  cfg.MetricsInterval,
+		Retention: cfg.MetricsRetention,
+		Target:    func() (*rest.Config, string) { return cl.RESTConfig(), cl.Name() },
+	})
+	go c.Run(ctx)
+	log.Info("coletor de métricas iniciado", "banco", db.Path(), "intervalo", cfg.MetricsInterval, "retencao", cfg.MetricsRetention)
+	return c, func() { db.Close() }
+}
+
+func defaultDataDir(mode cluster.Mode) string {
+	if mode == cluster.ModeInCluster {
+		return "/var/lib/kubeviz"
+	}
+	if dir, err := os.UserConfigDir(); err == nil {
+		return filepath.Join(dir, "kubeviz", "data")
+	}
+	return "kubeviz-data"
 }

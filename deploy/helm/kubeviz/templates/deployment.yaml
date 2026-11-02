@@ -78,6 +78,15 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
+            {{- $collector := dig "collector" dict (.Values.metrics | default dict) }}
+            - name: KUBEVIZ_METRICS_COLLECTOR
+              value: {{ dig "enabled" true $collector | quote }}
+            - name: KUBEVIZ_METRICS_INTERVAL
+              value: {{ dig "interval" "30s" $collector | quote }}
+            - name: KUBEVIZ_METRICS_RETENTION
+              value: {{ dig "retention" "720h" $collector | quote }}
+            - name: KUBEVIZ_DATA_DIR
+              value: /var/lib/kubeviz
             {{- if .Values.tls.enabled }}
             - name: KUBEVIZ_TLS_CERT_FILE
               value: /etc/kubeviz/tls/tls.crt
@@ -103,8 +112,9 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           {{- $oidcCA := and (dig "enabled" false (.Values.oidc | default dict)) (dig "caConfigMap" "" (.Values.oidc | default dict)) }}
-          {{- if or .Values.tls.enabled $oidcCA }}
           volumeMounts:
+            - name: data
+              mountPath: /var/lib/kubeviz
             {{- if .Values.tls.enabled }}
             - name: tls
               mountPath: /etc/kubeviz/tls
@@ -115,9 +125,15 @@ spec:
               mountPath: /etc/kubeviz/oidc-ca
               readOnly: true
             {{- end }}
-          {{- end }}
-      {{- if or .Values.tls.enabled $oidcCA }}
       volumes:
+        {{- $persistence := .Values.persistence | default dict }}
+        - name: data
+          {{- if dig "enabled" false $persistence }}
+          persistentVolumeClaim:
+            claimName: {{ dig "existingClaim" "" $persistence | default (printf "%s-data" (include "kubeviz.fullname" .)) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         {{- if .Values.tls.enabled }}
         - name: tls
           secret:
@@ -128,7 +144,6 @@ spec:
           configMap:
             name: {{ $oidcCA }}
         {{- end }}
-      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

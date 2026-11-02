@@ -1,0 +1,18 @@
+{{- $persistence := .Values.persistence | default dict }}
+{{- if and (dig "enabled" false $persistence) (not (dig "existingClaim" "" $persistence)) }}
+# Banco do KubeViz (histórico de métricas): sobrevive à recriação do pod.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kubeviz.fullname" . }}-data
+  labels:
+    {{- include "kubeviz.labels" . | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with dig "storageClass" "" $persistence }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ dig "size" "1Gi" $persistence }}
+{{- end }}

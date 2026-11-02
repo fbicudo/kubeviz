@@ -1,7 +1,9 @@
-import { RefreshCw, TriangleAlert } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ChartLine, RefreshCw, TriangleAlert } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { HistoryPanel } from '@/components/charts/HistoryPanel'
 import { ObjectLink } from '@/components/resources/ObjectLink'
+import { Button } from '@/components/ui/button'
 import { StatTile } from '@/components/ui/stat-tile'
 import { UsageBar } from '@/components/ui/usage-bar'
 import { kindOfOwner, kinds } from '@/lib/k8s/catalog'
@@ -18,6 +20,8 @@ import {
   type PodRow,
 } from '@/lib/k8s/metrics'
 import { useNodes, usePods } from '@/lib/k8s/queries'
+import { scopeId, type HistoryScope } from '@/lib/k8s/history'
+import type { ComboboxOption } from '@/components/ui/combobox'
 import { cn } from '@/lib/utils'
 
 type SortKey = 'cpu' | 'memory'
@@ -32,6 +36,12 @@ export function Metrics() {
   const podMetrics = usePodMetrics('')
   const [sort, setSort] = useState<SortKey>('cpu')
   const [scope, setScope] = useState<'workloads' | 'pods'>('workloads')
+  const [historyScope, setHistoryScope] = useState<HistoryScope>({ kind: 'cluster' })
+  const historyRef = useRef<HTMLDivElement>(null)
+  const showHistory = (s: HistoryScope) => {
+    setHistoryScope(s)
+    historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const rows = useMemo(() => podRows(pods.data?.items ?? [], podMetrics.data?.items ?? []), [pods.data, podMetrics.data])
   const nodeList = useMemo(() => nodeRows(nodes.data?.items ?? [], nodeMetrics.data?.items ?? [], rows), [nodes.data, nodeMetrics.data, rows])
@@ -40,6 +50,17 @@ export function Metrics() {
     () => groupBy(rows, (r) => `${r.workload.namespace}/${r.workload.kind}/${r.workload.name}`).sort((a, b) => b[sort] - a[sort]).slice(0, TOP),
     [rows, sort],
   )
+  // Escopos do histórico: o cluster, cada nó, cada namespace e cada workload.
+  const scopeOptions = useMemo<ComboboxOption[]>(() => {
+    const opts: ComboboxOption[] = [{ value: 'cluster', label: t('history.cluster') }]
+    for (const n of nodeList) opts.push({ value: scopeId({ kind: 'node', name: n.node.metadata.name }), label: n.node.metadata.name, hint: t('history.node') })
+    for (const g of groupBy(rows, (r) => r.pod.metadata.namespace ?? '')) opts.push({ value: scopeId({ kind: 'namespace', name: g.key }), label: g.key, hint: t('history.namespace') })
+    for (const g of groupBy(rows, (r) => `${r.workload.namespace}/${r.workload.kind}/${r.workload.name}`)) {
+      const [namespace, ownerKind, name] = g.key.split('/')
+      opts.push({ value: scopeId({ kind: 'workload', namespace, ownerKind, name }), label: name, hint: `${ownerKind} · ${namespace}` })
+    }
+    return opts
+  }, [nodeList, rows, t])
   const topPods = useMemo(() => [...rows].filter((r) => r.measured).sort((a, b) => b[sort] - a[sort]).slice(0, TOP), [rows, sort])
 
   const problem = nodeMetrics.isError ? metricsProblem(nodeMetrics.error) : podMetrics.isError ? metricsProblem(podMetrics.error) : null
@@ -83,6 +104,10 @@ export function Metrics() {
             <StatTile label={t('metrics.memoryRequested')} value={`${pct(total.memReq, total.memAlloc)}%`} hint={t('metrics.ofAllocatable', { used: formatBytes(total.memReq), total: formatBytes(total.memAlloc) })} status={level(total.memReq, total.memAlloc)} />
           </div>
 
+          <div ref={historyRef} className="scroll-mt-4">
+            <HistoryPanel scope={historyScope} onScope={setHistoryScope} options={scopeOptions} />
+          </div>
+
           <Section title={t('metrics.nodes')}>
             <table className="w-full text-left">
               <thead className="border-b text-xs text-muted">
@@ -98,6 +123,7 @@ export function Metrics() {
                   <tr key={n.node.metadata.name}>
                     <td className="px-3 py-2 font-medium whitespace-nowrap">
                       <ObjectLink kind={kinds.nodes} name={n.node.metadata.name} />
+                      <HistoryButton name={n.node.metadata.name} onClick={() => showHistory({ kind: 'node', name: n.node.metadata.name })} />
                     </td>
                     <td className="px-3 py-2">
                       <UsageBar label={t('metrics.cpuOf', { name: n.node.metadata.name })} used={n.cpu} max={n.cpuAllocatable} reserved={n.cpuRequests} text={`${formatCpu(n.cpu)} / ${formatCpu(n.cpuAllocatable)}`} />
@@ -118,10 +144,10 @@ export function Metrics() {
             <Toggle label={t('metrics.scope')} value={scope} onChange={setScope} options={[['workloads', t('metrics.workloads')], ['pods', t('metrics.pods')]]} />
             <Toggle label={t('metrics.sortBy')} value={sort} onChange={setSort} options={[['cpu', 'CPU'], ['memory', t('metrics.col.memory')]]} />
           </div>
-          {scope === 'workloads' ? <GroupTable rows={workloads} sort={sort} kind="workload" /> : <PodTable rows={topPods} sort={sort} />}
+          {scope === 'workloads' ? <GroupTable rows={workloads} sort={sort} kind="workload" onHistory={showHistory} /> : <PodTable rows={topPods} sort={sort} />}
 
           <Section title={t('metrics.namespaces')}>
-            <GroupTable rows={namespaces} sort={sort} kind="namespace" bare />
+            <GroupTable rows={namespaces} sort={sort} kind="namespace" bare onHistory={showHistory} />
           </Section>
         </>
       )}
@@ -160,7 +186,16 @@ function Toggle<T extends string>({ label, value, onChange, options }: { label: 
 }
 
 /** Barras relativas ao maior valor da lista (não há "capacidade" de namespace ou workload). */
-function GroupTable({ rows, sort, kind, bare }: { rows: GroupRow[]; sort: SortKey; kind: 'workload' | 'namespace'; bare?: boolean }) {
+function HistoryButton({ name, onClick }: { name: string; onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <Button size="icon" variant="ghost" className="ml-1 size-6 align-middle" onClick={onClick} aria-label={t('history.show', { name })} title={t('history.show', { name })}>
+      <ChartLine />
+    </Button>
+  )
+}
+
+function GroupTable({ rows, sort, kind, bare, onHistory }: { rows: GroupRow[]; sort: SortKey; kind: 'workload' | 'namespace'; bare?: boolean; onHistory: (s: HistoryScope) => void }) {
   const { t } = useTranslation()
   const maxCpu = Math.max(1, ...rows.map((r) => r.cpu))
   const maxMem = Math.max(1, ...rows.map((r) => r.memory))
@@ -186,12 +221,16 @@ function GroupTable({ rows, sort, kind, bare }: { rows: GroupRow[]; sort: SortKe
                 {kind === 'workload' ? (
                   <>
                     {ok ? <ObjectLink kind={ok} name={name} namespace={ns} /> : <span>{name}</span>}
+                    <HistoryButton name={name} onClick={() => onHistory({ kind: 'workload', namespace: ns, ownerKind: wkind, name })} />
                     <span className="ml-2 text-xs text-muted">
                       {wkind} · {ns}
                     </span>
                   </>
                 ) : (
-                  <ObjectLink kind={kinds.namespaces} name={r.key} />
+                  <>
+                    <ObjectLink kind={kinds.namespaces} name={r.key} />
+                    <HistoryButton name={r.key} onClick={() => onHistory({ kind: 'namespace', name: r.key })} />
+                  </>
                 )}
               </td>
               <td className="px-3 py-2"><UsageBar label={t('metrics.cpuOf', { name: name ?? r.key })} used={r.cpu} max={maxCpu} text={formatCpu(r.cpu)} percent={false} /></td>

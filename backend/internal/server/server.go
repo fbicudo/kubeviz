@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	authzv1 "k8s.io/api/authorization/v1"
 	"k8s.io/client-go/rest"
 
 	"github.com/fbicudo/kubeviz/backend/internal/auth"
@@ -39,6 +40,11 @@ type Options struct {
 	// SetupUntil limita o prazo para criar a conta de administrador pela tela
 	// de login (KubeViz exposto na rede); zero = sem prazo.
 	SetupUntil time.Time
+	// History é o histórico de métricas do coletor embutido. Nil = desativado.
+	History History
+	// CanI confere permissões (SelfSubjectAccessReview); nil = canI.
+	// Substituível nos testes.
+	CanI func(context.Context, *rest.Config, authzv1.ResourceAttributes) (bool, error)
 	// Providers faz o login das contas locais por Google, Microsoft, GitHub ou
 	// OIDC (configurados pela interface). Nil = desabilitado.
 	Providers *auth.Providers
@@ -59,6 +65,7 @@ type Server struct {
 	whoAmI   func(context.Context, *rest.Config) (auth.User, error)
 	limiter  *auth.LoginLimiter
 	passkeys ceremonies
+	access   accessCache
 }
 
 // New cria um servidor que serve a UI a partir de assets e consulta o
@@ -102,6 +109,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/v1/auth/setup", s.setup)
 	mux.HandleFunc("POST /api/v1/auth/passkey/begin", s.passkeyLoginBegin)
 	mux.HandleFunc("POST /api/v1/auth/passkey/finish", s.passkeyLoginFinish)
+
+	// Histórico de métricas (coletor embutido).
+	mux.HandleFunc("GET /api/v1/metrics/status", s.requireAuth(s.historyStatus))
+	mux.HandleFunc("GET /api/v1/metrics/history", s.requireAuth(s.history))
 
 	// Minha conta (contas locais).
 	mux.HandleFunc("GET /api/v1/me/passkeys", s.requireAccount(s.listPasskeys))

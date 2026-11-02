@@ -585,7 +585,7 @@
     }
   },
   "metrics": {
-    "subtitle": "What is using CPU and memory right now (metrics-server). History comes in the next step.",
+    "subtitle": "What is using CPU and memory: right now (metrics-server) and over time (built-in collector).",
     "updated": "updated at {{time}}",
     "cpuUsed": "CPU in use",
     "cpuRequested": "CPU reserved (requests)",
@@ -626,6 +626,31 @@
         "title": "Metrics unavailable",
         "body": "metrics-server did not respond. It may be starting; the page retries on its own."
       }
+    }
+  },
+  "history": {
+    "title": "History",
+    "scope": "History scope",
+    "searchScope": "Cluster, node, namespace or workload…",
+    "range": "Period",
+    "cluster": "Whole cluster",
+    "node": "node",
+    "namespace": "namespace",
+    "show": "Show the history of {{name}}",
+    "used": "Usage",
+    "requests": "Requests",
+    "limits": "Limits",
+    "capacity": "Capacity",
+    "cpuTitle": "CPU usage over time",
+    "memoryTitle": "Memory usage over time",
+    "summary": "Average {{avg}}, max {{max}}, last {{last}}.",
+    "empty": "No samples in this period yet. The collector samples every {{interval}}.",
+    "forbidden": "You are not allowed to see the history of this scope.",
+    "state": {
+      "missing": "No history: the cluster has no metrics-server.",
+      "forbidden": "No history: KubeViz is not allowed to read nodes, pods or metrics. {{error}}",
+      "error": "The metrics collector has an error: {{error}}",
+      "disabled": "Metrics history is disabled in this installation."
     }
   }
 }

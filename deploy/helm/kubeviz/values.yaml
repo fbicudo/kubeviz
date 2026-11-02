@@ -77,6 +77,25 @@ oidc:
   # ConfigMap com a CA do provedor (chave ca.crt), se não for uma CA pública.
   caConfigMap: ""
 
+# Coletor embutido de métricas: amostra o metrics-server e guarda o histórico
+# de CPU e memória (cluster, nós, namespaces e workloads) num banco SQLite.
+# Ligado, a ServiceAccount do KubeViz recebe leitura de nós, pods e métricas
+# (rbac.yaml); quem consulta o histórico precisa poder listar os mesmos objetos.
+metrics:
+  collector:
+    enabled: true
+    interval: 30s
+    # Mínimo 168h (7 dias).
+    retention: 720h
+
+# Onde fica o banco (histórico). Sem persistência, um emptyDir: o histórico
+# recomeça quando o pod é recriado.
+persistence:
+  enabled: false
+  size: 1Gi
+  storageClass: ""
+  existingClaim: ""
+
 serviceAccount:
   # Nome da ServiceAccount; vazio = nome do release.
   name: ""

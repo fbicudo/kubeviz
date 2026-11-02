@@ -87,3 +87,17 @@
     outline-offset: 2px;
   }
 }
+
+/* Gráficos (uPlot): legenda com as cores e fontes do tema. */
+.kv-chart .u-legend {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: left;
+}
+.kv-chart .u-legend .u-value {
+  color: var(--foreground);
+  font-family: ui-monospace, monospace;
+}
+.kv-chart .u-legend th {
+  font-weight: 400;
+}

@@ -31,3 +31,38 @@ subjects:
     name: {{ include "kubeviz.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}
+{{- $collector := dig "collector" dict (.Values.metrics | default dict) }}
+{{- if dig "enabled" true $collector }}
+---
+# Coletor embutido de métricas: só leitura de nós, pods e da API de métricas,
+# para amostrar o cluster em segundo plano. O histórico só é mostrado a quem
+# pode listar os mesmos objetos (conferido a cada consulta).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "kubeviz.fullname" . }}-collector
+  labels:
+    {{- include "kubeviz.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: [nodes, pods]
+    verbs: [get, list, watch]
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes, pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubeviz.fullname" . }}-collector
+  labels:
+    {{- include "kubeviz.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kubeviz.fullname" . }}-collector
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kubeviz.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
