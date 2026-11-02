@@ -11,6 +11,9 @@ import (
 	"net/http"
 	"time"
 
+	"k8s.io/client-go/rest"
+
+	"kubora.dev/kubora/internal/auth"
 	"kubora.dev/kubora/internal/version"
 	"kubora.dev/kubora/internal/web"
 )
@@ -20,20 +23,37 @@ type Options struct {
 	// LoopbackOnly deve ser true quando o servidor escuta só em localhost
 	// (modo local). Ativa a verificação do cabeçalho Host contra DNS rebinding.
 	LoopbackOnly bool
+	// LocalToken é o token de inicialização do modo local, trocado por uma
+	// sessão em /auth/local?token=... .
+	LocalToken string
+	// SessionTTL é a duração das sessões (padrão: 12 h).
+	SessionTTL time.Duration
+	// WhoAmI identifica o dono de uma credencial; nil = auth.WhoAmI.
+	// Substituível nos testes.
+	WhoAmI func(context.Context, *rest.Config) (auth.User, error)
 }
 
 // Server é o servidor HTTP do Kubora.
 type Server struct {
-	log     *slog.Logger
-	assets  fs.FS
-	cluster Cluster
-	opts    Options
+	log      *slog.Logger
+	assets   fs.FS
+	cluster  Cluster
+	opts     Options
+	sessions *auth.Store
+	whoAmI   func(context.Context, *rest.Config) (auth.User, error)
 }
 
 // New cria um servidor que serve a UI a partir de assets e consulta o
 // Kubernetes por meio de cl.
 func New(log *slog.Logger, assets fs.FS, cl Cluster, opts Options) *Server {
-	return &Server{log: log, assets: assets, cluster: cl, opts: opts}
+	if opts.SessionTTL == 0 {
+		opts.SessionTTL = 12 * time.Hour
+	}
+	s := &Server{log: log, assets: assets, cluster: cl, opts: opts, sessions: auth.NewStore(opts.SessionTTL), whoAmI: opts.WhoAmI}
+	if s.whoAmI == nil {
+		s.whoAmI = auth.WhoAmI
+	}
+	return s
 }
 
 // Handler devolve o roteador completo, já com os middlewares.
@@ -46,9 +66,17 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/v1/version", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, version.Get())
 	})
-	mux.HandleFunc("GET /api/v1/cluster", s.getCluster)
-	mux.HandleFunc("GET /api/v1/contexts", s.getContexts)
-	mux.HandleFunc("PUT /api/v1/contexts/current", s.putCurrentContext)
+	// Autenticação (públicas).
+	mux.HandleFunc("GET /auth/local", s.localLogin)
+	mux.HandleFunc("GET /api/v1/auth/session", s.getSession)
+	mux.HandleFunc("POST /api/v1/auth/login", s.login)
+	mux.HandleFunc("POST /api/v1/auth/logout", s.logout)
+
+	// Exigem sessão.
+	mux.HandleFunc("GET /api/v1/cluster", s.requireAuth(s.getCluster))
+	mux.HandleFunc("GET /api/v1/contexts", s.requireAuth(s.getContexts))
+	mux.HandleFunc("PUT /api/v1/contexts/current", s.requireAuth(s.putCurrentContext))
+	mux.HandleFunc(k8sPrefix+"/", s.requireAuth(s.k8sProxy))
 	// Qualquer outra rota de API inexistente devolve 404 em JSON, nunca a UI.
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "rota não encontrada")

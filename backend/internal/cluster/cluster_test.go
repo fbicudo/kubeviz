@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"k8s.io/client-go/rest"
 )
 
 // fakeAPIServer responde /version como um API server do Kubernetes.
@@ -175,6 +177,28 @@ func TestResolveMode(t *testing.T) {
 	t.Setenv("KUBERNETES_SERVICE_HOST", "")
 	if got, _ := resolveMode(Options{}); got != ModeLocal {
 		t.Errorf("fora de um pod, auto deveria ser local, veio %s", got)
+	}
+}
+
+func TestConfigForTokenDropsServiceAccountCredentials(t *testing.T) {
+	base := &rest.Config{
+		Host:            "https://10.0.0.1:443",
+		BearerToken:     "token-da-serviceaccount",
+		BearerTokenFile: "/var/run/secrets/token",
+		Impersonate:     rest.ImpersonationConfig{UserName: "admin"},
+		TLSClientConfig: rest.TLSClientConfig{CAData: []byte("ca"), CertData: []byte("cert"), KeyData: []byte("key")},
+	}
+	m := NewInCluster(base, "kubora-test")
+
+	cfg := m.ConfigForToken("token-do-usuario")
+	if cfg.BearerToken != "token-do-usuario" || cfg.BearerTokenFile != "" {
+		t.Errorf("token = %q, arquivo = %q", cfg.BearerToken, cfg.BearerTokenFile)
+	}
+	if cfg.Impersonate.UserName != "" || cfg.CertData != nil || cfg.KeyData != nil {
+		t.Error("credenciais da ServiceAccount vazaram para a configuração do usuário")
+	}
+	if cfg.Host != base.Host || string(cfg.CAData) != "ca" || cfg.UserAgent != "kubora-test" {
+		t.Errorf("endereço/CA/UserAgent não preservados: %+v", cfg)
 	}
 }
 

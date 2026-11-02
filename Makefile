@@ -9,7 +9,7 @@ PKG     := kubora.dev/kubora/internal/version
 LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT) -X $(PKG).Date=$(DATE)
 WEBDIST := backend/internal/web/dist
 
-.PHONY: help deps dev-backend dev-frontend frontend build test test-integration kind-up kind-down lint clean
+.PHONY: help deps dev-backend dev-frontend frontend build test test-integration test-envtest kind-up kind-down lint clean
 
 help: ## Mostra esta ajuda
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -38,6 +38,13 @@ test: ## Roda os testes do backend e do frontend
 
 test-integration: ## Testa contra o cluster do kubeconfig atual (ex.: kind)
 	cd backend && go test -tags integration -count=1 -v ./internal/cluster/ -run Integration
+
+ENVTEST_K8S ?= 1.37.x
+
+test-envtest: ## Testes de RBAC contra um API server real (envtest, sem Docker)
+	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.25
+	cd backend && KUBEBUILDER_ASSETS="$$($$(go env GOPATH)/bin/setup-envtest use $(ENVTEST_K8S) -p path)" \
+		go test -tags envtest -count=1 -v ./internal/server/ -run RBAC
 
 kind-up: ## Cria o cluster de desenvolvimento kind-kubora-dev
 	kind create cluster --name kubora-dev --wait 120s

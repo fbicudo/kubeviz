@@ -32,6 +32,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(res.status, message)
   }
+  if (res.status === 204) return undefined as T
   return (await res.json()) as T
 }
 
@@ -71,3 +72,22 @@ export const getContexts = () =>
 
 export const setCurrentContext = (name: string) =>
   apiSend<ClusterInfo>('PUT', '/api/v1/contexts/current', { name })
+
+export interface User {
+  username: string
+  groups?: string[]
+}
+
+export interface SessionInfo {
+  mode: ClusterMode
+  authenticated: boolean
+  user?: User
+  expiresAt?: string
+  userError?: string
+}
+
+export const getSession = () => apiGet<SessionInfo>('/api/v1/auth/session')
+
+export const login = (token: string) => apiSend<SessionInfo>('POST', '/api/v1/auth/login', { token })
+
+export const logout = () => apiSend<void>('POST', '/api/v1/auth/logout', {})

@@ -69,5 +69,21 @@
       "local": "Modo local · kubeconfig",
       "in-cluster": "Modo in-cluster · ServiceAccount"
     }
+  },
+  "auth": {
+    "title": "Entrar no Kubora",
+    "unknownUser": "Usuário desconhecido",
+    "groups": "Grupos",
+    "logout": "Sair",
+    "local": {
+      "body": "Abra o link exibido no terminal em que o Kubora foi iniciado.",
+      "hint": "O link contém um token de acesso gerado a cada execução, para que outras pessoas nesta máquina não usem as suas credenciais do kubeconfig."
+    },
+    "token": {
+      "label": "Token de acesso ao Kubernetes",
+      "help": "Use um token de ServiceAccount ou de usuário. Para gerar um:",
+      "submit": "Entrar",
+      "invalid": "Token inválido ou expirado."
+    }
   }
 }

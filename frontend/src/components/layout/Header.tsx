@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { languages } from '@/i18n'
 import { useTheme } from '@/lib/theme-context'
 import { ClusterSelector } from './ClusterSelector'
+import { UserMenu } from './UserMenu'
 
 export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { t, i18n } = useTranslation()
@@ -39,6 +40,8 @@ export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
       <Button variant="ghost" size="icon" onClick={toggle} aria-label={t('header.theme')}>
         {theme === 'dark' ? <Sun /> : <Moon />}
       </Button>
+      <div className="mx-1 h-5 w-px bg-border" aria-hidden />
+      <UserMenu />
     </header>
   )
 }

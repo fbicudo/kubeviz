@@ -136,6 +136,23 @@ GitOps).
 
 - Autenticação: OIDC (padrão recomendado), token de ServiceAccount/bearer e, no modo
   local, o kubeconfig do usuário.
+- **Como está implementado (tarefa 0.3):**
+  - *Modo local:* a cada execução o Kubora gera um token aleatório e imprime no
+    terminal um link `/auth/local?token=...`, como o Jupyter. Só quem vê o
+    terminal entra; outros usuários da mesma máquina não usam o kubeconfig de
+    quem executou o Kubora. O token é trocado por uma sessão e sai da URL.
+  - *Modo in-cluster:* login com token do Kubernetes (ServiceAccount ou
+    usuário), validado com `SelfSubjectReview`. As requisições seguem para a
+    API **com o próprio token do usuário** (repasse), sem nenhuma credencial da
+    ServiceAccount do Kubora. A impersonation fica reservada para o OIDC, quando
+    o API server não confia no provedor de identidade.
+  - *Sessões:* ID aleatório de 256 bits em cookie `HttpOnly`, `SameSite=Strict`
+    e `Secure` atrás de HTTPS; duração de 12 h; guardadas em memória (reiniciar
+    encerra as sessões; várias réplicas exigirão armazenamento compartilhado). O
+    token do usuário nunca volta ao navegador.
+  - *Proxy `/api/k8s/*`:* repassa qualquer chamada à API do Kubernetes com a
+    credencial da sessão e descarta `Authorization`, `Cookie` e `Impersonate-*`
+    vindos do navegador. Watches e logs são repassados sem buffer.
 - Autorização: delegada ao RBAC do cluster; a UI consulta
   `SelfSubjectAccessReview`/`SelfSubjectRulesReview` para ocultar ou desabilitar
   ações não permitidas.

@@ -23,7 +23,7 @@ var testAssets = fstest.MapFS{
 
 func newTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	s := New(slog.New(slog.DiscardHandler), testAssets, newFakeCluster(), Options{LoopbackOnly: true})
+	s := newServer(newFakeCluster(), Options{LoopbackOnly: true})
 	ts := httptest.NewServer(s.Handler())
 	t.Cleanup(ts.Close)
 	return ts
@@ -124,7 +124,7 @@ func TestGracefulShutdown(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() {
-		done <- New(slog.New(slog.DiscardHandler), testAssets, newFakeCluster(), Options{LoopbackOnly: true}).Serve(ctx, ln)
+		done <- newServer(newFakeCluster(), Options{LoopbackOnly: true}).Serve(ctx, ln)
 	}()
 
 	if resp, _ := get(t, "http://"+ln.Addr().String()+"/healthz"); resp.StatusCode != 200 {

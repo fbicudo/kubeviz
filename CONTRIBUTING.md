@@ -22,7 +22,11 @@ make dev-backend    # API em http://localhost:4466
 make dev-frontend   # UI com recarga automática em http://localhost:5173
 make test           # testes do backend e do frontend
 make build          # binário único em bin/kubora (inclui a UI)
+make test-envtest   # testes de RBAC contra um API server real
 ```
+
+Com `make dev-frontend`, abra o link de acesso impresso pelo backend trocando a
+porta `4466` por `5173`, para que o cookie de sessão fique na origem do Vite.
 
 ## Commits e DCO
 

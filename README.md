@@ -3,9 +3,9 @@
 Interface web open source para gestão de clusters Kubernetes, com painéis de
 performance e uptime e assistentes (wizards) para configurar o ambiente.
 
-> **Status:** Fase 0 (fundação) em andamento. Conecta ao cluster pelo kubeconfig
-> e permite trocar de contexto; ainda não lista recursos nem tem login. Acompanhe
-> em [docs/PROGRESSO.md](docs/PROGRESSO.md).
+> **Status:** Fase 0 (fundação) em andamento. Conecta ao cluster, troca de
+> contexto, autentica usuários e repassa chamadas à API com as credenciais de
+> cada um; ainda não lista recursos. Acompanhe em [docs/PROGRESSO.md](docs/PROGRESSO.md).
 
 ![Visão geral do Kubora conectado a um cluster kind](docs/img/cluster-conectado.png)
 
@@ -18,6 +18,7 @@ make deps           # dependências
 make dev-backend    # API em http://127.0.0.1:4466
 make dev-frontend   # UI em http://localhost:5173
 make build          # binário único em bin/kubora
+make test-envtest   # testes de RBAC contra um API server real (sem Docker)
 ```
 
 Executando:
@@ -28,8 +29,9 @@ Executando:
 ./bin/kubora --kubeconfig ~/outro.yaml
 ```
 
-Abra http://127.0.0.1:4466. Até existir login (Fase 0, tarefa 0.3), use o modo
-local apenas em localhost: quem acessa a porta age com as suas credenciais.
+O Kubora imprime no terminal um link com um token de acesso gerado a cada
+execução (`http://127.0.0.1:4466/auth/local?token=...`). Só quem tem o link
+entra, o que impede outras pessoas na mesma máquina de usar o seu kubeconfig.
 
 Licença: [Apache-2.0](LICENSE).
 

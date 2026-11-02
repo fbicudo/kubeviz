@@ -100,8 +100,7 @@ func New(opts Options) (*Manager, error) {
 		if err != nil {
 			return nil, fmt.Errorf("configuração in-cluster: %w", err)
 		}
-		m.config = m.tune(cfg)
-		return m, nil
+		return NewInCluster(cfg, opts.UserAgent), nil
 	}
 
 	m.rules = clientcmd.NewDefaultClientConfigLoadingRules()
@@ -126,6 +125,15 @@ func New(opts Options) (*Manager, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+// NewInCluster cria um Manager no modo in-cluster a partir de cfg (a
+// configuração da ServiceAccount do pod). Exportado para os testes de
+// integração, que usam um API server do envtest.
+func NewInCluster(cfg *rest.Config, userAgent string) *Manager {
+	m := &Manager{mode: ModeInCluster, userAgent: userAgent}
+	m.config = m.tune(rest.CopyConfig(cfg))
+	return m
 }
 
 func resolveMode(opts Options) (Mode, error) {
@@ -203,6 +211,32 @@ func (m *Manager) RESTConfig() *rest.Config {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return rest.CopyConfig(m.config)
+}
+
+// ConfigForToken devolve a configuração ativa com as credenciais trocadas
+// pelo token do usuário. Usada no modo in-cluster: cada requisição chega à
+// API com a identidade de quem fez login, nunca com a da ServiceAccount do
+// Kubora. Mantém apenas endereço e CA do cluster.
+func (m *Manager) ConfigForToken(token string) *rest.Config {
+	m.mu.RLock()
+	base := m.config
+	m.mu.RUnlock()
+
+	return &rest.Config{
+		Host:    base.Host,
+		APIPath: base.APIPath,
+		TLSClientConfig: rest.TLSClientConfig{
+			Insecure:   base.Insecure,
+			ServerName: base.ServerName,
+			CAFile:     base.CAFile,
+			CAData:     base.CAData,
+		},
+		BearerToken: token,
+		UserAgent:   base.UserAgent,
+		QPS:         base.QPS,
+		Burst:       base.Burst,
+		Proxy:       base.Proxy,
+	}
 }
 
 // Info consulta /version para saber se o cluster responde. Erros de conexão

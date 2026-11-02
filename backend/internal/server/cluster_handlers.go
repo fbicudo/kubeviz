@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 
+	"k8s.io/client-go/rest"
+
 	"kubora.dev/kubora/internal/cluster"
 )
 
@@ -16,6 +18,8 @@ type Cluster interface {
 	Info(ctx context.Context) cluster.Info
 	Contexts() []cluster.ContextInfo
 	UseContext(name string) error
+	RESTConfig() *rest.Config
+	ConfigForToken(token string) *rest.Config
 }
 
 type contextsResponse struct {

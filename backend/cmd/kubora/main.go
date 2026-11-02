@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"kubora.dev/kubora/internal/auth"
 	"kubora.dev/kubora/internal/cluster"
 	"kubora.dev/kubora/internal/config"
 	"kubora.dev/kubora/internal/server"
@@ -45,16 +47,31 @@ func main() {
 		"versao", info.Version, "acessivel", info.Reachable)
 
 	opts := server.Options{LoopbackOnly: cfg.ListenIsLoopback()}
-	if !opts.LoopbackOnly && cl.Mode() == cluster.ModeLocal {
-		// Até a autenticação existir (tarefa 0.3), qualquer pessoa que alcance
-		// a porta age com as credenciais do kubeconfig.
-		log.Warn("modo local exposto fora de localhost: qualquer pessoa na rede usará suas credenciais", "listen", cfg.Listen)
+	if cl.Mode() == cluster.ModeLocal {
+		opts.LocalToken = auth.RandomToken()
+		// Como no Jupyter: só quem vê o terminal recebe o link de acesso.
+		fmt.Fprintf(os.Stderr, "\n  Kubora pronto. Abra no navegador:\n\n    %s/auth/local?token=%s\n\n", browserURL(cfg.Listen), opts.LocalToken)
+		if !opts.LoopbackOnly {
+			log.Warn("modo local exposto fora de localhost: quem tiver o link usará suas credenciais do kubeconfig", "listen", cfg.Listen)
+		}
 	}
 
 	if err := server.New(log, web.Assets(), cl, opts).Run(ctx, cfg.Listen); err != nil {
 		log.Error("servidor encerrado com erro", "erro", err)
 		os.Exit(1)
 	}
+}
+
+// browserURL converte o endereço de escuta num endereço clicável.
+func browserURL(listen string) string {
+	host, port, err := net.SplitHostPort(listen)
+	if err != nil {
+		return "http://" + listen
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+	return "http://" + net.JoinHostPort(host, port)
 }
 
 func newLogger(cfg config.Config) *slog.Logger {

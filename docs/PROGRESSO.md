@@ -68,21 +68,52 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
   API server falso, mais leve.
 - **Não testado:** modo in-cluster de verdade (depende do Helm chart, tarefa 0.5).
 
+### 02/11/2026 — Tarefa 0.3: autenticação e proxy autenticado
+- **Modo local:** link de acesso com token aleatório impresso no terminal a cada
+  execução (`/auth/local?token=...`), trocado por sessão; a identidade exibida é
+  a do kubeconfig, consultada na hora (muda com o contexto).
+- **Modo in-cluster:** `POST /api/v1/auth/login` com token do Kubernetes,
+  validado por `SelfSubjectReview`. **Decisão:** em vez de impersonation, o
+  token do próprio usuário é repassado à API; a ServiceAccount do Kubora não
+  age em nome de ninguém. Impersonation fica para o OIDC (Fase 1).
+- **Sessões** (pacote `internal/auth`): em memória, cookie `HttpOnly` +
+  `SameSite=Strict` (+ `Secure` atrás de HTTPS), 12 h; `GET /api/v1/auth/session`
+  e `POST /api/v1/auth/logout`. Rotas de cluster e contextos passam a exigir sessão.
+- **Proxy `/api/k8s/*`:** repassa à API com a credencial da sessão, descartando
+  `Authorization`, `Cookie` e `Impersonate-*` do navegador; sem buffer (pronto
+  para watch e logs).
+- **Interface:** tela de entrada (instruções no modo local; campo de token no
+  in-cluster), usuário e botão Sair no cabeçalho; qualquer 401 devolve à tela
+  de entrada.
+- **Verificado:**
+  - testes Go de sessões, login local e in-cluster, logout, cookies e proxy
+    (caminho, credenciais e cabeçalhos descartados); 11 testes Vitest;
+  - **RBAC com envtest** (`make test-envtest`, API server real v1.37, sem
+    Docker): a ServiceAccount `time-a/dev` lê pods de `time-a` e recebe 403 em
+    outro namespace, em secrets, na lista de namespaces e ao criar pods; os 403
+    citam a própria ServiceAccount, provando que a credencial de administrador do
+    Kubora não é usada; cabeçalhos `Impersonate-*` do navegador são descartados;
+  - de ponta a ponta no kind (modo local): 401 sem sessão e com token errado;
+    link correto redireciona para `/` com cookie `HttpOnly`; proxy lista os 8
+    pods de `kube-system`; logout encerra o acesso;
+  - capturas: [img/login-local.png](img/login-local.png) e
+    [img/autenticado.png](img/autenticado.png).
+- **CI:** passo de testes envtest adicionado.
+- **Não verificado:** tela de token no modo in-cluster com o binário real (só
+  nos testes; o binário in-cluster depende do Helm chart, tarefa 0.5).
+
 ## Próximas tarefas (Fase 0)
 
-1. **0.3 — Autenticação por token e proxy autenticado:** login com token bearer,
-   sessão em cookie `HttpOnly`, proxy `/api/k8s/*` com a identidade do usuário
-   (impersonation no modo in-cluster); tela de login; testes de RBAC com
-   `envtest`.
-2. **0.4 — Primeira lista real:** pods do namespace, respeitando o RBAC do
+1. **0.4 — Primeira lista real:** pods do namespace, respeitando o RBAC do
    usuário (critério de pronto da Fase 0). Preenche os indicadores de nós e pods
    da visão geral.
-3. **0.5 — Empacotamento:** Dockerfile (distroless, multi-arquitetura) e Helm
-   chart com ServiceAccount de permissões mínimas; testar o modo in-cluster no kind.
-4. **0.6 — Revisão visual:** ajustar tokens de cor e densidade, definir logo e
+2. **0.5 — Empacotamento:** Dockerfile (distroless, multi-arquitetura) e Helm
+   chart com ServiceAccount de permissões mínimas; testar o modo in-cluster e a
+   tela de token no kind.
+3. **0.6 — Revisão visual:** ajustar tokens de cor e densidade, definir logo e
    paleta finais; trocar o `<select>` nativo do seletor de contexto por um
    componente com busca.
-5. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
+4. **0.7 — Publicação:** criar o repositório no GitHub, confirmar o CI verde,
    ativar o relato privado de vulnerabilidades.
 
 ## Bloqueios e pendências do responsável

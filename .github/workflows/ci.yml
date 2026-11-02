@@ -38,6 +38,9 @@ jobs:
       - name: Testes
         run: make test
 
+      - name: Testes de RBAC (envtest)
+        run: make test-envtest
+
       - name: Build
         run: make build
 
