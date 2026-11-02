@@ -23,7 +23,7 @@ var testAssets = fstest.MapFS{
 
 func newTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	s := New(slog.New(slog.DiscardHandler), testAssets)
+	s := New(slog.New(slog.DiscardHandler), testAssets, newFakeCluster(), Options{LoopbackOnly: true})
 	ts := httptest.NewServer(s.Handler())
 	t.Cleanup(ts.Close)
 	return ts
@@ -97,7 +97,7 @@ func TestSPA(t *testing.T) {
 }
 
 func TestSPANotBuilt(t *testing.T) {
-	s := New(slog.New(slog.DiscardHandler), fstest.MapFS{})
+	s := New(slog.New(slog.DiscardHandler), fstest.MapFS{}, newFakeCluster(), Options{})
 	ts := httptest.NewServer(s.Handler())
 	defer ts.Close()
 	_, body := get(t, ts.URL+"/")
@@ -123,7 +123,9 @@ func TestGracefulShutdown(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- New(slog.New(slog.DiscardHandler), testAssets).Serve(ctx, ln) }()
+	go func() {
+		done <- New(slog.New(slog.DiscardHandler), testAssets, newFakeCluster(), Options{LoopbackOnly: true}).Serve(ctx, ln)
+	}()
 
 	if resp, _ := get(t, "http://"+ln.Addr().String()+"/healthz"); resp.StatusCode != 200 {
 		t.Fatalf("servidor não respondeu: %d", resp.StatusCode)

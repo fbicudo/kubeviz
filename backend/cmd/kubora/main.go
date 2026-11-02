@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"kubora.dev/kubora/internal/cluster"
 	"kubora.dev/kubora/internal/config"
 	"kubora.dev/kubora/internal/server"
 	"kubora.dev/kubora/internal/version"
@@ -29,7 +30,28 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := server.New(log, web.Assets()).Run(ctx, cfg.Listen); err != nil {
+	cl, err := cluster.New(cluster.Options{
+		Mode:       cfg.Mode,
+		Kubeconfig: cfg.Kubeconfig,
+		Context:    cfg.Context,
+		UserAgent:  "kubora/" + v.Version,
+	})
+	if err != nil {
+		log.Error("não foi possível configurar o acesso ao cluster", "erro", err)
+		os.Exit(1)
+	}
+	info := cl.Info(ctx)
+	log.Info("cluster configurado", "modo", info.Mode, "contexto", info.Context, "servidor", info.Server,
+		"versao", info.Version, "acessivel", info.Reachable)
+
+	opts := server.Options{LoopbackOnly: cfg.ListenIsLoopback()}
+	if !opts.LoopbackOnly && cl.Mode() == cluster.ModeLocal {
+		// Até a autenticação existir (tarefa 0.3), qualquer pessoa que alcance
+		// a porta age com as credenciais do kubeconfig.
+		log.Warn("modo local exposto fora de localhost: qualquer pessoa na rede usará suas credenciais", "listen", cfg.Listen)
+	}
+
+	if err := server.New(log, web.Assets(), cl, opts).Run(ctx, cfg.Listen); err != nil {
 		log.Error("servidor encerrado com erro", "erro", err)
 		os.Exit(1)
 	}

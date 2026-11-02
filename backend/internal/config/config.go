@@ -22,6 +22,10 @@ type Config struct {
 	// Kubeconfig é o caminho do kubeconfig no modo local. Vazio = padrão do
 	// kubectl ($KUBECONFIG ou ~/.kube/config) ou configuração in-cluster.
 	Kubeconfig string
+	// Context é o contexto inicial do kubeconfig; vazio = current-context.
+	Context string
+	// Mode: auto, local ou in-cluster.
+	Mode string
 	// LogLevel: debug, info, warn ou error.
 	LogLevel slog.Level
 	// LogFormat: text ou json.
@@ -46,6 +50,8 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	var level string
 	fs.StringVar(&c.Listen, "listen", env("LISTEN", "127.0.0.1:4466"), "endereço HTTP (env KUBORA_LISTEN)")
 	fs.StringVar(&c.Kubeconfig, "kubeconfig", env("KUBECONFIG", ""), "caminho do kubeconfig (env KUBORA_KUBECONFIG)")
+	fs.StringVar(&c.Context, "context", env("CONTEXT", ""), "contexto inicial do kubeconfig (env KUBORA_CONTEXT)")
+	fs.StringVar(&c.Mode, "mode", env("MODE", "auto"), "auto|local|in-cluster (env KUBORA_MODE)")
 	fs.StringVar(&level, "log-level", env("LOG_LEVEL", "info"), "debug|info|warn|error (env KUBORA_LOG_LEVEL)")
 	fs.StringVar(&c.LogFormat, "log-format", env("LOG_FORMAT", "text"), "text|json (env KUBORA_LOG_FORMAT)")
 	fs.BoolVar(&c.ShowVersion, "version", false, "imprime a versão e sai")
@@ -62,10 +68,30 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	if c.LogFormat != "text" && c.LogFormat != "json" {
 		return Config{}, fmt.Errorf("log-format inválido %q (use text ou json)", c.LogFormat)
 	}
+	switch c.Mode {
+	case "auto", "local", "in-cluster":
+	default:
+		return Config{}, fmt.Errorf("mode inválido %q (use auto, local ou in-cluster)", c.Mode)
+	}
 	if _, _, err := net.SplitHostPort(c.Listen); err != nil {
 		return Config{}, fmt.Errorf("listen inválido %q: %w", c.Listen, err)
 	}
 	return c, nil
+}
+
+// ListenIsLoopback indica se o servidor escuta apenas em localhost. Nesse
+// caso, o Kubora age com as credenciais do kubeconfig de quem o executa e
+// precisa recusar requisições vindas de outros sites (ver server.Options).
+func (c Config) ListenIsLoopback() bool {
+	host, _, err := net.SplitHostPort(c.Listen)
+	if err != nil {
+		return false
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // MustLoad é Load com os argumentos e o ambiente do processo. Sai com código 2

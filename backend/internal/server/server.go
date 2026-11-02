@@ -15,15 +15,25 @@ import (
 	"kubora.dev/kubora/internal/web"
 )
 
-// Server é o servidor HTTP do Kubora.
-type Server struct {
-	log    *slog.Logger
-	assets fs.FS
+// Options ajusta o comportamento do servidor.
+type Options struct {
+	// LoopbackOnly deve ser true quando o servidor escuta só em localhost
+	// (modo local). Ativa a verificação do cabeçalho Host contra DNS rebinding.
+	LoopbackOnly bool
 }
 
-// New cria um servidor que serve a UI a partir de assets.
-func New(log *slog.Logger, assets fs.FS) *Server {
-	return &Server{log: log, assets: assets}
+// Server é o servidor HTTP do Kubora.
+type Server struct {
+	log     *slog.Logger
+	assets  fs.FS
+	cluster Cluster
+	opts    Options
+}
+
+// New cria um servidor que serve a UI a partir de assets e consulta o
+// Kubernetes por meio de cl.
+func New(log *slog.Logger, assets fs.FS, cl Cluster, opts Options) *Server {
+	return &Server{log: log, assets: assets, cluster: cl, opts: opts}
 }
 
 // Handler devolve o roteador completo, já com os middlewares.
@@ -36,6 +46,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/v1/version", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, version.Get())
 	})
+	mux.HandleFunc("GET /api/v1/cluster", s.getCluster)
+	mux.HandleFunc("GET /api/v1/contexts", s.getContexts)
+	mux.HandleFunc("PUT /api/v1/contexts/current", s.putCurrentContext)
 	// Qualquer outra rota de API inexistente devolve 404 em JSON, nunca a UI.
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "rota não encontrada")
@@ -52,7 +65,11 @@ func (s *Server) Handler() http.Handler {
 		ui.ServeHTTP(w, r)
 	})
 
-	return recoverer(s.log, securityHeaders(requestLog(s.log, mux)))
+	var h http.Handler = sameOriginWrites(mux)
+	if s.opts.LoopbackOnly {
+		h = loopbackHostOnly(h)
+	}
+	return recoverer(s.log, securityHeaders(requestLog(s.log, h)))
 }
 
 func (s *Server) ok(w http.ResponseWriter, _ *http.Request) {

@@ -9,7 +9,7 @@ PKG     := kubora.dev/kubora/internal/version
 LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT) -X $(PKG).Date=$(DATE)
 WEBDIST := backend/internal/web/dist
 
-.PHONY: help deps dev-backend dev-frontend frontend build test lint clean
+.PHONY: help deps dev-backend dev-frontend frontend build test test-integration kind-up kind-down lint clean
 
 help: ## Mostra esta ajuda
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -35,6 +35,15 @@ build: frontend ## Gera o binário único bin/kubora com a UI embutida
 test: ## Roda os testes do backend e do frontend
 	cd backend && go test ./...
 	cd frontend && pnpm test
+
+test-integration: ## Testa contra o cluster do kubeconfig atual (ex.: kind)
+	cd backend && go test -tags integration -count=1 -v ./internal/cluster/ -run Integration
+
+kind-up: ## Cria o cluster de desenvolvimento kind-kubora-dev
+	kind create cluster --name kubora-dev --wait 120s
+
+kind-down: ## Remove o cluster de desenvolvimento
+	kind delete cluster --name kubora-dev
 
 lint: ## Verifica formatação, go vet, tipos e lint do frontend
 	@test -z "$$(gofmt -l backend)" || (echo "arquivos sem gofmt:"; gofmt -l backend; exit 1)

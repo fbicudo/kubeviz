@@ -49,7 +49,7 @@
     "pods": "Pods em execução",
     "cpu": "Uso de CPU",
     "memory": "Uso de memória",
-    "pending": "Disponível na Fase 1, quando o Kubora se conectar ao cluster.",
+    "pending": "Disponível em breve, com a leitura dos recursos do cluster.",
     "backend": "Backend",
     "backendOk": "Conectado · {{version}}",
     "backendDown": "Indisponível"
@@ -57,5 +57,17 @@
   "placeholder": {
     "title": "Em construção",
     "body": "Esta área faz parte do roadmap do Kubora e ainda não foi implementada."
+  },
+  "cluster": {
+    "checking": "Verificando conexão",
+    "reachable": "Cluster acessível",
+    "unreachable": "Cluster inacessível",
+    "inCluster": "Este cluster (in-cluster)",
+    "switchFailed": "Falha ao trocar de contexto",
+    "title": "Cluster",
+    "mode": {
+      "local": "Modo local · kubeconfig",
+      "in-cluster": "Modo in-cluster · ServiceAccount"
+    }
   }
 }

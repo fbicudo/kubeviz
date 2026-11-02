@@ -2,7 +2,11 @@ package server
 
 import (
 	"log/slog"
+	"mime"
+	"net"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -27,6 +31,54 @@ func securityHeaders(next http.Handler) http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "no-referrer")
 		h.Set("Cross-Origin-Opener-Policy", "same-origin")
+		next.ServeHTTP(w, r)
+	})
+}
+
+// loopbackHostOnly recusa requisições cujo cabeçalho Host não seja localhost.
+// Protege contra DNS rebinding: um site malicioso que aponte seu domínio para
+// 127.0.0.1 não consegue usar as credenciais do kubeconfig do usuário.
+func loopbackHostOnly(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		host := r.Host
+		if h, _, err := net.SplitHostPort(r.Host); err == nil {
+			host = h
+		}
+		host = strings.Trim(host, "[]")
+		ip := net.ParseIP(host)
+		if host != "localhost" && (ip == nil || !ip.IsLoopback()) {
+			writeError(w, http.StatusForbidden, "host não permitido; acesse por localhost ou 127.0.0.1")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// sameOriginWrites recusa requisições que alteram estado vindas de outro site
+// (CSRF). Exige JSON, o que força preflight CORS em requisições de outras
+// origens, e confere Sec-Fetch-Site e Origin quando presentes.
+func sameOriginWrites(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet, http.MethodHead, http.MethodOptions:
+			next.ServeHTTP(w, r)
+			return
+		}
+		if site := r.Header.Get("Sec-Fetch-Site"); site != "" && site != "same-origin" && site != "none" {
+			writeError(w, http.StatusForbidden, "requisição de outra origem recusada")
+			return
+		}
+		if origin := r.Header.Get("Origin"); origin != "" {
+			u, err := url.Parse(origin)
+			if err != nil || u.Host != r.Host {
+				writeError(w, http.StatusForbidden, "requisição de outra origem recusada")
+				return
+			}
+		}
+		if ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type")); ct != "application/json" {
+			writeError(w, http.StatusUnsupportedMediaType, "Content-Type deve ser application/json")
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

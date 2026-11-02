@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { languages } from '@/i18n'
 import { useTheme } from '@/lib/theme-context'
+import { ClusterSelector } from './ClusterSelector'
 
 export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { t, i18n } = useTranslation()
@@ -19,10 +20,7 @@ export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
         <PanelLeft />
       </Button>
 
-      <div className="flex items-center gap-2 rounded-md border px-2 py-1 text-xs">
-        <span className="text-subtle">{t('header.cluster')}</span>
-        <span className="text-muted">{t('header.noCluster')}</span>
-      </div>
+      <ClusterSelector />
 
       {/* Busca global: implementação na Fase 1 (RF-14). */}
       <button

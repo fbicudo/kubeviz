@@ -38,12 +38,29 @@ func TestFlagOverridesEnv(t *testing.T) {
 	}
 }
 
+func TestListenIsLoopback(t *testing.T) {
+	cases := map[string]bool{
+		"127.0.0.1:4466": true,
+		"localhost:4466": true,
+		"[::1]:4466":     true,
+		"0.0.0.0:4466":   false,
+		":4466":          false,
+		"10.0.0.5:4466":  false,
+	}
+	for listen, want := range cases {
+		if got := (Config{Listen: listen}).ListenIsLoopback(); got != want {
+			t.Errorf("%s: %v, quer %v", listen, got, want)
+		}
+	}
+}
+
 func TestLoadInvalid(t *testing.T) {
 	cases := map[string][]string{
 		"listen sem porta": {"--listen", "localhost"},
 		"nível inválido":   {"--log-level", "verbose"},
 		"formato inválido": {"--log-format", "xml"},
 		"argumento solto":  {"extra"},
+		"modo inválido":    {"--mode", "remoto"},
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {
