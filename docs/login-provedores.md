@@ -1,4 +1,4 @@
-# Contas e login com Google, Microsoft, GitHub ou OIDC (modo local)
+# Contas, passkeys e login com Google, Microsoft, GitHub ou OIDC (modo local)
 
 Este guia vale para o KubeViz rodando como binário ou container (modo local),
 em que ele usa o kubeconfig da máquina. Num cluster (instalação por Helm), o
@@ -62,6 +62,51 @@ volta para a interface.
 | Microsoft | Microsoft Entra › Registros de aplicativo | Escolha "qualquer diretório organizacional e contas Microsoft pessoais" para o inquilino `common`; crie um segredo em Certificados e segredos. Contas de organização entram pelo nome de login (UPN), cujo domínio a organização verificou; o campo de e-mail delas não é usado, porque a Microsoft não o verifica. |
 | GitHub | GitHub › Settings › Developer settings › OAuth Apps | Usa o e-mail principal e verificado da conta. |
 | OIDC | Keycloak, Okta, GitLab, Authentik, Dex… | Cliente confidencial; o e-mail precisa vir com `email_verified=true`. |
+
+## Passkeys
+
+Cada pessoa cadastra passkeys em **Minha conta** (clique no próprio nome, no
+canto superior direito). Depois, na tela de login, **Entrar com passkey** entra
+sem usuário nem senha, com a digital, o rosto ou o PIN do dispositivo, ou do
+celular por QR code.
+
+- **Onde ficam:** a passkey fica no dispositivo ou no gerenciador de senhas
+  (iCloud, Google, 1Password…). O KubeViz guarda só a chave pública, no
+  arquivo de contas.
+- **Proteções:** cada passkey é residente e exige a verificação do usuário no
+  dispositivo. Cada desafio vale uma vez só. Um contador de uso detecta
+  passkeys clonadas, e tentativas erradas são limitadas por IP.
+- **Endereço:** a passkey fica ligada ao **nome** pelo qual o KubeViz foi
+  acessado ao criá-la. Endereço IP não serve: o navegador recusa.
+- **Certificado:** fora de `localhost`, é preciso HTTPS com um **certificado
+  confiável**. O Chrome bloqueia passkeys em sites com erro de certificado,
+  mesmo depois de aceitar o aviso. Veja a seção abaixo.
+
+![Minha conta](img/minha-conta-passkeys.png)
+
+## Certificado confiável sem domínio público
+
+`hack/tls/certs.sh` cria uma **CA local restrita por nome**: ela só vale para
+os nomes e IPs informados, então instalá-la não lhe dá poder sobre outros
+sites. O script também cria o certificado do KubeViz assinado por ela:
+
+```bash
+hack/tls/certs.sh ~/.config/kubeviz/tls 10.11.12.103.nip.io 10.11.12.103 localhost 127.0.0.1
+./bin/kubeviz --listen 10.11.12.103:4466 --tls-cert-file ~/.config/kubeviz/tls/tls.crt --tls-key-file ~/.config/kubeviz/tls/tls.key
+```
+
+Depois, instale o `ca.crt`, uma única vez, em cada máquina que acessa o KubeViz:
+
+- **Windows:** clique duas vezes no arquivo › Instalar certificado › Máquina
+  local › "Autoridades de Certificação Raiz Confiáveis".
+- **macOS:** abra no Acesso às Chaves, no chaveiro Sistema, e marque "Confiar
+  sempre".
+- **Linux:** copie para `/usr/local/share/ca-certificates/` e rode
+  `sudo update-ca-certificates`. O Chrome e o Firefox também aceitam importar
+  em Configurações › Privacidade e segurança › Certificados.
+
+Rodar o script de novo renova só o certificado do servidor (validade de 397
+dias), mantendo a CA já instalada. O KubeViz relê o certificado sozinho.
 
 ## Endereço com nome (exigência do Google e da Microsoft)
 

@@ -1,10 +1,12 @@
-import { Building2, KeyRound, LogIn, ShieldCheck, Terminal } from 'lucide-react'
+import { Building2, Fingerprint, KeyRound, LogIn, ShieldCheck, Terminal } from 'lucide-react'
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ProviderIcon } from '@/components/ui/provider-icon'
 import { ApiError, type LoginMethod, type LoginProvider } from '@/lib/api'
-import { useLogin, usePasswordLogin, useSetupAdmin } from '@/lib/queries'
+import { sessionKey, useLogin, usePasswordLogin, useSetupAdmin } from '@/lib/queries'
+import { cancelled, loginWithPasskey, passkeySupport } from '@/lib/webauthn'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 /** Mesmo mínimo do backend (auth.MinPasswordLength). */
 const MIN_PASSWORD = 12
@@ -25,6 +27,8 @@ interface LoginProps {
   setup?: 'available' | 'expired'
   /** Provedores das contas locais (Google, Microsoft, GitHub, OIDC). */
   providers?: LoginProvider[]
+  /** Contas locais podem entrar com passkey. */
+  passkeys?: boolean
 }
 
 /** Motivo da falha do último login (?loginError=), tirado da barra de endereços. */
@@ -45,12 +49,14 @@ function returnQuery() {
   return here && here !== '/' ? `?return=${encodeURIComponent(here)}` : ''
 }
 
-export function Login({ methods, oidcName, setup, providers = [] }: LoginProps) {
+export function Login({ methods, oidcName, setup, providers = [], passkeys }: LoginProps) {
   const { t } = useTranslation()
   const error = useLoginError()
   const oidc = methods.includes('oidc')
   const others = methods.filter((m) => m !== 'oidc')
-  const external = oidc || providers.length > 0
+  // O navegador só aceita passkeys num endereço com nome e em contexto seguro.
+  const withPasskey = passkeys && passkeySupport() === 'ok'
+  const external = oidc || providers.length > 0 || withPasskey
 
   return (
     <div className="flex min-h-full items-center justify-center p-4">
@@ -75,8 +81,9 @@ export function Login({ methods, oidcName, setup, providers = [] }: LoginProps) 
               <p className="mb-4 rounded-md border border-warn/40 bg-warn/5 p-2 text-warn">{t('auth.setup.expired')}</p>
             )}
             {oidc && <OidcLogin name={oidcName} />}
+            {withPasskey && <PasskeyLogin />}
             {providers.length > 0 && (
-              <div className="space-y-2">
+              <div className={withPasskey ? 'mt-2 space-y-2' : 'space-y-2'}>
                 {providers.map((p) => (
                   <a
                     key={p.id}
@@ -100,6 +107,30 @@ export function Login({ methods, oidcName, setup, providers = [] }: LoginProps) 
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+function PasskeyLogin() {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  const login = useMutation({
+    mutationFn: loginWithPasskey,
+    onSuccess: (session) => qc.setQueryData(sessionKey, session),
+  })
+  const error = login.error
+  const errorText = !error || cancelled(error) ? null : error instanceof ApiError && error.status === 401 ? t('account.passkeys.unknown') : error.message
+  return (
+    <div className="space-y-2">
+      <Button variant="primary" className="h-9 w-full" onClick={() => login.mutate()} disabled={login.isPending}>
+        <Fingerprint />
+        {t('account.passkeys.login')}
+      </Button>
+      {errorText && (
+        <p role="alert" className="text-critical">
+          {errorText}
+        </p>
+      )}
     </div>
   )
 }

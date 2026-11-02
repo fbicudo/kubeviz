@@ -34,8 +34,9 @@ testes. Opções em [values.yaml](deploy/helm/kubeviz/values.yaml).
 Para login corporativo (Keycloak, Dex, Entra ID, Okta…), veja
 [Login corporativo (OIDC)](docs/oidc.md). Rodando como binário ou container, o
 primeiro acesso cria a conta de administrador pela própria tela, e os usuários
-podem entrar com Google, Microsoft, GitHub ou OIDC configurados pela interface:
-[Contas e provedores de login](docs/login-provedores.md).
+podem entrar com passkey (digital, rosto ou PIN, sem senha) ou com Google,
+Microsoft, GitHub ou OIDC configurados pela interface:
+[Contas, passkeys e provedores de login](docs/login-provedores.md).
 
 ## Desenvolvimento
 

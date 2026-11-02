@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { LogOut, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -17,13 +17,24 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-1">
-      <span
-        className="flex max-w-48 items-center gap-1.5 truncate px-1 text-xs text-muted"
-        title={groups ? `${name}\n${kubeIdentity}${t('auth.groups')}: ${groups}` : (data?.userError ?? name)}
-      >
-        <UserRound className="size-4 shrink-0" aria-hidden />
-        <span className="truncate">{name}</span>
-      </span>
+      {data?.localUser ? (
+        <Link
+          to="/account"
+          className="flex max-w-48 items-center gap-1.5 truncate rounded px-1 text-xs text-muted hover:text-foreground"
+          title={`${t('account.title')}\n${kubeIdentity}`.trim()}
+        >
+          <UserRound className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">{name}</span>
+        </Link>
+      ) : (
+        <span
+          className="flex max-w-48 items-center gap-1.5 truncate px-1 text-xs text-muted"
+          title={groups ? `${name}\n${kubeIdentity}${t('auth.groups')}: ${groups}` : (data?.userError ?? name)}
+        >
+          <UserRound className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">{name}</span>
+        </span>
+      )}
       <Button
         variant="ghost"
         size="icon"

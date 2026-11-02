@@ -44,6 +44,7 @@ type accountView struct {
 	Emails      []string  `json:"emails"`
 	Created     time.Time `json:"created,omitzero"`
 	Current     bool      `json:"current,omitempty"`
+	Passkeys    int       `json:"passkeys"`
 }
 
 func (s *Server) listAccounts(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +58,7 @@ func (s *Server) listAccounts(w http.ResponseWriter, r *http.Request) {
 		}
 		views = append(views, accountView{
 			Name: a.Name, Admin: a.Admin, HasPassword: a.HasPassword(), Emails: emails,
-			Created: a.Created, Current: a.Name == sess.LocalUser,
+			Created: a.Created, Current: a.Name == sess.LocalUser, Passkeys: len(a.Passkeys),
 		})
 	}
 	domains := d.AllowedDomains

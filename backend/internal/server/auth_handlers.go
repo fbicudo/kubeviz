@@ -305,6 +305,8 @@ type sessionResponse struct {
 	Setup string `json:"setup,omitempty"`
 	// Providers são os botões de login por provedor (contas locais).
 	Providers []providerButton `json:"providers,omitempty"`
+	// Passkeys: a tela de login oferece entrar com passkey (há contas locais).
+	Passkeys bool `json:"passkeys,omitempty"`
 	// Admin: a sessão pode gerenciar contas e provedores.
 	Admin bool `json:"admin,omitempty"`
 	// OIDCName é o nome do provedor exibido no botão de login.
@@ -323,7 +325,8 @@ type sessionResponse struct {
 func (s *Server) getSession(w http.ResponseWriter, r *http.Request) {
 	sess, ok := s.session(r)
 	if !ok {
-		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods(), OIDCName: s.oidcName(), Setup: s.setupState(), Providers: s.loginProviders()})
+		writeJSON(w, http.StatusOK, sessionResponse{Mode: s.cluster.Mode(), LoginMethods: s.loginMethods(), OIDCName: s.oidcName(), Setup: s.setupState(), Providers: s.loginProviders(),
+			Passkeys: s.passkeysEnabled() && s.opts.Users.Enabled()})
 		return
 	}
 	writeJSON(w, http.StatusOK, s.sessionInfo(r, sess))

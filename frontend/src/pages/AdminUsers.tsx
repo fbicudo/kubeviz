@@ -55,6 +55,7 @@ export function AdminUsers() {
                 <td className="px-3 py-2">
                   <ul className="space-y-0.5">
                     {a.hasPassword && <li>{t('admin.users.password')}</li>}
+                    {a.passkeys > 0 && <li>{t('admin.users.passkeys', { count: a.passkeys })}</li>}
                     {a.emails.map((e) => (
                       <li key={e} className="font-mono text-xs">{e}</li>
                     ))}

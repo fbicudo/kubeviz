@@ -761,6 +761,47 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   chart OCI e upgrade real no kind com `helm upgrade --reuse-values` vindo da
   0.2.1.
 
+### 02/11/2026 — Passkeys (pedido do responsável)
+- **Contexto:** o responsável perguntou sobre a biblioteca Better Auth.
+  - Ela foi descartada: exige um servidor em TypeScript (Node, Bun ou Deno)
+    com banco de dados próprio, o que quebraria o binário único sem
+    dependências.
+  - Do que ela oferece, faltavam as passkeys, implementadas em Go com a
+    go-webauthn v0.18.2.
+- **Minha conta** (clique no próprio nome): cadastrar passkeys, com nome
+  sugerido como "Chrome · Linux", listar (criada, último uso, sincronizada) e
+  remover.
+- **Entrar com passkey:** na tela de login, sem usuário nem senha.
+  - A passkey é residente e exige verificação do usuário.
+  - Cada desafio vale uma vez só e por 5 min.
+  - O contador de uso detecta clonagem.
+  - Tentativas erradas são limitadas por IP.
+  - Na lista de usuários, cada conta mostra quantas passkeys tem.
+- **Restrições dos navegadores:**
+  - a passkey fica ligada ao nome do endereço; por IP, o botão não aparece
+    e a página explica o motivo;
+  - fora de localhost, é preciso HTTPS com certificado confiável (o Chrome
+    bloqueia passkeys com erro de certificado);
+  - por isso, `hack/tls/certs.sh` cria uma CA local restrita por nome
+    (nameConstraints) e o certificado do servidor;
+  - a instância da rede já usa esse certificado; falta o responsável instalar
+    o `ca.crt`.
+- **Verificado:**
+  - testes Go com um autenticador de software (`internal/auth/webauthntest`,
+    ES256 com atestação "none"): cadastro (residente, verificação
+    obrigatória, desafio de uso único), login sem usuário, recusa de origem
+    falsa, de contador que volta atrás e de passkey removida, e endereço IP
+    recusado;
+  - 188 testes Vitest: conversões base64url ↔ ArrayBuffer, botão de login,
+    cancelamento, Minha conta;
+  - **no Chromium com autenticador virtual:**
+    - em `http://localhost`: cadastro, login sem senha (contador 2), passkey
+      removida recusada, e nenhum botão por IP;
+    - em `https://10.11.12.103.nip.io` com o certificado da CA local:
+      contexto seguro, cadastro e login;
+  - capturas: [img/minha-conta-passkeys.png](img/minha-conta-passkeys.png) e
+    [img/login-passkey.png](img/login-passkey.png).
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca

@@ -94,6 +94,8 @@ export interface SessionInfo {
   setup?: 'available' | 'expired'
   /** Botões de login por provedor (Google, Microsoft, GitHub, OIDC). */
   providers?: LoginProvider[]
+  /** A tela de login oferece entrar com passkey. */
+  passkeys?: boolean
   /** Pode gerenciar contas e provedores. */
   admin?: boolean
   user?: User

@@ -12,6 +12,7 @@ export interface Account {
   created?: string
   /** A conta da sessão atual. */
   current?: boolean
+  passkeys: number
 }
 
 export interface AccountsResponse {

@@ -65,6 +65,10 @@ type Account struct {
 	// Emails com que a conta entra pelos provedores de identidade.
 	Emails  []string  `json:"emails,omitempty"`
 	Created time.Time `json:"created,omitzero"`
+	// WebAuthnID identifica a conta nas passkeys (aleatório, sem dados pessoais).
+	WebAuthnID string `json:"webauthnId,omitempty"`
+	// Passkeys cadastradas pela própria pessoa (Minha conta).
+	Passkeys []Passkey `json:"passkeys,omitempty"`
 }
 
 // HasPassword indica se a conta entra com senha.

@@ -58,6 +58,7 @@ type Server struct {
 	sessions *auth.Store
 	whoAmI   func(context.Context, *rest.Config) (auth.User, error)
 	limiter  *auth.LoginLimiter
+	passkeys ceremonies
 }
 
 // New cria um servidor que serve a UI a partir de assets e consulta o
@@ -99,6 +100,14 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/v1/auth/login", s.login)
 	mux.HandleFunc("POST /api/v1/auth/password", s.passwordLogin)
 	mux.HandleFunc("POST /api/v1/auth/setup", s.setup)
+	mux.HandleFunc("POST /api/v1/auth/passkey/begin", s.passkeyLoginBegin)
+	mux.HandleFunc("POST /api/v1/auth/passkey/finish", s.passkeyLoginFinish)
+
+	// Minha conta (contas locais).
+	mux.HandleFunc("GET /api/v1/me/passkeys", s.requireAccount(s.listPasskeys))
+	mux.HandleFunc("POST /api/v1/me/passkeys/begin", s.requireAccount(s.passkeyRegisterBegin))
+	mux.HandleFunc("POST /api/v1/me/passkeys/finish", s.requireAccount(s.passkeyRegisterFinish))
+	mux.HandleFunc("DELETE /api/v1/me/passkeys/{id}", s.requireAccount(s.deletePasskey))
 
 	// Administração das contas locais (exigem sessão de administrador).
 	mux.HandleFunc("GET /api/v1/admin/users", s.requireAdmin(s.listAccounts))

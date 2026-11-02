@@ -504,7 +504,9 @@
       "emailsHelp": "Um por linha. A pessoa clica em \"Continuar com Google\" (ou outro) e entra se o provedor confirmar este e-mail.",
       "makeAdmin": "Administrador (gerencia usuários e provedores)",
       "save": "Salvar",
-      "create": "Criar"
+      "create": "Criar",
+      "passkeys_one": "{{count}} passkey",
+      "passkeys_other": "{{count}} passkeys"
     },
     "domains": {
       "title": "Domínios liberados",
@@ -546,6 +548,35 @@
         },
         "oidc": "Registre o KubeViz como cliente confidencial no provedor (Keycloak, Okta, GitLab, Authentik…), com o endereço de retorno abaixo, e informe o endereço do provedor, o client ID e o secret."
       }
+    }
+  },
+  "account": {
+    "title": "Minha conta",
+    "subtitle": "Como você entra no KubeViz.",
+    "passkeys": {
+      "title": "Passkeys",
+      "hint": "Entre sem senha, com a digital, o rosto ou o PIN deste dispositivo (ou do celular). A passkey fica guardada no dispositivo ou no seu gerenciador de senhas; o KubeViz guarda só a chave pública.",
+      "add": "Adicionar passkey",
+      "name": "Nome da passkey",
+      "empty": "Nenhuma passkey cadastrada.",
+      "synced": "sincronizada",
+      "created": "Criada {{age}}",
+      "used": "usada {{age}}",
+      "never": "nunca usada",
+      "remove": "Remover {{name}}",
+      "removeTitle": "Remover a passkey {{name}}?",
+      "removeHint": "Ela deixa de entrar no KubeViz. A cópia no dispositivo pode ser apagada nas configurações dele.",
+      "added": "Passkey cadastrada. Na próxima vez, use \"Entrar com passkey\".",
+      "exists": "Este dispositivo já tem uma passkey desta conta.",
+      "cancelled": "Cadastro cancelado.",
+      "login": "Entrar com passkey",
+      "unknown": "Passkey não reconhecida. Ela pode ter sido removida ou ser de outro endereço do KubeViz.",
+      "unsupported": {
+        "browser": "Este navegador não aceita passkeys.",
+        "ip": "Passkeys não funcionam com endereço IP. Acesse o KubeViz por um nome (ex.: {{host}}).",
+        "insecure": "Passkeys exigem HTTPS com certificado confiável (ou localhost)."
+      },
+      "hostBound": "As passkeys valem só para o endereço em que foram criadas ({{host}})."
     }
   }
 }

@@ -504,7 +504,9 @@
       "emailsHelp": "One per line. The person clicks \"Continue with Google\" (or another) and gets in if the provider confirms this email.",
       "makeAdmin": "Administrator (manages users and providers)",
       "save": "Save",
-      "create": "Create"
+      "create": "Create",
+      "passkeys_one": "{{count}} passkey",
+      "passkeys_other": "{{count}} passkeys"
     },
     "domains": {
       "title": "Allowed domains",
@@ -546,6 +548,35 @@
         },
         "oidc": "Register KubeViz as a confidential client in the provider (Keycloak, Okta, GitLab, Authentik…) with the redirect URL below, and enter the provider URL, client ID and secret."
       }
+    }
+  },
+  "account": {
+    "title": "My account",
+    "subtitle": "How you sign in to KubeViz.",
+    "passkeys": {
+      "title": "Passkeys",
+      "hint": "Sign in without a password, using this device's fingerprint, face or PIN (or your phone). The passkey stays on the device or in your password manager; KubeViz only stores the public key.",
+      "add": "Add passkey",
+      "name": "Passkey name",
+      "empty": "No passkeys yet.",
+      "synced": "synced",
+      "created": "Created {{age}}",
+      "used": "used {{age}}",
+      "never": "never used",
+      "remove": "Remove {{name}}",
+      "removeTitle": "Remove the passkey {{name}}?",
+      "removeHint": "It will no longer sign in to KubeViz. The copy on the device can be deleted in its settings.",
+      "added": "Passkey added. Next time, use \"Sign in with passkey\".",
+      "exists": "This device already has a passkey for this account.",
+      "cancelled": "Registration cancelled.",
+      "login": "Sign in with passkey",
+      "unknown": "Passkey not recognized. It may have been removed or belong to another KubeViz address.",
+      "unsupported": {
+        "browser": "This browser does not support passkeys.",
+        "ip": "Passkeys do not work with an IP address. Open KubeViz by name (e.g. {{host}}).",
+        "insecure": "Passkeys require HTTPS with a trusted certificate (or localhost)."
+      },
+      "hostBound": "Passkeys only work on the address where they were created ({{host}})."
     }
   }
 }
