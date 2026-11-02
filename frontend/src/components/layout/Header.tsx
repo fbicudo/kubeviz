@@ -2,7 +2,7 @@ import { Languages, Moon, PanelLeft, Search, Sun } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { languages } from '@/i18n'
-import { useTheme } from '@/lib/theme'
+import { useTheme } from '@/lib/theme-context'
 
 export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { t, i18n } = useTranslation()

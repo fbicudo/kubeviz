@@ -24,9 +24,17 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 - **Verificado:** `go vet` e testes Go (config, servidor, SPA, cabeçalhos,
   shutdown) passam; `tsc -b` e 5 testes Vitest passam (navegação, tema, idioma,
   paridade das traduções); binário único de 9 MB serve a UI e a API.
-- **Não verificado:** aparência no navegador (sem navegador nesta máquina; ver
-  bloqueios); CI no GitHub (repositório ainda não publicado); `make` (não
-  instalado; os comandos equivalentes foram executados manualmente).
+- **Não verificado:** CI no GitHub (repositório ainda não publicado).
+
+### 02/11/2026 — Ambiente com Docker e verificação visual
+- Instalados Docker 29.1, make 4.4 e as bibliotecas do Chromium (Playwright).
+- `make lint`, `make test` e `make build` passam; lint do frontend sem avisos
+  (hook `useTheme` separado em `lib/theme-context.ts`).
+- Interface conferida em Chromium headless: tema escuro e claro, pt-BR e inglês,
+  navegação pelo menu, sem erros no console nem bloqueios da CSP. Capturas em
+  [img/overview-dark.png](img/overview-dark.png) e [img/pods-light.png](img/pods-light.png).
+- Cluster de desenvolvimento `kind-kubora-dev` (Kubernetes 1.37, 1 nó) criado e
+  definido como contexto atual do kubectl.
 
 ## Próximas tarefas (Fase 0)
 
@@ -49,15 +57,18 @@ e o que está bloqueado. Atualize ao fim de cada tarefa.
 
 | Item | Por quê | Como resolver |
 |------|---------|---------------|
-| Docker + kind | Necessário para testar o Helm chart e o critério de pronto da Fase 0 | `sudo apt install docker.io` e `sudo usermod -aG docker $USER` |
-| `make` | Executar as tarefas do `Makefile` | `sudo apt install make` |
-| Bibliotecas do Chromium | Capturas de tela automáticas da UI | `sudo npx playwright install-deps chromium` |
 | Contato do Código de Conduta | `CODE_OF_CONDUCT.md` tem um campo `<contato-a-definir>` | Definir um e-mail ou canal público do projeto |
 | Usuário do GitHub | `MAINTAINERS.md` e caminhos do chart | Informar o usuário |
 | Domínio `kubora.dev` | O módulo Go usa `kubora.dev/kubora` | Registrar o domínio, ou trocar o caminho do módulo |
 
 ## Ambiente de desenvolvimento desta máquina
 
-Ferramentas instaladas sem `sudo`, em `~/.local` (PATH configurado em
-`~/.profile`): Go 1.27.3, Node.js 26.13 LTS, pnpm 12.16, kubectl 1.37, Helm 4.3,
-kind 0.33.
+- Em `~/.local` (PATH configurado em `~/.profile`): Go 1.27.3, Node.js 26.13 LTS,
+  pnpm 12.16, kubectl 1.37, Helm 4.3, kind 0.33.
+- Pelo apt: Docker 29.1, make 4.4, dependências do Chromium.
+- O usuário foi adicionado ao grupo `docker`; até o próximo login, use
+  `sg docker -c "<comando>"` ou abra uma nova sessão.
+- Cluster: `kind-kubora-dev` (recriar com
+  `kind create cluster --name kubora-dev`; remover com
+  `kind delete cluster --name kubora-dev`). A máquina tem 3,3 GB de RAM, então
+  manter apenas um cluster por vez.

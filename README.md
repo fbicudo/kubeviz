@@ -7,6 +7,8 @@ performance e uptime e assistentes (wizards) para configurar o ambiente.
 > prontos; ainda não conecta a um cluster. Acompanhe em
 > [docs/PROGRESSO.md](docs/PROGRESSO.md).
 
+![Visão geral do Kubora no tema escuro](docs/img/overview-dark.png)
+
 ## Desenvolvimento
 
 Requisitos: Go 1.27+, Node.js LTS, pnpm. Detalhes em [CONTRIBUTING.md](CONTRIBUTING.md).
