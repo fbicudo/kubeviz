@@ -121,7 +121,8 @@ func (h *History) check(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		h.log.Warn("Prometheus deixou de responder; o histórico volta ao coletor embutido", "prometheus", cur.c.desc, "erro", err, "falta", missing)
+		// Uma falha passageira não troca a fonte: a busca abaixo confere de novo.
+		h.log.Debug("Prometheus falhou na conferência", "prometheus", cur.c.desc, "erro", err, "falta", missing)
 		recent = false
 	}
 	if cur == nil && !changed && recent && h.opts.Prometheus == "auto" {
@@ -138,7 +139,9 @@ func (h *History) check(ctx context.Context) {
 	if backend != nil && (h.prom == nil || h.prom.c.desc != backend.c.desc || changed) {
 		h.log.Info("histórico de métricas pelo Prometheus", "prometheus", backend.c.desc, "cluster", cluster, "uso_do_no", map[bool]string{true: "cgroup do nó", false: "soma dos pods"}[backend.nodeCgroup])
 	}
-	if backend == nil && !samePromStatus(st, h.pstatus) && st.State != PromNotFound {
+	if backend == nil && h.prom != nil && !changed {
+		h.log.Warn("Prometheus deixou de responder; o histórico volta ao coletor embutido", "prometheus", h.prom.c.desc, "estado", st.State, "falta", st.Missing, "erro", st.Error)
+	} else if backend == nil && !samePromStatus(st, h.pstatus) && st.State != PromNotFound {
 		h.log.Warn("Prometheus não usado no histórico", "estado", st.State, "prometheus", st.Target, "falta", st.Missing, "erro", st.Error)
 	}
 	h.prom, h.pstatus = backend, st
