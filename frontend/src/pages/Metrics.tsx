@@ -1,7 +1,8 @@
-import { ChartLine, RefreshCw, TriangleAlert } from 'lucide-react'
+import { ChartLine, RefreshCw } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HistoryPanel } from '@/components/charts/HistoryPanel'
+import { MetricsProblem, PodTable } from '@/components/metrics/live'
 import { ObjectLink } from '@/components/resources/ObjectLink'
 import { Button } from '@/components/ui/button'
 import { StatTile } from '@/components/ui/stat-tile'
@@ -17,7 +18,6 @@ import {
   useNodeMetrics,
   usePodMetrics,
   type GroupRow,
-  type PodRow,
 } from '@/lib/k8s/metrics'
 import { useNodes, usePods } from '@/lib/k8s/queries'
 import { scopeId, type HistoryScope } from '@/lib/k8s/history'
@@ -25,6 +25,7 @@ import type { ComboboxOption } from '@/components/ui/combobox'
 import { cn } from '@/lib/utils'
 
 type SortKey = 'cpu' | 'memory'
+
 const TOP = 10
 
 /** Métricas ao vivo: o que está consumindo CPU e memória agora. */
@@ -245,57 +246,4 @@ function GroupTable({ rows, sort, kind, bare, onHistory }: { rows: GroupRow[]; s
     </table>
   )
   return bare ? table : <div className="overflow-x-auto rounded-lg border bg-surface">{table}</div>
-}
-
-function PodTable({ rows, sort }: { rows: PodRow[]; sort: SortKey }) {
-  const { t } = useTranslation()
-  const maxCpu = Math.max(1, ...rows.map((r) => r.cpu))
-  const maxMem = Math.max(1, ...rows.map((r) => r.memory))
-  return (
-    <div className="overflow-x-auto rounded-lg border bg-surface">
-      <table className="w-full text-left">
-        <thead className="border-b text-xs text-muted">
-          <tr>
-            <th scope="col" className="px-3 py-2 font-medium">{t('metrics.col.pod')}</th>
-            <th scope="col" className={cn('px-3 py-2 font-medium', sort === 'cpu' && 'text-foreground')}>{t('metrics.col.cpu')}</th>
-            <th scope="col" className="px-3 py-2 font-medium">{t('metrics.col.cpuReqLim')}</th>
-            <th scope="col" className={cn('px-3 py-2 font-medium', sort === 'memory' && 'text-foreground')}>{t('metrics.col.memory')}</th>
-            <th scope="col" className="px-3 py-2 font-medium">{t('metrics.col.memReqLim')}</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {rows.map((r) => (
-            <tr key={r.pod.metadata.uid}>
-              <td className="px-3 py-2 whitespace-nowrap">
-                <ObjectLink kind={kinds.pods} name={r.pod.metadata.name} namespace={r.pod.metadata.namespace} />
-                <span className="ml-2 text-xs text-muted">{r.pod.metadata.namespace}</span>
-              </td>
-              <td className="px-3 py-2"><UsageBar label={t('metrics.cpuOf', { name: r.pod.metadata.name })} used={r.cpu} max={r.cpuLimits || maxCpu} reserved={r.cpuRequests} text={formatCpu(r.cpu)} percent={!!r.cpuLimits} /></td>
-              <td className="px-3 py-2 font-mono text-xs text-muted">{r.cpuRequests ? formatCpu(r.cpuRequests) : '—'} / {r.cpuLimits ? formatCpu(r.cpuLimits) : '—'}</td>
-              <td className="px-3 py-2"><UsageBar label={t('metrics.memoryOf', { name: r.pod.metadata.name })} used={r.memory} max={r.memoryLimits || maxMem} reserved={r.memoryRequests} text={formatBytes(r.memory)} percent={!!r.memoryLimits} /></td>
-              <td className="px-3 py-2 font-mono text-xs text-muted">{r.memoryRequests ? formatBytes(r.memoryRequests) : '—'} / {r.memoryLimits ? formatBytes(r.memoryLimits) : '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function MetricsProblem({ problem }: { problem: 'missing' | 'forbidden' | 'error' }) {
-  const { t } = useTranslation()
-  return (
-    <div className="flex gap-3 rounded-lg border border-warn/40 bg-warn/5 p-4">
-      <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warn" aria-hidden />
-      <div className="space-y-2">
-        <p className="font-medium">{t(`metrics.problem.${problem}.title`)}</p>
-        <p className="text-muted">{t(`metrics.problem.${problem}.body`)}</p>
-        {problem === 'missing' && (
-          <pre className="overflow-x-auto rounded-md bg-surface-raised p-2 font-mono text-xs">
-            kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-          </pre>
-        )}
-      </div>
-    </div>
-  )
 }

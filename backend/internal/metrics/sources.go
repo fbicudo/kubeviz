@@ -228,6 +228,9 @@ func (h *History) Status() Status {
 // ErrNoHistory: nem coletor nem Prometheus.
 var ErrNoHistory = errors.New("o histórico de métricas está desativado")
 
+// ErrPodNeedsPrometheus: o coletor embutido não guarda pods individuais.
+var ErrPodNeedsPrometheus = errors.New("o histórico de pods individuais requer o Prometheus; o coletor embutido guarda só cluster, nós, namespaces e workloads")
+
 // History devolve a série no período, da fonte em uso.
 func (h *History) History(ctx context.Context, key store.SeriesKey, span time.Duration) (store.Tier, []store.Point, error) {
 	h.mu.Lock()
@@ -239,6 +242,9 @@ func (h *History) History(ctx context.Context, key store.SeriesKey, span time.Du
 			return tier, nil, errors.New("consultando o Prometheus: " + strings.TrimPrefix(err.Error(), "Prometheus: "))
 		}
 		return tier, pts, nil
+	}
+	if key.Kind == "pod" {
+		return store.Tier{}, nil, ErrPodNeedsPrometheus
 	}
 	if h.collector == nil {
 		return store.Tier{}, nil, ErrNoHistory

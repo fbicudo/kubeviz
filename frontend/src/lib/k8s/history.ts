@@ -13,14 +13,23 @@ export type HistoryScope =
   | { kind: 'node'; name: string }
   | { kind: 'namespace'; name: string }
   | { kind: 'workload'; namespace: string; name: string; ownerKind: string }
+  /** Pod individual: só com o Prometheus (o coletor não guarda pods). */
+  | { kind: 'pod'; namespace: string; name: string }
 
 export const scopeId = (s: HistoryScope) =>
-  s.kind === 'cluster' ? 'cluster' : s.kind === 'workload' ? `workload/${s.namespace}/${s.ownerKind}/${s.name}` : `${s.kind}/${s.name}`
+  s.kind === 'cluster'
+    ? 'cluster'
+    : s.kind === 'workload'
+      ? `workload/${s.namespace}/${s.ownerKind}/${s.name}`
+      : s.kind === 'pod'
+        ? `pod/${s.namespace}/${s.name}`
+        : `${s.kind}/${s.name}`
 
 export function scopeFromId(id: string): HistoryScope {
   const [kind, a, b, c] = id.split('/')
   if (kind === 'node' || kind === 'namespace') return { kind, name: a }
   if (kind === 'workload') return { kind, namespace: a, ownerKind: b, name: c }
+  if (kind === 'pod') return { kind, namespace: a, name: b }
   return { kind: 'cluster' }
 }
 
@@ -57,11 +66,11 @@ export function useHistoryStatus() {
 export function useHistory(scope: HistoryScope, range: HistoryRange, enabled = true) {
   const q = new URLSearchParams({ range, kind: scope.kind })
   if (scope.kind === 'node' || scope.kind === 'namespace') q.set('name', scope.name)
-  if (scope.kind === 'workload') {
+  if (scope.kind === 'workload' || scope.kind === 'pod') {
     q.set('namespace', scope.namespace)
     q.set('name', scope.name)
-    q.set('ownerKind', scope.ownerKind)
   }
+  if (scope.kind === 'workload') q.set('ownerKind', scope.ownerKind)
   return useQuery({
     queryKey: ['metrics-history', scopeId(scope), range],
     queryFn: () => apiGet<HistoryData>(`/api/v1/metrics/history?${q}`),

@@ -979,6 +979,51 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
   - captura: [img/historico-prometheus.png](img/historico-prometheus.png).
 - **Guia:** [metricas.md](metricas.md#histórico-pelo-prometheus).
 
+### 03/11/2026 — Tarefa 2.4: indicadores de saúde e métricas no detalhe
+- **Saúde, na Visão geral:**
+  - quatro indicadores:
+    - reinícios na última hora ou em CrashLoopBackOff;
+    - OOMKilled nas últimas 24 h;
+    - pods em Pending há mais de 2 min, com o motivo (Unschedulable,
+      ImagePullBackOff…);
+    - nós com Ready diferente de True;
+  - cada indicador filtra a lista de ocorrências, que traz motivo,
+    mensagem, idade e link para o objeto;
+  - calculado no navegador a partir das listas de pods e nós, que já chegam
+    por watch, com a credencial de quem vê; sem permissão para alguma lista,
+    o painel avisa que os indicadores são parciais.
+- **Aba Métricas** em pods, nós, Deployments, StatefulSets, DaemonSets e
+  Jobs:
+  - **pod:**
+    - uso agora de cada container, sobre o limit (o traço marca o request);
+    - o histórico do pod, só com Prometheus (`kind=pod` na API, mesma
+      permissão do namespace; sem Prometheus, 422 e uma explicação);
+    - link para o histórico do workload;
+  - **workload:** histórico e os pods dele agora;
+  - **nó:** uso sobre o alocável, histórico e os pods agendados nele.
+- **Cenário de demonstração:**
+  - `memoria-curta`: estoura o limit e é morto (OOMKilled);
+  - `grande-demais`: pede 512 GiB e fica Unschedulable.
+- **Encontrado no teste real e corrigido:**
+  - com a máquina sobrecarregada, o Prometheus perdia coletas do
+    kube-state-metrics, e as linhas de requests e limits caíam a zero por um
+    instante. Agora vale o último valor visto há até 5 min;
+  - sem amostra do metrics-server, a tela mostrava "0m" e "— 0%"; agora
+    mostra "sem amostra".
+- **O painel mostrou problemas reais do cluster de desenvolvimento:**
+  kube-scheduler e kube-controller-manager em CrashLoopBackOff, perdendo a
+  eleição de líder com a máquina sobrecarregada, e o metrics-server
+  reiniciando.
+- **Verificado:**
+  - **Vitest:** 4 testes da lógica de saúde e 6 de tela (aba de pod, com e
+    sem Prometheus, de Deployment e de nó, abas por tipo, filtro da saúde);
+  - **Go:** API com `kind=pod` (200, 403 e 422) e manutenção dos requests
+    quando falta uma coleta;
+  - **no kind com Prometheus:** capturas
+    [img/saude.png](img/saude.png) e
+    [img/detalhe-pod-metricas.png](img/detalhe-pod-metricas.png).
+- **Guia:** [metricas.md](metricas.md#saúde-visão-geral).
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca
@@ -992,7 +1037,7 @@ e nos requisitos RF-30 a RF-36. Fica pronta quando o KubeViz responder, sem
 Grafana, "o que está consumindo recursos?" e "qual foi a disponibilidade do
 serviço X no último mês?".
 
-Concluídas: 2.1, 2.2 e 2.3 (registros acima).
+Concluídas: 2.1 a 2.4 (registros acima).
 
 1. **2.1 — Métricas ao vivo:**
    - CPU e memória por nó, namespace e pod (metrics-server), comparados com

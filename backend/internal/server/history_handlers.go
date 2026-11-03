@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"sync"
 	"time"
@@ -73,12 +74,12 @@ func (c *accessCache) put(key string, allowed bool) {
 	c.entries[key] = accessEntry{allowed: allowed, expires: time.Now().Add(time.Minute)}
 }
 
-// historyAllowed: nós e cluster exigem poder listar nós; namespaces e
-// workloads, poder listar pods no namespace. O histórico é coletado com a
+// historyAllowed: nós e cluster exigem poder listar nós; namespaces,
+// workloads e pods, poder listar pods no namespace. O histórico é coletado com a
 // credencial do KubeViz, então quem não poderia ver os objetos não vê as séries.
 func (s *Server) historyAllowed(r *http.Request, key store.SeriesKey) (bool, error) {
 	attrs := authzv1.ResourceAttributes{Verb: "list", Resource: "nodes"}
-	if key.Kind == "namespace" || key.Kind == "workload" {
+	if key.Kind == "namespace" || key.Kind == "workload" || key.Kind == "pod" {
 		ns := key.Namespace
 		if key.Kind == "namespace" {
 			ns = key.Name
@@ -131,13 +132,19 @@ func (s *Server) history(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "informe o nome")
 			return
 		}
+	case "pod":
+		key.OwnerKind = ""
+		if key.Namespace == "" || key.Name == "" {
+			writeError(w, http.StatusBadRequest, "informe namespace e nome do pod")
+			return
+		}
 	case "workload":
 		if key.Namespace == "" || key.Name == "" || key.OwnerKind == "" {
 			writeError(w, http.StatusBadRequest, "informe namespace, nome e tipo do workload")
 			return
 		}
 	default:
-		writeError(w, http.StatusBadRequest, "tipo inválido (use cluster, node, namespace ou workload)")
+		writeError(w, http.StatusBadRequest, "tipo inválido (use cluster, node, namespace, workload ou pod)")
 		return
 	}
 	allowed, err := s.historyAllowed(r, key)
@@ -150,6 +157,10 @@ func (s *Server) history(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tier, points, err := s.opts.History.History(r.Context(), key, span)
+	if errors.Is(err, metrics.ErrPodNeedsPrometheus) {
+		writeError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

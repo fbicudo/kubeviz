@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"sort"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -95,6 +95,8 @@ func promQueries(key store.SeriesKey, w string, nodeCgroup bool) [8]string {
 		m = ", namespace=" + q(key.Name)
 	case "node":
 		filter = fmt.Sprintf(`max by (namespace, pod) (kube_pod_info{node=%s})`, q(key.Name))
+	case "pod":
+		m = ", namespace=" + q(key.Namespace) + ", pod=" + q(key.Name)
 	case "workload":
 		ns := "namespace=" + q(key.Namespace)
 		m = ", " + ns
@@ -152,8 +154,7 @@ func promQueries(key store.SeriesKey, w string, nodeCgroup bool) [8]string {
 	return out
 }
 
-// history consulta o período no Prometheus. Instantes sem uso medido ficam
-// de fora (viram lacunas no gráfico).
+// history consulta o período no Prometheus.
 func (b *promBackend) history(ctx context.Context, key store.SeriesKey, span time.Duration) (store.Tier, []store.Point, error) {
 	step := promStep(span)
 	end := time.Now().Truncate(step)
@@ -184,8 +185,12 @@ func (b *promBackend) history(ctx context.Context, key store.SeriesKey, span tim
 		}
 	}
 
-	byTS := map[int64]*[8]float64{}
-	present := map[int64]bool{}
+	// Por instante: a soma de cada consulta e quais delas responderam.
+	type row struct {
+		v   [8]float64
+		has [8]bool
+	}
+	byTS := map[int64]*row{}
 	for i, res := range results {
 		for _, s := range res {
 			for _, v := range s.Values {
@@ -193,25 +198,46 @@ func (b *promBackend) history(ctx context.Context, key store.SeriesKey, span tim
 					continue
 				}
 				ts := int64(v.T)
-				row := byTS[ts]
-				if row == nil {
-					row = &[8]float64{}
-					byTS[ts] = row
+				r := byTS[ts]
+				if r == nil {
+					r = &row{}
+					byTS[ts] = r
 				}
-				row[i] += v.V
-				if i < 2 {
-					present[ts] = true
-				}
+				r.v[i] += v.V
+				r.has[i] = true
 			}
 		}
 	}
-	points := make([]store.Point, 0, len(present))
-	for ts := range present {
+	stamps := make([]int64, 0, len(byTS))
+	for ts := range byTS {
+		stamps = append(stamps, ts)
+	}
+	slices.Sort(stamps)
+
+	// Requests, limits e capacidade (kube-state-metrics) mudam pouco: se uma
+	// coleta falhou num instante em que o uso existe, vale o último valor
+	// visto há até 5 min (ou 3 passos), em vez de uma queda falsa a zero.
+	hold := int64(max(5*time.Minute, 3*step) / time.Second)
+	var last [8]float64
+	var lastAt [8]int64
+	points := make([]store.Point, 0, len(stamps))
+	for _, ts := range stamps {
 		r := byTS[ts]
+		for i := 2; i < 8; i++ {
+			if r.has[i] {
+				last[i], lastAt[i] = r.v[i], ts
+			} else if lastAt[i] != 0 && ts-lastAt[i] <= hold {
+				r.v[i] = last[i]
+			}
+		}
+		// Sem uso medido, o instante fica de fora (lacuna no gráfico).
+		if !r.has[0] && !r.has[1] {
+			continue
+		}
+		v := r.v
 		points = append(points, store.Point{TS: ts, Sample: store.Sample{
-			CPU: r[0], Mem: r[1], CPUReq: r[2], MemReq: r[3], CPULim: r[4], MemLim: r[5], CPUCap: r[6], MemCap: r[7],
+			CPU: v[0], Mem: v[1], CPUReq: v[2], MemReq: v[3], CPULim: v[4], MemLim: v[5], CPUCap: v[6], MemCap: v[7],
 		}})
 	}
-	sort.Slice(points, func(i, j int) bool { return points[i].TS < points[j].TS })
 	return store.Tier{Step: step}, points, nil
 }

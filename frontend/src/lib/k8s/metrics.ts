@@ -221,3 +221,7 @@ export function usePodMetrics(namespace: string) {
     retry: retryUnlessClientError,
   })
 }
+
+/** Tipos com aba Métricas: os workloads que o histórico agrupa, pods e nós. */
+export const WORKLOAD_KINDS = new Set(['Deployment', 'StatefulSet', 'DaemonSet', 'Job'])
+export const hasMetricsTab = (kind: string) => kind === 'Pod' || kind === 'Node' || WORKLOAD_KINDS.has(kind)

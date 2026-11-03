@@ -22,6 +22,9 @@ func (f *fakeHistory) Status() metrics.Status {
 }
 func (f *fakeHistory) History(_ context.Context, k store.SeriesKey, span time.Duration) (store.Tier, []store.Point, error) {
 	f.asked = append(f.asked, k)
+	if k.Kind == "pod" && k.Name == "sem-prometheus" {
+		return store.Tier{}, nil, metrics.ErrPodNeedsPrometheus
+	}
 	tier := store.TierFor(store.Tiers(0), span)
 	return tier, []store.Point{{TS: 1000, Sample: store.Sample{CPU: 250, Mem: 1e9, CPUCap: 4000}}}, nil
 }
@@ -71,7 +74,17 @@ func TestHistoryAPI(t *testing.T) {
 	if len(checks) != before {
 		t.Errorf("a permissão deveria vir do cache (%d → %d perguntas)", before, len(checks))
 	}
-	if len(hist.asked) != 3 {
+	// Pods: mesma permissão do namespace; sem Prometheus, 422 explicando.
+	if code, _ := get("kind=pod&namespace=demo&name=web-1&range=1h"); code != 200 {
+		t.Errorf("pod em demo: %d", code)
+	}
+	if code, body := get("kind=pod&namespace=demo&name=sem-prometheus&range=1h"); code != 422 || !strings.Contains(body["error"].(string), "Prometheus") {
+		t.Errorf("pod sem Prometheus: %d %v", code, body)
+	}
+	if code, _ := get("kind=pod&namespace=kube-system&name=etcd&range=1h"); code != 403 {
+		t.Errorf("pod em kube-system: %d", code)
+	}
+	if len(hist.asked) != 5 {
 		t.Errorf("histórico consultado só quando permitido: %d consultas", len(hist.asked))
 	}
 	// Sem sessão, nada.

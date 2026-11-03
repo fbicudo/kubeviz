@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { HealthPanel } from '@/components/health/HealthPanel'
 import { StatTile } from '@/components/ui/stat-tile'
 import { Link } from '@tanstack/react-router'
 import { ApiError, getVersion } from '@/lib/api'
@@ -31,6 +32,8 @@ export function Overview() {
         <PodsTile />
         <UsageTiles />
       </div>
+
+      <Health />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:max-w-4xl">
         <ClusterTile />
@@ -107,6 +110,24 @@ function PodsTile() {
           </Link>
         ) : undefined
       }
+    />
+  )
+}
+
+/** Indicadores de saúde; o que não puder ser lido conta como vazio, com aviso. */
+function Health() {
+  const { t } = useTranslation()
+  const pods = usePods('')
+  const nodes = useNodes()
+  if (useClusterDown()) return null
+  const failed = [pods.isError && `${t('kinds.pods')}: ${errorHint(t, pods.error)}`, nodes.isError && `${t('kinds.nodes')}: ${errorHint(t, nodes.error)}`]
+    .filter(Boolean)
+    .join(' · ')
+  return (
+    <HealthPanel
+      pods={pods.isError ? [] : pods.data?.items}
+      nodes={nodes.isError ? [] : nodes.data?.items}
+      error={failed || undefined}
     />
   )
 }

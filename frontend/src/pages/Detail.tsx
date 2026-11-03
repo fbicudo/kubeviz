@@ -8,6 +8,7 @@ import { EditObject } from '@/components/editor/EditObject'
 import { ActionBar } from '@/components/resources/Actions'
 import { LoadError } from '@/components/resources/common'
 import { LogsView } from '@/components/resources/LogsView'
+import { MetricsTab } from '@/components/metrics/MetricsTab'
 import { TerminalView } from '@/components/resources/TerminalView'
 import { ObjectLink } from '@/components/resources/ObjectLink'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ import {
   listHref,
   type ResourceKind,
 } from '@/lib/k8s/catalog'
+import { hasMetricsTab } from '@/lib/k8s/metrics'
 import { summarizePod } from '@/lib/k8s/pods'
 import { lastSeen } from '@/lib/k8s/events'
 import { maskSecret } from '@/lib/k8s/secrets'
@@ -33,7 +35,7 @@ import { cn } from '@/lib/utils'
 
 export interface DetailSearch {
   ns?: string
-  tab?: 'overview' | 'yaml' | 'events' | 'logs' | 'terminal'
+  tab?: 'overview' | 'metrics' | 'yaml' | 'events' | 'logs' | 'terminal'
 }
 
 /** Detalhe de qualquer objeto: /view/<grupo>/<versão>/<recurso>/<nome>?ns=… */
@@ -117,7 +119,7 @@ export function Detail() {
       ) : (
         <>
           <div role="tablist" aria-label={t('detail.sections')} className="flex gap-1 border-b">
-            {(kind.kind === 'Pod' ? (['overview', 'logs', 'terminal', 'yaml', 'events'] as const) : (['overview', 'yaml', 'events'] as const)).map((id) => (
+            {tabsFor(kind.kind).map((id) => (
               <button
                 key={id}
                 type="button"
@@ -138,12 +140,19 @@ export function Detail() {
           {tab === 'overview' && <Overview obj={obj} kind={kind} />}
           {tab === 'yaml' && <YamlView obj={obj} path={objectPath(kind, namespace, name)} />}
           {tab === 'events' && <Events obj={obj} />}
+          {tab === 'metrics' && hasMetricsTab(kind.kind) && <MetricsTab obj={obj} />}
           {tab === 'logs' && kind.kind === 'Pod' && <LogsView pod={obj} />}
           {tab === 'terminal' && kind.kind === 'Pod' && <TerminalView pod={obj} />}
         </>
       )}
     </div>
   )
+}
+
+/** Abas do detalhe: logs e terminal só em pods; métricas em pods, nós e workloads. */
+function tabsFor(kind: string): NonNullable<DetailSearch['tab']>[] {
+  if (kind === 'Pod') return ['overview', 'metrics', 'logs', 'terminal', 'yaml', 'events']
+  return hasMetricsTab(kind) ? ['overview', 'metrics', 'yaml', 'events'] : ['overview', 'yaml', 'events']
 }
 
 /** Status resumido: fase, condição Ready ou status do pod. */

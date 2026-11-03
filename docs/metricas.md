@@ -1,8 +1,9 @@
 # Métricas e histórico
 
 O KubeViz mostra o uso de CPU e memória **agora** (metrics-server) e **ao
-longo do tempo**. O histórico vem do Prometheus do cluster, quando há um, ou
-do coletor embutido, sem precisar instalar nada.
+longo do tempo**, além de indicadores de saúde do cluster. O histórico vem do
+Prometheus do cluster, quando há um, ou do coletor embutido, sem precisar
+instalar nada.
 
 ![Página Métricas](img/metricas.png)
 
@@ -28,6 +29,40 @@ metrics-server com a credencial de quem está logado, a cada 15 s:
 - nós;
 - maiores consumidores, por workload ou por pod;
 - namespaces.
+
+## Saúde (Visão geral)
+
+O painel **Saúde** da Visão geral aponta o que costuma estar por trás de um
+problema:
+
+| Indicador | O que conta |
+|---|---|
+| Reinícios | Pods com container reiniciado na última hora ou em CrashLoopBackOff |
+| Sem memória (OOM) | Containers mortos por estourar o limit de memória (OOMKilled) nas últimas 24 h |
+| Pods pendentes | Pods em Pending há mais de 2 min: sem nó que comporte (Unschedulable) ou sem conseguir iniciar (ImagePullBackOff…) |
+| Nós fora do ar | Nós com a condição Ready diferente de True |
+
+Clicar num indicador filtra a lista, que traz o motivo, a mensagem do
+Kubernetes e um link para o objeto. Os dados vêm do estado atual dos pods e
+nós, lidos com a credencial de quem vê: cada pessoa vê só o que pode listar.
+
+![Saúde na Visão geral](img/saude.png)
+
+## Aba Métricas no detalhe
+
+Pods, nós, Deployments, StatefulSets, DaemonSets e Jobs têm uma aba
+**Métricas**:
+
+- **Pod:**
+  - uso agora de cada container, sobre o limit (o traço marca o request);
+  - o histórico do pod, que **requer o Prometheus**, porque o coletor
+    embutido não guarda pods individuais;
+  - um link para o histórico do workload.
+- **Workload:** o histórico do workload e os pods dele agora.
+- **Nó:** uso agora sobre o alocável, o histórico do nó e os pods agendados
+  nele.
+
+![Aba Métricas de um pod](img/detalhe-pod-metricas.png)
 
 ## Histórico (coletor embutido)
 
@@ -133,6 +168,10 @@ logs. `--prometheus=off` desliga a integração.
   pods.
 - **Resolução:** de 15 s (período de 15 min) a 2 h (30 dias). Cada ponto é a
   média do intervalo.
+- **Requests, limits e capacidade:** se uma coleta do kube-state-metrics
+  falhar, vale o último valor visto há até 5 min, em vez de uma queda falsa a
+  zero no gráfico.
+- **Pods individuais:** só com o Prometheus (aba Métricas do pod).
 - **Permissões:** as mesmas do coletor. Cada consulta é conferida com o RBAC
   de quem pergunta, e só as séries de cluster, nós, namespaces e workloads
   ficam acessíveis, nunca PromQL livre.

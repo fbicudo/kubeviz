@@ -28,6 +28,7 @@ let historyRequests: string[]
 let historyState = 'ok'
 let historyCode = 200
 let historyExtra: Record<string, unknown> = {}
+let extraPods: unknown[] = []
 
 function fakeApi({ metricsStatus = 200 } = {}) {
   return vi.fn(async (input: RequestInfo | URL) => {
@@ -39,7 +40,20 @@ function fakeApi({ metricsStatus = 200 } = {}) {
     if (url === '/api/k8s/api/v1/nodes') {
       return json({ kind: 'NodeList', metadata: {}, items: [{ metadata: meta('kind-control-plane'), status: { allocatable: { cpu: '4', memory: '4Gi' }, conditions: [{ type: 'Ready', status: 'True' }] } }] })
     }
-    if (url === '/api/k8s/api/v1/pods') return json({ kind: 'PodList', metadata: {}, items: pods })
+    if (url === '/api/k8s/api/v1/pods') return json({ kind: 'PodList', metadata: {}, items: [...pods, ...extraPods] })
+    // Detalhe (lista filtrada pelo nome) e pods de um namespace.
+    const [path, query = ''] = url.split('?')
+    const only = new URLSearchParams(query).get('fieldSelector')?.replace('metadata.name=', '')
+    const ns = /\/namespaces\/([^/]+)\//.exec(path)?.[1]
+    const pick = <T extends { metadata: { name: string; namespace?: string } }>(items: T[]) =>
+      items.filter((o) => (!only || o.metadata.name === only) && (!ns || o.metadata.namespace === ns))
+    if (/^\/api\/k8s\/api\/v1\/namespaces\/[^/]+\/pods$/.test(path)) return json({ kind: 'PodList', metadata: {}, items: pick(pods) })
+    if (path === '/api/k8s/apis/apps/v1/namespaces/demo/deployments') {
+      return json({ kind: 'DeploymentList', metadata: {}, items: pick([{ metadata: meta('web', 'demo'), spec: {}, status: {} }]) })
+    }
+    if (path === '/api/k8s/api/v1/nodes' && only) {
+      return json({ kind: 'NodeList', metadata: {}, items: [{ metadata: meta('kind-control-plane'), status: { allocatable: { cpu: '4', memory: '4Gi' }, conditions: [{ type: 'Ready', status: 'True' }] } }] })
+    }
     if (url === '/api/v1/metrics/status') return json({ state: historyState, interval: '30s', error: 'credencial sem leitura', source: 'collector', ...historyExtra })
     if (url.startsWith('/api/v1/metrics/history?')) {
       historyRequests.push(url)
@@ -64,6 +78,7 @@ beforeEach(async () => {
   historyState = 'ok'
   historyCode = 200
   historyExtra = {}
+  extraPods = []
   await i18n.changeLanguage('pt-BR')
   vi.stubGlobal('fetch', fakeApi())
 })
@@ -154,5 +169,83 @@ describe('histórico (coletor embutido)', () => {
     renderAt('/metrics')
     expect(await screen.findByText('Fonte: Prometheus (monitoring/prometheus-server)')).toBeInTheDocument()
     expect(screen.queryByText(/não usado/)).not.toBeInTheDocument()
+  })
+})
+
+describe('aba Métricas do detalhe', () => {
+  it('pod: containers agora; sem Prometheus, explica e leva ao histórico do workload', async () => {
+    renderAt('/view/core/v1/pods/web-abc12-x1?ns=demo&tab=metrics')
+    const live = await screen.findByRole('region', { name: 'Containers agora' })
+    expect(await within(live).findByRole('meter', { name: 'CPU de c' })).toHaveAttribute('aria-valuetext', '10m')
+    expect(live).toHaveTextContent('100m / —')
+    expect(await screen.findByText(/O histórico de um pod individual requer o Prometheus/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ver o histórico do Deployment web' })).toHaveAttribute('href', '/view/apps/v1/deployments/web?ns=demo&tab=metrics')
+    expect(historyRequests).toEqual([])
+  })
+
+  it('pod com Prometheus: histórico do próprio pod', async () => {
+    historyExtra = { source: 'prometheus', prometheus: { state: 'ok', target: 'monitoring/prometheus-server' } }
+    renderAt('/view/core/v1/pods/web-abc12-x1?ns=demo&tab=metrics')
+    await vi.waitFor(() => expect(historyRequests).toEqual(['/api/v1/metrics/history?range=1h&kind=pod&namespace=demo&name=web-abc12-x1']))
+    expect(await screen.findByRole('figure', { name: 'Uso de CPU ao longo do tempo' })).toBeInTheDocument()
+  })
+
+  it('Deployment: histórico do workload e os pods dele agora', async () => {
+    renderAt('/view/apps/v1/deployments/web?ns=demo&tab=metrics')
+    expect(await screen.findByRole('heading', { name: /2 pods agora/ })).toHaveTextContent('total 25m · 42.0 MiB')
+    await vi.waitFor(() => expect(historyRequests).toEqual(['/api/v1/metrics/history?range=1h&kind=workload&namespace=demo&name=web&ownerKind=Deployment']))
+    // Sem o seletor de escopo: o escopo é o objeto.
+    expect(screen.queryByRole('combobox', { name: 'Escopo do histórico' })).not.toBeInTheDocument()
+  })
+
+  it('nó: uso sobre o alocável, histórico do nó e pods nele', async () => {
+    renderAt('/view/core/v1/nodes/kind-control-plane?tab=metrics')
+    const now = await screen.findByRole('region', { name: 'Agora' })
+    expect(await within(now).findByRole('meter', { name: 'CPU de kind-control-plane' })).toHaveAttribute('aria-valuetext', '1 CPU / 4 CPU (25%)')
+    expect(await screen.findByRole('heading', { name: '3 pods neste nó' })).toBeInTheDocument()
+    await vi.waitFor(() => expect(historyRequests).toEqual(['/api/v1/metrics/history?range=1h&kind=node&name=kind-control-plane']))
+  })
+
+  it('tipos sem métricas não têm a aba', async () => {
+    renderAt('/view/core/v1/pods/web-abc12-x1?ns=demo')
+    expect(await screen.findByRole('tab', { name: 'Métricas' })).toBeInTheDocument()
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Visão geral', 'Métricas', 'Logs', 'Terminal', 'YAML', 'Eventos'])
+  })
+})
+
+describe('saúde na Visão geral', () => {
+  it('conta reinícios, OOM e pendentes, e filtra a lista pelo indicador', async () => {
+    const user = userEvent.setup()
+    const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString()
+    extraPods = [
+      {
+        metadata: meta('api-1', 'demo', { creationTimestamp: ago(60) }),
+        spec: { containers: [{ name: 'api' }] },
+        status: {
+          phase: 'Running',
+          containerStatuses: [{ name: 'api', ready: false, restartCount: 7, state: { waiting: { reason: 'CrashLoopBackOff', message: 'back-off 5m0s' } }, lastState: { terminated: { reason: 'OOMKilled', exitCode: 137, finishedAt: ago(3) } } }],
+        },
+      },
+      {
+        metadata: meta('grande-1', 'demo', { creationTimestamp: ago(10) }),
+        spec: { containers: [{ name: 'c' }] },
+        status: { phase: 'Pending', conditions: [{ type: 'PodScheduled', status: 'False', reason: 'Unschedulable', message: '0/1 nodes are available: 1 Insufficient memory.' }] },
+      },
+    ]
+    renderAt('/')
+    const health = await screen.findByRole('region', { name: 'Saúde' })
+    const tile = (name: RegExp) => within(health).getByRole('button', { name })
+    await vi.waitFor(() => expect(tile(/Reinícios/)).toHaveTextContent('1'))
+    expect(tile(/Sem memória/)).toHaveTextContent('1')
+    expect(tile(/Pods pendentes/)).toHaveTextContent('1')
+    expect(tile(/Nós fora do ar/)).toHaveTextContent('0')
+    expect(within(health).getAllByRole('row')).toHaveLength(4) // cabeçalho + 3
+
+    await user.click(tile(/Pods pendentes/))
+    const rows = within(health).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toHaveTextContent('Unschedulable')
+    expect(rows[0]).toHaveTextContent('Insufficient memory')
+    expect(within(rows[0]).getByRole('link', { name: 'grande-1' })).toHaveAttribute('href', '/view/core/v1/pods/grande-1?ns=demo')
   })
 })

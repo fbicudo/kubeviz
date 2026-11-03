@@ -83,6 +83,7 @@ func TestPromQueries(t *testing.T) {
 		{Kind: "workload", Namespace: "demo", Name: "web", OwnerKind: "Deployment"},
 		{Kind: "workload", Namespace: "demo", Name: "db", OwnerKind: "StatefulSet"},
 		{Kind: "workload", Namespace: "kube-system", Name: "etcd-n1", OwnerKind: "Pod"},
+		{Kind: "pod", Namespace: "demo", Name: "web-abc12-x1"},
 	}
 	for _, k := range keys {
 		for _, cg := range []bool{false, true} {
@@ -106,6 +107,9 @@ func TestPromQueries(t *testing.T) {
 	}
 	if req := cpu[2]; !strings.Contains(req, `kube_pod_container_resource_requests{resource="cpu", namespace="demo"}`) || !strings.Contains(req, `phase=~"Pending|Running"`) {
 		t.Errorf("requests: %s", req)
+	}
+	if p := promQueries(store.SeriesKey{Kind: "pod", Namespace: "demo", Name: "web-abc12-x1"}, "120s", false); !strings.Contains(p[0], `namespace="demo", pod="web-abc12-x1"`) || p[6] != "" {
+		t.Errorf("pod: %s", p[0])
 	}
 	pod := promQueries(store.SeriesKey{Kind: "workload", Namespace: "kube-system", Name: "etcd-n1", OwnerKind: "Pod"}, "120s", false)
 	if !strings.Contains(pod[1], `pod="etcd-n1"`) || strings.Contains(pod[1], "kube_pod_owner") {
@@ -157,8 +161,10 @@ func newFakeProm(t *testing.T, answer func(expr string) (float64, bool)) *fakePr
 			step, _ := strconv.ParseFloat(r.URL.Query().Get("step"), 64)
 			var values [][]any
 			for ts := start; ts <= end; ts += int64(step) {
-				// Um buraco no meio do período: sem uso, sem ponto.
-				if ok && !((strings.Contains(expr, "_usage_") || strings.Contains(expr, "working_set")) && ts == start+int64(step)*2) {
+				// Um buraco no meio do período: sem uso, sem ponto. E um buraco
+				// só nos requests (coleta do kube-state-metrics que falhou).
+				usage := strings.Contains(expr, "_usage_") || strings.Contains(expr, "working_set")
+				if ok && !(usage && ts == start+int64(step)*2) && !(strings.Contains(expr, "requests") && ts == start+int64(step)*4) {
 					values = append(values, []any{float64(ts), val})
 				}
 			}
@@ -228,6 +234,10 @@ func TestHistoryFromPrometheus(t *testing.T) {
 	if pts[2].TS-pts[1].TS != 60 {
 		t.Errorf("lacuna esperada entre %d e %d", pts[1].TS, pts[2].TS)
 	}
+	// Sem requests num instante, vale o anterior (e não uma queda a zero).
+	if pts[3].CPUReq != 1 || pts[3].MemReq != 1 {
+		t.Errorf("requests no instante sem coleta: %+v", pts[3])
+	}
 	// Namespaces não têm capacidade: 6 consultas.
 	before := f.queries.Load()
 	if _, _, err := h.History(ctx, store.SeriesKey{Kind: "namespace", Name: "demo"}, 15*time.Minute); err != nil {
@@ -253,6 +263,9 @@ func TestPrometheusIncompleteAndUnreachable(t *testing.T) {
 	}
 	if _, _, err := h.History(context.Background(), store.SeriesKey{Kind: "cluster"}, time.Hour); err != ErrNoHistory {
 		t.Errorf("sem fonte: %v", err)
+	}
+	if _, _, err := h.History(context.Background(), store.SeriesKey{Kind: "pod", Namespace: "demo", Name: "x"}, time.Hour); err != ErrPodNeedsPrometheus {
+		t.Errorf("pod sem Prometheus: %v", err)
 	}
 
 	h = newTestHistory(t, "http://127.0.0.1:1/", nil)

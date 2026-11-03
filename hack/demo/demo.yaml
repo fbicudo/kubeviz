@@ -46,6 +46,38 @@ spec:
         command: ["sh", "-c", "i=0; while true; do i=$((i+1)); printf '\\033[32mINFO\\033[0m tique %s: %s\\n' $i \"$(date)\"; sleep 2; done"]
         resources: {requests: {cpu: 5m, memory: 8Mi}, limits: {memory: 32Mi}}
 ---
+# Estoura o limit de memória e é morto (OOMKilled), reiniciando sem parar.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: memoria-curta, namespace: demo}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: memoria-curta}}
+  template:
+    metadata: {labels: {app: memoria-curta}}
+    spec:
+      containers:
+      - name: app
+        image: busybox:1.37
+        # O tail guarda a entrada inteira (sem quebras de linha) na memória:
+        # ~64 MiB, acima do limit.
+        command: ["sh", "-c", "sleep 20; head -c 64m /dev/zero | tail > /dev/null"]
+        resources:
+          requests: {cpu: 5m, memory: 16Mi}
+          limits: {memory: 32Mi}
+---
+# Pede mais memória do que qualquer nó tem: fica Pending (Unschedulable).
+apiVersion: v1
+kind: Pod
+metadata: {name: grande-demais, namespace: demo}
+spec:
+  containers:
+  - name: app
+    image: busybox:1.37
+    command: ["sleep", "infinity"]
+    resources:
+      requests: {memory: 512Gi}
+---
 # Imagem que não existe: ErrImagePull / ImagePullBackOff.
 apiVersion: v1
 kind: Pod

@@ -32,7 +32,7 @@ export interface Status {
 export interface ContainerState {
   waiting?: { reason?: string; message?: string }
   running?: { startedAt?: string }
-  terminated?: { reason?: string; exitCode: number; signal?: number }
+  terminated?: { reason?: string; exitCode: number; signal?: number; startedAt?: string; finishedAt?: string }
 }
 
 export interface ContainerStatus {
@@ -40,6 +40,8 @@ export interface ContainerStatus {
   ready: boolean
   restartCount: number
   state?: ContainerState
+  /** Término anterior (o motivo do último reinício). */
+  lastState?: ContainerState
 }
 
 /** Recursos pedidos (requests) e máximos (limits) de um container. */
@@ -60,6 +62,7 @@ export interface Pod {
     phase?: 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown'
     reason?: string
     podIP?: string
+    conditions?: { type: string; status: string; reason?: string; message?: string; lastTransitionTime?: string }[]
     containerStatuses?: ContainerStatus[]
     initContainerStatuses?: ContainerStatus[]
   }
@@ -68,6 +71,9 @@ export interface Pod {
 export interface NodeCondition {
   type: string
   status: 'True' | 'False' | 'Unknown'
+  reason?: string
+  message?: string
+  lastTransitionTime?: string
 }
 
 export interface Node {

@@ -233,7 +233,8 @@
       "yaml": "YAML",
       "events": "Eventos",
       "logs": "Logs",
-      "terminal": "Terminal"
+      "terminal": "Terminal",
+      "metrics": "Métricas"
     },
     "notFound": "Objeto não encontrado",
     "notFoundHint": "Ele pode ter sido excluído ou estar em outro namespace.",
@@ -611,7 +612,8 @@
       "namespace": "Namespace",
       "pod": "Pod",
       "cpuReqLim": "CPU requests / limits",
-      "memReqLim": "Memória requests / limits"
+      "memReqLim": "Memória requests / limits",
+      "container": "Container"
     },
     "problem": {
       "missing": {
@@ -626,7 +628,18 @@
         "title": "Métricas indisponíveis",
         "body": "O metrics-server não respondeu. Ele pode estar iniciando; a página tenta de novo sozinha."
       }
-    }
+    },
+    "now": "Agora",
+    "podsOnNode_one": "{{count}} pod neste nó",
+    "podsOnNode_other": "{{count}} pods neste nó",
+    "containersNow": "Containers agora",
+    "notMeasured": "sem amostra",
+    "containerBarHint": "Com limit, a barra mostra o uso sobre ele; sem limit, é só comparativa. O traço marca o request.",
+    "workloadHistory": "Ver o histórico do {{kind}} {{name}}",
+    "workloadPods_one": "{{count}} pod agora",
+    "workloadPods_other": "{{count}} pods agora",
+    "total": "total {{cpu}} · {{memory}}",
+    "noPods": "Nenhum pod deste workload agora."
   },
   "history": {
     "title": "Histórico",
@@ -660,6 +673,37 @@
     "prometheus": {
       "incomplete": "Prometheus em {{target}} não usado: faltam {{missing}}.",
       "unreachable": "Prometheus {{target}} não respondeu: {{error}}"
-    }
+    },
+    "podNeedsPrometheus": "O histórico de um pod individual requer o Prometheus: o coletor embutido guarda só cluster, nós, namespaces e workloads."
+  },
+  "health": {
+    "title": "Saúde",
+    "kind": {
+      "restarts": "Reinícios",
+      "oom": "Sem memória (OOM)",
+      "pending": "Pods pendentes",
+      "notReady": "Nós fora do ar"
+    },
+    "hint": {
+      "restarts": "na última hora ou em CrashLoopBackOff",
+      "oom": "OOMKilled nas últimas 24 h",
+      "pending": "há mais de 2 min",
+      "notReady": "condição Ready diferente de True"
+    },
+    "none": "Nenhum problema encontrado.",
+    "noneOf": "Nenhuma ocorrência de “{{what}}”.",
+    "listCaption": "Ocorrências",
+    "col": {
+      "what": "Indicador",
+      "object": "Objeto",
+      "reason": "Motivo",
+      "since": "Desde"
+    },
+    "container": "container {{name}}",
+    "showAll": "Mostrar todas ({{count}})",
+    "showLess": "Mostrar menos",
+    "total_one": "{{count}} ocorrência",
+    "total_other": "{{count}} ocorrências",
+    "partial": "Indicadores parciais: {{error}}"
   }
 }

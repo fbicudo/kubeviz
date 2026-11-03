@@ -12,8 +12,9 @@ const COL = { cpu: 0, mem: 1, cpuReq: 2, memReq: 3, cpuLim: 4, memLim: 5, cpuCap
 
 interface HistoryPanelProps {
   scope: HistoryScope
-  onScope: (s: HistoryScope) => void
-  options: ComboboxOption[]
+  /** Seletor de escopo (página Métricas); sem ele, o escopo é fixo (detalhe). */
+  onScope?: (s: HistoryScope) => void
+  options?: ComboboxOption[]
 }
 
 /** Histórico de CPU e memória do escopo escolhido (coletor embutido ou Prometheus). */
@@ -24,7 +25,9 @@ export function HistoryPanel({ scope, onScope, options }: HistoryPanelProps) {
   const state = status.data?.state
   const prom = status.data?.prometheus
   const fromProm = status.data?.source === 'prometheus'
-  const ready = state === 'ok' || state === 'starting'
+  // O coletor embutido não guarda pods individuais: só o Prometheus tem.
+  const podWithoutProm = scope.kind === 'pod' && status.data !== undefined && !fromProm
+  const ready = (state === 'ok' || state === 'starting') && !podWithoutProm
   const history = useHistory(scope, range, ready)
 
   const charts = useMemo(() => {
@@ -57,14 +60,16 @@ export function HistoryPanel({ scope, onScope, options }: HistoryPanelProps) {
     <section className="space-y-3 rounded-lg border bg-surface p-3" aria-label={t('history.title')}>
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="mr-auto font-semibold">{t('history.title')}</h2>
-        <Combobox
-          label={t('history.scope')}
-          value={scopeId(scope)}
-          options={options}
-          onChange={(v) => onScope(scopeFromId(v))}
-          searchPlaceholder={t('history.searchScope')}
-          className="w-72"
-        />
+        {options && onScope && (
+          <Combobox
+            label={t('history.scope')}
+            value={scopeId(scope)}
+            options={options}
+            onChange={(v) => onScope(scopeFromId(v))}
+            searchPlaceholder={t('history.searchScope')}
+            className="w-72"
+          />
+        )}
         <div role="radiogroup" aria-label={t('history.range')} className="flex rounded-md border p-0.5">
           {HISTORY_RANGES.map((r) => (
             <button
@@ -91,7 +96,8 @@ export function HistoryPanel({ scope, onScope, options }: HistoryPanelProps) {
           {t(`history.prometheus.${prom.state}`, { target: prom.target ?? '', missing: prom.missing?.join(', ') ?? '', error: prom.error ?? '' })}
         </p>
       )}
-      {state && !ready && <p className="text-muted">{t(`history.state.${state}`, { error: status.data?.error ?? '' })}</p>}
+      {podWithoutProm && <p className="text-muted">{t('history.podNeedsPrometheus')}</p>}
+      {state && !ready && !podWithoutProm && <p className="text-muted">{t(`history.state.${state}`, { error: status.data?.error ?? '' })}</p>}
       {ready && forbidden && <p className="text-muted">{t('history.forbidden')}</p>}
       {ready && !forbidden && history.isError && <p className="text-critical">{history.error.message}</p>}
       {ready && history.data && !charts && <p className="text-muted">{fromProm ? t('history.emptyPrometheus') : t('history.empty', { interval: status.data?.interval ?? '30s' })}</p>}
