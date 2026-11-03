@@ -85,6 +85,8 @@ spec:
               value: {{ dig "interval" "30s" $collector | quote }}
             - name: KUBEVIZ_METRICS_RETENTION
               value: {{ dig "retention" "720h" $collector | quote }}
+            - name: KUBEVIZ_PROMETHEUS
+              value: {{ dig "prometheus" "auto" (.Values.metrics | default dict) | quote }}
             - name: KUBEVIZ_DATA_DIR
               value: /var/lib/kubeviz
             {{- if .Values.tls.enabled }}

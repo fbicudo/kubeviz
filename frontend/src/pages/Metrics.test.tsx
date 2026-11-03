@@ -27,6 +27,7 @@ const podMetrics = [
 let historyRequests: string[]
 let historyState = 'ok'
 let historyCode = 200
+let historyExtra: Record<string, unknown> = {}
 
 function fakeApi({ metricsStatus = 200 } = {}) {
   return vi.fn(async (input: RequestInfo | URL) => {
@@ -39,7 +40,7 @@ function fakeApi({ metricsStatus = 200 } = {}) {
       return json({ kind: 'NodeList', metadata: {}, items: [{ metadata: meta('kind-control-plane'), status: { allocatable: { cpu: '4', memory: '4Gi' }, conditions: [{ type: 'Ready', status: 'True' }] } }] })
     }
     if (url === '/api/k8s/api/v1/pods') return json({ kind: 'PodList', metadata: {}, items: pods })
-    if (url === '/api/v1/metrics/status') return json({ state: historyState, interval: '30s', error: 'credencial sem leitura' })
+    if (url === '/api/v1/metrics/status') return json({ state: historyState, interval: '30s', error: 'credencial sem leitura', source: 'collector', ...historyExtra })
     if (url.startsWith('/api/v1/metrics/history?')) {
       historyRequests.push(url)
       if (historyCode !== 200) return json({ error: 'sem permissão para ver este histórico' }, historyCode)
@@ -62,6 +63,7 @@ beforeEach(async () => {
   historyRequests = []
   historyState = 'ok'
   historyCode = 200
+  historyExtra = {}
   await i18n.changeLanguage('pt-BR')
   vi.stubGlobal('fetch', fakeApi())
 })
@@ -139,5 +141,18 @@ describe('histórico (coletor embutido)', () => {
     renderAt('/metrics')
     expect(await screen.findByText(/o KubeViz não tem permissão para ler nós, pods ou métricas/)).toBeInTheDocument()
     expect(historyRequests).toEqual([])
+  })
+
+  it('mostra a fonte: coletor, ou Prometheus quando há um completo', async () => {
+    historyExtra = { prometheus: { state: 'incomplete', target: 'monitoring/prometheus', missing: ['kube-state-metrics'] } }
+    const { unmount } = renderAt('/metrics')
+    expect(await screen.findByText('Fonte: coletor embutido')).toBeInTheDocument()
+    expect(screen.getByText('Prometheus em monitoring/prometheus não usado: faltam kube-state-metrics.')).toBeInTheDocument()
+    unmount()
+
+    historyExtra = { source: 'prometheus', prometheus: { state: 'ok', target: 'monitoring/prometheus-server' } }
+    renderAt('/metrics')
+    expect(await screen.findByText('Fonte: Prometheus (monitoring/prometheus-server)')).toBeInTheDocument()
+    expect(screen.queryByText(/não usado/)).not.toBeInTheDocument()
   })
 })

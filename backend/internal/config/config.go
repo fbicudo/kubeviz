@@ -51,6 +51,9 @@ type Config struct {
 	MetricsInterval time.Duration
 	// MetricsRetention é por quanto tempo o histórico é guardado.
 	MetricsRetention time.Duration
+	// Prometheus: "auto" (procura um Service), "off" ou o endereço. Quando há
+	// um, o histórico vem dele e o coletor embutido fica pausado.
+	Prometheus string
 }
 
 // OIDC são as opções do login corporativo (ver auth.OIDCConfig).
@@ -104,6 +107,7 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	fs.DurationVar(&c.MetricsInterval, "metrics-interval", interval, "intervalo entre amostras do coletor (env KUBEVIZ_METRICS_INTERVAL)")
 	retention, _ := time.ParseDuration(env("METRICS_RETENTION", "720h"))
 	fs.DurationVar(&c.MetricsRetention, "metrics-retention", retention, "por quanto tempo guardar o histórico, mínimo 168h (env KUBEVIZ_METRICS_RETENTION)")
+	fs.StringVar(&c.Prometheus, "prometheus", env("PROMETHEUS", "auto"), "histórico pelo Prometheus: auto (procura um Service), off ou o endereço, ex.: http://prometheus.monitoring:9090 (env KUBEVIZ_PROMETHEUS)")
 
 	o := &c.OIDC
 	var scopes string
@@ -150,6 +154,12 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	}
 	if c.MetricsRetention < 7*24*time.Hour {
 		return Config{}, fmt.Errorf("metrics-retention mínimo é 168h (7 dias); recebido %s", c.MetricsRetention)
+	}
+	switch p := c.Prometheus; {
+	case p == "auto" || p == "off":
+	case strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://"):
+	default:
+		return Config{}, fmt.Errorf("prometheus inválido %q (use auto, off ou http://host:porta)", p)
 	}
 	for _, s := range strings.Split(scopes, ",") {
 		if s = strings.TrimSpace(s); s != "" {

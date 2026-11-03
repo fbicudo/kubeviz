@@ -1,4 +1,4 @@
-// Histórico de métricas (coletor embutido): consultas e preparação dos dados
+// Histórico de métricas (coletor embutido ou Prometheus): consultas e preparação dos dados
 // para os gráficos.
 
 import { useQuery } from '@tanstack/react-query'
@@ -24,8 +24,18 @@ export function scopeFromId(id: string): HistoryScope {
   return { kind: 'cluster' }
 }
 
+export interface PrometheusStatus {
+  state: 'searching' | 'ok' | 'notfound' | 'incomplete' | 'unreachable'
+  target?: string
+  missing?: string[]
+  error?: string
+}
+
 export interface HistoryStatus {
-  state: 'starting' | 'ok' | 'missing' | 'forbidden' | 'error' | 'disabled'
+  state: 'starting' | 'ok' | 'missing' | 'forbidden' | 'error' | 'disabled' | 'paused'
+  /** De onde vem o histórico: o coletor embutido ou o Prometheus. */
+  source?: 'collector' | 'prometheus'
+  prometheus?: PrometheusStatus
   error?: string
   lastSample?: string
   interval?: string

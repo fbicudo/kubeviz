@@ -102,11 +102,9 @@ func main() {
 		}
 	}
 
-	if cfg.MetricsCollector {
-		if history, closeDB := startCollector(ctx, log, cfg, cl); history != nil {
-			opts.History = history
-			defer closeDB()
-		}
+	if history, closeDB := startHistory(ctx, log, cfg, cl); history != nil {
+		opts.History = history
+		defer closeDB()
 	}
 
 	if err := server.New(log, web.Assets(), cl, opts).Run(ctx, cfg.Listen); err != nil {
@@ -139,27 +137,42 @@ func newLogger(cfg config.Config) *slog.Logger {
 	return slog.New(slog.NewTextHandler(os.Stderr, opts))
 }
 
-// startCollector abre o banco e inicia o coletor embutido de métricas. Se o
+// startHistory inicia o histórico de métricas: o coletor embutido (banco
+// SQLite) e a detecção do Prometheus, que o substitui quando existe. Se o
 // banco não puder ser aberto (disco somente leitura, por exemplo), o
-// KubeViz segue sem histórico.
-func startCollector(ctx context.Context, log *slog.Logger, cfg config.Config, cl *cluster.Manager) (*metrics.Collector, func()) {
-	dir := cfg.DataDir
-	if dir == "" {
-		dir = defaultDataDir(cl.Mode())
+// KubeViz segue só com o Prometheus, ou sem histórico.
+func startHistory(ctx context.Context, log *slog.Logger, cfg config.Config, cl *cluster.Manager) (*metrics.History, func()) {
+	target := func() (*rest.Config, string) { return cl.RESTConfig(), cl.Name() }
+	var collector *metrics.Collector
+	closeDB := func() {}
+	if cfg.MetricsCollector {
+		dir := cfg.DataDir
+		if dir == "" {
+			dir = defaultDataDir(cl.Mode())
+		}
+		db, err := store.Open(filepath.Join(dir, "kubeviz.db"))
+		if err != nil {
+			log.Warn("coletor de métricas desativado: não foi possível abrir o banco", "erro", err)
+		} else {
+			collector = metrics.NewCollector(log, db, metrics.Options{
+				Interval:  cfg.MetricsInterval,
+				Retention: cfg.MetricsRetention,
+				Target:    target,
+			})
+			closeDB = func() { db.Close() }
+			log.Info("coletor de métricas iniciado", "banco", db.Path(), "intervalo", cfg.MetricsInterval, "retencao", cfg.MetricsRetention)
+		}
 	}
-	db, err := store.Open(filepath.Join(dir, "kubeviz.db"))
-	if err != nil {
-		log.Warn("histórico de métricas desativado: não foi possível abrir o banco", "erro", err)
+	if collector == nil && cfg.Prometheus == "off" {
 		return nil, nil
 	}
-	c := metrics.NewCollector(log, db, metrics.Options{
-		Interval:  cfg.MetricsInterval,
-		Retention: cfg.MetricsRetention,
-		Target:    func() (*rest.Config, string) { return cl.RESTConfig(), cl.Name() },
+	h := metrics.NewHistory(log, collector, metrics.HistoryOptions{
+		Prometheus: cfg.Prometheus,
+		InCluster:  cl.Mode() == cluster.ModeInCluster,
+		Target:     target,
 	})
-	go c.Run(ctx)
-	log.Info("coletor de métricas iniciado", "banco", db.Path(), "intervalo", cfg.MetricsInterval, "retencao", cfg.MetricsRetention)
-	return c, func() { db.Close() }
+	go h.Run(ctx)
+	return h, closeDB
 }
 
 func defaultDataDir(mode cluster.Mode) string {

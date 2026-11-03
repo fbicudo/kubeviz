@@ -1,7 +1,8 @@
 # Métricas e histórico
 
 O KubeViz mostra o uso de CPU e memória **agora** (metrics-server) e **ao
-longo do tempo** (coletor embutido), sem precisar de Prometheus ou Grafana.
+longo do tempo**. O histórico vem do Prometheus do cluster, quando há um, ou
+do coletor embutido, sem precisar instalar nada.
 
 ![Página Métricas](img/metricas.png)
 
@@ -67,8 +68,9 @@ milhares de pods, seriam dezenas de milhões de linhas por dia.
 | `--metrics-interval` / `KUBEVIZ_METRICS_INTERVAL` | `30s` | Intervalo entre amostras (mínimo 10 s) |
 | `--metrics-retention` / `KUBEVIZ_METRICS_RETENTION` | `720h` | Por quanto tempo guardar (mínimo 168 h) |
 | `--data-dir` / `KUBEVIZ_DATA_DIR` | ver acima | Diretório do banco |
+| `--prometheus` / `KUBEVIZ_PROMETHEUS` | `auto` | `auto` (procura um Service), `off` ou o endereço do Prometheus |
 
-No Helm, use `metrics.collector.*` e `persistence.*`. Sem `persistence.enabled`,
+No Helm, use `metrics.collector.*`, `metrics.prometheus` e `persistence.*`. Sem `persistence.enabled`,
 o banco fica num `emptyDir` e o histórico recomeça quando o pod é recriado:
 
 ```yaml
@@ -78,3 +80,62 @@ persistence:
 ```
 
 ![Histórico de um workload](img/historico-workload.png)
+
+## Histórico pelo Prometheus
+
+Se o cluster já tem um Prometheus, o KubeViz o encontra sozinho e passa a
+buscar o histórico nele, com as mesmas séries e gráficos. Vantagens:
+
+- o histórico já existe desde antes de instalar o KubeViz, pelo tempo de
+  retenção do Prometheus;
+- o coletor embutido fica **pausado** enquanto o Prometheus responde, e não
+  gasta memória com o mesmo trabalho. Se o Prometheus parar de responder, o
+  coletor volta em até 1 minuto; quando o Prometheus volta, o KubeViz o retoma
+  em até 5 minutos.
+
+O painel Histórico mostra a fonte em uso ("Fonte: Prometheus
+(monitoring/prometheus-server)" ou "Fonte: coletor embutido").
+
+![Histórico pelo Prometheus](img/historico-prometheus.png)
+
+**Requisitos:** o Prometheus precisa coletar:
+
+- o **cAdvisor** do kubelet (uso de CPU e memória dos contêineres);
+- o **kube-state-metrics** v2 (requests, limits, capacidade e donos dos pods).
+
+O kube-prometheus-stack e o chart `prometheus-community/prometheus` já trazem
+os dois. Se faltar algum, o painel diz o que falta e o coletor continua.
+
+**Como é encontrado** (`--prometheus=auto`, o padrão):
+
+1. O KubeViz procura Services com "prometheus" no nome, ou com o rótulo
+   `app.kubernetes.io/name=prometheus`, ignorando Alertmanager, Pushgateway,
+   exporters e afins.
+2. Testa os mais prováveis e usa o primeiro que tiver os dados.
+3. Sem Prometheus, procura de novo a cada 5 minutos.
+
+O acesso ao Service é feito assim:
+
+- **no cluster:** direto pelo DNS do Service; a ServiceAccount recebe leitura
+  de Services;
+- **no modo local:** pelo proxy do API server, com a credencial do kubeconfig
+  (`services/proxy`).
+
+**Endereço fixo:** `--prometheus=http://prometheus.monitoring.svc:9090`. Serve
+qualquer API compatível (Thanos, VictoriaMetrics). Para autenticação básica,
+use `https://usuario:senha@host`; a senha não aparece na interface nem nos
+logs. `--prometheus=off` desliga a integração.
+
+**Diferenças em relação ao coletor:**
+
+- **Uso de um nó:** quando o cAdvisor expõe o cgroup raiz com o nome do nó (o
+  comum), é o uso do nó inteiro, como no metrics-server. Senão, é a soma dos
+  pods.
+- **Resolução:** de 15 s (período de 15 min) a 2 h (30 dias). Cada ponto é a
+  média do intervalo.
+- **Permissões:** as mesmas do coletor. Cada consulta é conferida com o RBAC
+  de quem pergunta, e só as séries de cluster, nós, namespaces e workloads
+  ficam acessíveis, nunca PromQL livre.
+
+Para testar no kind: `hack/demo/prometheus.sh` instala um Prometheus mínimo
+(servidor e kube-state-metrics).

@@ -31,12 +31,17 @@ subjects:
     name: {{ include "kubeviz.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}
-{{- $collector := dig "collector" dict (.Values.metrics | default dict) }}
-{{- if dig "enabled" true $collector }}
+{{- $metrics := .Values.metrics | default dict }}
+{{- $collector := dig "enabled" true (dig "collector" dict $metrics) }}
+{{- $prometheus := dig "prometheus" "auto" $metrics }}
+{{- if or $collector (eq $prometheus "auto") }}
 ---
-# Coletor embutido de métricas: só leitura de nós, pods e da API de métricas,
-# para amostrar o cluster em segundo plano. O histórico só é mostrado a quem
-# pode listar os mesmos objetos (conferido a cada consulta).
+# Histórico de métricas, só leitura:
+#   - coletor embutido: nós, pods e a API de métricas, amostrados em segundo
+#     plano;
+#   - prometheus "auto": Services, para encontrar o Prometheus.
+# O histórico só é mostrado a quem pode listar os mesmos nós e pods
+# (conferido a cada consulta).
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -44,12 +49,19 @@ metadata:
   labels:
     {{- include "kubeviz.labels" . | nindent 4 }}
 rules:
+  {{- if $collector }}
   - apiGroups: [""]
     resources: [nodes, pods]
     verbs: [get, list, watch]
   - apiGroups: [metrics.k8s.io]
     resources: [nodes, pods]
     verbs: [get, list]
+  {{- end }}
+  {{- if eq $prometheus "auto" }}
+  - apiGroups: [""]
+    resources: [services]
+    verbs: [list]
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

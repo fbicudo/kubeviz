@@ -3,7 +3,7 @@
 Ponto de partida de cada sessão de trabalho: o que foi feito, o que vem a seguir
 e o que está bloqueado. Atualize ao fim de cada tarefa.
 
-**Fase atual:** 1 — Navegação e operação (Fase 0 concluída em 02/11/2026, `v0.1.0`) ([roadmap](05-roadmap.md#fase-1--navegação-e-operação-79-semanas--v02))
+**Fase atual:** 2 — Performance e uptime (Fase 1 concluída em 02/11/2026, `v0.3.0`) ([roadmap](05-roadmap.md#fase-2--performance-e-uptime-68-semanas--v03))
 
 ## Concluído
 
@@ -922,6 +922,63 @@ ServiceAccount, identidade visual, CI e release automatizados. Testes: Go
     [img/historico-claro.png](img/historico-claro.png).
 - **Guia:** [metricas.md](metricas.md).
 
+### 03/11/2026 — Tarefa 2.3: histórico pelo Prometheus
+- **Detecção** (`--prometheus`, padrão `auto`):
+  - procura Services de Prometheus (nome ou rótulo), ignorando Alertmanager,
+    Pushgateway, exporters e os Services auxiliares do kube-prometheus-stack;
+  - testa até 5 candidatos, do mais provável ao menos provável, e usa o
+    primeiro que tiver cAdvisor e kube-state-metrics v2;
+  - **acesso:** no cluster, direto pelo DNS do Service; no modo local, pelo
+    proxy do API server com a credencial do kubeconfig;
+  - também aceita um endereço fixo (Thanos, VictoriaMetrics; autenticação
+    básica no endereço, sem aparecer na interface nem nos logs) ou `off`;
+  - confere a cada minuto; sem Prometheus, procura de novo a cada 5 min ou ao
+    trocar de contexto.
+- **Consultas PromQL** com as mesmas séries do coletor (uso, requests, limits
+  e capacidade de cluster, nós, namespaces e workloads):
+  - **Deployment:** pelo `kube_replicaset_owner`;
+  - **pods estáticos:** pelo nome;
+  - **pods terminados:** não reservam recursos;
+  - **séries duplicadas** (dois scrapes do mesmo alvo): eliminadas;
+  - **uso do nó:** pelo cgroup raiz do cAdvisor, quando ele traz o nome do
+    nó; senão, soma dos pods;
+  - **resolução:** de 15 s (15 min) a 2 h (30 dias), com médias do intervalo;
+  - **nomes vindos da URL:** escapados (testado com aspas).
+- **Fonte do histórico:**
+  - enquanto o Prometheus responde, o coletor fica **pausado** e libera os
+    informers; se o Prometheus cair, o coletor volta em até 1 min;
+  - o status (`/api/v1/metrics/status`) traz `source` e `prometheus`;
+  - o painel mostra "Fonte: Prometheus (…)" ou "Fonte: coletor embutido", e
+    explica quando um Prometheus foi achado mas falta algo;
+  - o RBAC de quem consulta continua conferido a cada consulta, e não há
+    PromQL livre.
+- **Chart:**
+  - `metrics.prometheus` (padrão `auto`);
+  - o ClusterRole de métricas ganha só `list` de Services, quando `auto`;
+  - funciona com `--reuse-values` de versões anteriores.
+- `hack/demo/prometheus.sh`: Prometheus mínimo (servidor e
+  kube-state-metrics) para testes.
+- **Verificado:**
+  - **testes Go:**
+    - descoberta (kube-prometheus-stack e prometheus-community);
+    - consultas de cada escopo, parênteses balanceados e escape;
+    - Prometheus falso: pontos, lacunas, quantidade de consultas, estados
+      incompleto e inacessível;
+    - pausa e volta do coletor;
+  - **teste Vitest da fonte;**
+  - **no kind, com o chart `prometheus-community/prometheus`:**
+    - todas as consultas rodaram num Prometheus de verdade
+      (`TestPrometheusLive`);
+    - requests e limits batem com os declarados nos Deployments;
+    - uso próximo ao do `kubectl top` (ex.: prometheus-server 69m/213Mi
+      contra 74m/210Mi);
+  - **instalado pelo chart com `--reuse-values`:** achou
+    `monitoring/prometheus-server` e pausou o coletor; com o Prometheus em
+    zero réplicas, o coletor voltou em 1 min, no cluster e no modo local;
+  - **modo local:** pelo proxy do API server;
+  - captura: [img/historico-prometheus.png](img/historico-prometheus.png).
+- **Guia:** [metricas.md](metricas.md#histórico-pelo-prometheus).
+
 ### Resumo da Fase 1
 Navegação e operação completas: listas genéricas e CRDs, tempo real,
 detalhe, edição e aplicação de YAML, logs, terminal, ações com RBAC, busca
@@ -934,6 +991,8 @@ Escopo no [roadmap](05-roadmap.md#fase-2--performance-e-uptime-68-semanas--v03)
 e nos requisitos RF-30 a RF-36. Fica pronta quando o KubeViz responder, sem
 Grafana, "o que está consumindo recursos?" e "qual foi a disponibilidade do
 serviço X no último mês?".
+
+Concluídas: 2.1, 2.2 e 2.3 (registros acima).
 
 1. **2.1 — Métricas ao vivo:**
    - CPU e memória por nó, namespace e pod (metrics-server), comparados com

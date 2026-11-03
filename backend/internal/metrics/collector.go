@@ -19,6 +19,7 @@ const (
 	StateMissing   = "missing"   // sem metrics-server
 	StateForbidden = "forbidden" // credencial do KubeViz sem leitura
 	StateError     = "error"
+	StatePaused    = "paused" // o histórico vem do Prometheus
 )
 
 // Options configuram o coletor.
@@ -28,6 +29,9 @@ type Options struct {
 	// Target devolve a credencial e o nome do cluster atual (no modo local
 	// o contexto pode mudar: o coletor acompanha).
 	Target func() (*rest.Config, string)
+	// Paused: enquanto true, o coletor não amostra e libera os informers
+	// (o histórico vem do Prometheus).
+	Paused func() bool
 	// NewSource é substituível nos testes.
 	NewSource func(*rest.Config) (Source, error)
 }
@@ -42,6 +46,9 @@ type Status struct {
 	Retention  string    `json:"retention"`
 	Series     int       `json:"series"`
 	DBBytes    int64     `json:"dbBytes"`
+	// Source: de onde vem o histórico ("collector" ou "prometheus").
+	Source     string      `json:"source"`
+	Prometheus *PromStatus `json:"prometheus,omitempty"`
 }
 
 // Collector amostra o cluster periodicamente e guarda no banco.
@@ -103,6 +110,16 @@ func (c *Collector) stopSource() {
 
 // collect faz uma amostra.
 func (c *Collector) collect(ctx context.Context) {
+	if c.opts.Paused != nil && c.opts.Paused() {
+		c.stopSource()
+		c.mu.Lock()
+		if c.status.State != StatePaused {
+			c.log.Info("coletor de métricas pausado: o histórico vem do Prometheus")
+		}
+		c.status.State, c.status.Error = StatePaused, ""
+		c.mu.Unlock()
+		return
+	}
 	cfg, cluster := c.opts.Target()
 	c.mu.Lock()
 	if c.source == nil || cluster != c.cluster {

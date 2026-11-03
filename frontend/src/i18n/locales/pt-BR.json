@@ -651,6 +651,15 @@
       "forbidden": "Sem histórico: o KubeViz não tem permissão para ler nós, pods ou métricas. {{error}}",
       "error": "O coletor de métricas está com erro: {{error}}",
       "disabled": "O histórico de métricas está desativado nesta instalação."
+    },
+    "source": {
+      "prometheus": "Fonte: Prometheus ({{target}})",
+      "collector": "Fonte: coletor embutido"
+    },
+    "emptyPrometheus": "O Prometheus não tem dados deste escopo neste período.",
+    "prometheus": {
+      "incomplete": "Prometheus em {{target}} não usado: faltam {{missing}}.",
+      "unreachable": "Prometheus {{target}} não respondeu: {{error}}"
     }
   }
 }

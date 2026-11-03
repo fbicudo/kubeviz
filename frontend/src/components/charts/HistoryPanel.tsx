@@ -16,12 +16,14 @@ interface HistoryPanelProps {
   options: ComboboxOption[]
 }
 
-/** Histórico de CPU e memória do escopo escolhido (coletor embutido). */
+/** Histórico de CPU e memória do escopo escolhido (coletor embutido ou Prometheus). */
 export function HistoryPanel({ scope, onScope, options }: HistoryPanelProps) {
   const { t } = useTranslation()
   const [range, setRange] = useState<HistoryRange>('1h')
   const status = useHistoryStatus()
   const state = status.data?.state
+  const prom = status.data?.prometheus
+  const fromProm = status.data?.source === 'prometheus'
   const ready = state === 'ok' || state === 'starting'
   const history = useHistory(scope, range, ready)
 
@@ -79,10 +81,20 @@ export function HistoryPanel({ scope, onScope, options }: HistoryPanelProps) {
         </div>
       </div>
 
+      {status.data && state !== 'disabled' && (
+        <p className="-mt-2 text-xs text-muted">
+          {fromProm ? t('history.source.prometheus', { target: prom?.target ?? '' }) : t('history.source.collector')}
+        </p>
+      )}
+      {!fromProm && (prom?.state === 'incomplete' || prom?.state === 'unreachable') && (
+        <p className="text-xs text-muted">
+          {t(`history.prometheus.${prom.state}`, { target: prom.target ?? '', missing: prom.missing?.join(', ') ?? '', error: prom.error ?? '' })}
+        </p>
+      )}
       {state && !ready && <p className="text-muted">{t(`history.state.${state}`, { error: status.data?.error ?? '' })}</p>}
       {ready && forbidden && <p className="text-muted">{t('history.forbidden')}</p>}
       {ready && !forbidden && history.isError && <p className="text-critical">{history.error.message}</p>}
-      {ready && history.data && !charts && <p className="text-muted">{t('history.empty', { interval: status.data?.interval ?? '30s' })}</p>}
+      {ready && history.data && !charts && <p className="text-muted">{fromProm ? t('history.emptyPrometheus') : t('history.empty', { interval: status.data?.interval ?? '30s' })}</p>}
       {charts && (
         <div className="grid gap-3 xl:grid-cols-2">
           <div>

@@ -651,6 +651,15 @@
       "forbidden": "No history: KubeViz is not allowed to read nodes, pods or metrics. {{error}}",
       "error": "The metrics collector has an error: {{error}}",
       "disabled": "Metrics history is disabled in this installation."
+    },
+    "source": {
+      "prometheus": "Source: Prometheus ({{target}})",
+      "collector": "Source: built-in collector"
+    },
+    "emptyPrometheus": "Prometheus has no data for this scope in this period.",
+    "prometheus": {
+      "incomplete": "Prometheus at {{target}} not used: missing {{missing}}.",
+      "unreachable": "Prometheus {{target}} did not respond: {{error}}"
     }
   }
 }

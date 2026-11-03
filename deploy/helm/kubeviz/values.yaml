@@ -87,6 +87,12 @@ metrics:
     interval: 30s
     # Mínimo 168h (7 dias).
     retention: 720h
+  # Histórico pelo Prometheus, quando há um com cAdvisor e kube-state-metrics:
+  # "auto" procura um Service de Prometheus no cluster (a ServiceAccount
+  # recebe leitura de Services); "off" desliga; ou o endereço, ex.:
+  # http://prometheus-server.monitoring.svc. Enquanto o Prometheus responde,
+  # o coletor embutido fica pausado.
+  prometheus: auto
 
 # Onde fica o banco (histórico). Sem persistência, um emptyDir: o histórico
 # recomeça quando o pod é recriado.
